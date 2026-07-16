@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Afya Kamili — Formules & Tarifs</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#E8E8E1;
+  --bg2:#EEEDE8;
+  --card:#F8F8F3;
+  --white:#FFFFFF;
+  --ink:#111111;
+  --dark:#3D3F3A;
+  --mid:#8B8D86;
+  --light:#D8D8D0;
+  --accent:#EFFF3A;
+  --green:#60e0a8;
+  --blue:#60b8ff;
+  --red:#FF5A5A;
+  --border:rgba(0,0,0,0.07);
+  --font:'Manrope',sans-serif;
+}
+html,body{min-height:100vh;background:var(--bg);font-family:var(--font);color:var(--ink);overflow-x:hidden;}
+
+/* ══ TOPBAR ══ */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:62px;background:rgba(232,232,225,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:16px;}
+.tb-brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;text-decoration:none;}
+.tb-dot{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;}
+.tb-dot svg{width:13px;height:13px;}
+.tb-brand span{color:var(--mid);}
+.tb-spacer{flex:1;}
+.tb-back{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--mid);text-decoration:none;transition:color 0.2s;padding:7px 14px;border-radius:999px;border:1px solid var(--border);}
+.tb-back:hover{color:var(--ink);background:var(--white);}
+.tb-back svg{width:13px;height:13px;}
+
+/* ══ PAGE ══ */
+.page{padding-top:62px;}
+
+/* ══ HERO ══ */
+.hero{
+  text-align:center;padding:72px 32px 56px;
+  background:linear-gradient(180deg,var(--bg2) 0%,var(--bg) 100%);
+  border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(239,255,58,0.12) 0%,transparent 65%);
+  top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;
+}
+.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);margin-bottom:16px;position:relative;}
+.hero-title{font-size:clamp(32px,5vw,54px);font-weight:800;color:var(--ink);letter-spacing:-1.5px;line-height:1.08;position:relative;margin-bottom:16px;}
+.hero-title span{color:var(--mid);}
+.hero-sub{font-size:15px;color:var(--mid);max-width:480px;margin:0 auto 36px;line-height:1.6;position:relative;}
+
+/* toggle annuel/mensuel */
+.billing-toggle{
+  display:inline-flex;align-items:center;gap:12px;
+  background:var(--white);border:1px solid var(--border);
+  border-radius:999px;padding:6px 6px 6px 18px;
+  position:relative;
+}
+.bt-label{font-size:12.5px;font-weight:600;color:var(--ink);}
+.bt-label.off{color:var(--mid);}
+.bt-switch{
+  width:44px;height:26px;border-radius:999px;
+  background:var(--ink);border:none;cursor:pointer;
+  position:relative;transition:background 0.25s;
+  display:flex;align-items:center;padding:3px;
+}
+.bt-switch::after{
+  content:'';width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:transform 0.25s;
+}
+.bt-switch.annual::after{transform:translateX(18px);}
+.bt-switch.annual{background:var(--ink);}
+.bt-save{
+  background:var(--accent);color:var(--ink);
+  font-size:10.5px;font-weight:800;
+  padding:4px 12px;border-radius:999px;
+  margin-left:4px;white-space:nowrap;
+}
+
+/* ══ PLANS GRID ══ */
+.plans-wrap{padding:56px 32px 0;max-width:1300px;margin:0 auto;}
+.plans-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  align-items:end;
+}
+
+.plan-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:28px;padding:28px 22px 24px;
+  display:flex;flex-direction:column;gap:20px;
+  position:relative;overflow:hidden;
+  transition:transform 0.22s,box-shadow 0.22s;
+}
+.plan-card:hover{transform:translateY(-3px);box-shadow:0 18px 48px rgba(0,0,0,0.1);}
+.plan-card.featured{
+  border-color:var(--ink);
+  transform:translateY(-8px);
+  box-shadow:0 20px 56px rgba(0,0,0,0.13);
+}
+.plan-card.featured:hover{transform:translateY(-12px);}
+
+/* featured shimmer */
+.plan-card.featured::before{
+  content:'';position:absolute;inset:0;border-radius:28px;
+  background:linear-gradient(135deg,rgba(239,255,58,0.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* plan header */
+.plan-badge{
+  font-size:9.5px;font-weight:800;letter-spacing:0.8px;
+  text-transform:uppercase;padding:3px 11px;border-radius:999px;
+  display:inline-block;margin-bottom:6px;align-self:flex-start;
+}
+.badge-free      {background:rgba(96,224,168,0.2);color:#0a5c3a;border:1px solid rgba(96,224,168,0.4);}
+.badge-starter   {background:rgba(239,255,58,0.25);color:#5a6000;border:1px solid rgba(239,255,58,0.5);}
+.badge-clinic    {background:rgba(96,224,168,0.2);color:#0a5c3a;border:1px solid rgba(96,224,168,0.4);}
+.badge-diagno    {background:rgba(96,184,255,0.2);color:#063a5a;border:1px solid rgba(96,184,255,0.4);}
+.badge-enterprise{background:var(--ink);color:var(--accent);}
+
+.plan-name{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;}
+.plan-tagline{font-size:11.5px;color:var(--mid);line-height:1.5;margin-top:4px;}
+
+.plan-price-wrap{border-top:1px solid var(--border);padding-top:18px;}
+.plan-price{font-size:36px;font-weight:800;color:var(--ink);letter-spacing:-1px;line-height:1;}
+.plan-price sup{font-size:16px;vertical-align:top;margin-top:6px;font-weight:700;}
+.plan-price sub{font-size:11px;font-weight:600;color:var(--mid);letter-spacing:0;vertical-align:baseline;}
+.plan-price.free-price{font-size:28px;}
+.plan-price-annual{font-size:11px;color:var(--mid);margin-top:5px;}
+.plan-price-annual strong{color:var(--green);font-weight:700;}
+
+/* module list */
+.plan-modules{display:flex;flex-direction:column;gap:8px;flex:1;}
+.pm-item{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:600;color:var(--ink);}
+.pm-item svg{width:14px;height:14px;flex-shrink:0;}
+.pm-check{color:#16a34a;}
+.pm-item.dim{color:var(--mid);}
+.pm-item.dim svg{color:var(--light);}
+.pm-item .pm-sub{font-size:10.5px;color:var(--mid);font-weight:500;display:block;margin-left:23px;margin-top:-4px;}
+
+/* CTA */
+.plan-cta{
+  display:flex;align-items:center;justify-content:center;
+  padding:14px;border-radius:999px;
+  font-size:13.5px;font-weight:700;
+  cursor:pointer;border:none;
+  text-decoration:none;transition:all 0.2s;
+  font-family:var(--font);
+}
+.cta-primary{background:var(--ink);color:#fff;}
+.cta-primary:hover{background:#333;transform:translateY(-1px);}
+.cta-accent{background:var(--accent);color:var(--ink);}
+.cta-accent:hover{background:#f5ff50;transform:translateY(-1px);}
+.cta-outline{background:transparent;color:var(--ink);border:1.5px solid var(--border);}
+.cta-outline:hover{background:var(--white);border-color:rgba(0,0,0,0.15);}
+.cta-current{background:var(--bg);color:var(--mid);cursor:default;border:1.5px dashed var(--light);}
+
+.plan-popular{
+  position:absolute;top:-1px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--accent);
+  font-size:9.5px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;
+  padding:4px 14px;border-radius:0 0 12px 12px;white-space:nowrap;
+}
+
+/* ══ FEATURES TABLE ══ */
+.compare-wrap{padding:64px 32px 0;max-width:1300px;margin:0 auto;}
+.compare-title{font-size:13px;font-weight:700;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:24px;}
+
+.compare-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border-radius:24px;overflow:hidden;border:1px solid var(--border);}
+.compare-table th,.compare-table td{padding:14px 20px;text-align:left;border-bottom:1px solid var(--border);}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-table thead th{font-size:11px;font-weight:700;color:var(--mid);letter-spacing:0.8px;text-transform:uppercase;background:var(--bg2);}
+.compare-table thead th:first-child{border-radius:24px 0 0 0;}
+.compare-table thead th:last-child{border-radius:0 24px 0 0;}
+.compare-table td:first-child{font-size:13px;font-weight:600;color:var(--ink);}
+.compare-table .cat-row td{background:var(--bg2);font-size:10.5px;font-weight:700;color:var(--mid);letter-spacing:0.8px;text-transform:uppercase;padding:10px 20px;}
+.check-yes{color:#16a34a;}
+.check-yes svg,.check-no svg,.check-part svg{width:16px;height:16px;}
+.check-no{color:var(--light);}
+.check-part{color:#f59e0b;}
+.col-highlight{background:rgba(239,255,58,0.05);}
+
+/* ══ FAQ ══ */
+.faq-wrap{padding:64px 32px 0;max-width:800px;margin:0 auto;}
+.faq-title{font-size:13px;font-weight:700;color:var(--mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:24px;}
+.faq-item{border-bottom:1px solid var(--border);overflow:hidden;}
+.faq-q{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0;cursor:pointer;gap:16px;
+  font-size:14px;font-weight:700;color:var(--ink);
+  user-select:none;
+}
+.faq-q svg{width:18px;height:18px;flex-shrink:0;color:var(--mid);transition:transform 0.25s;}
+.faq-item.open .faq-q svg{transform:rotate(45deg);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.32s ease,padding 0.32s ease;font-size:13.5px;color:var(--mid);line-height:1.7;}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:18px;}
+
+/* ══ CTA STRIP ══ */
+.cta-strip{
+  margin:64px 32px;max-width:1300px;margin-left:auto;margin-right:auto;
+  background:var(--ink);border-radius:28px;
+  padding:48px 56px;
+  display:flex;align-items:center;gap:32px;
+  position:relative;overflow:hidden;
+}
+.cta-strip::before{
+  content:'';position:absolute;width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(239,255,58,0.12) 0%,transparent 65%);
+  top:-200px;right:-100px;pointer-events:none;
+}
+.cs-text{flex:1;position:relative;}
+.cs-title{font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.6px;margin-bottom:8px;}
+.cs-sub{font-size:14px;color:rgba(255,255,255,0.5);}
+.cs-actions{display:flex;gap:12px;flex-shrink:0;position:relative;}
+.cs-btn{padding:14px 28px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);text-decoration:none;transition:all 0.2s;}
+.cs-btn.primary{background:var(--accent);color:var(--ink);}
+.cs-btn.primary:hover{background:#f5ff50;}
+.cs-btn.outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,0.2);}
+.cs-btn.outline:hover{background:rgba(255,255,255,0.08);}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:1100px){
+  .plans-grid{grid-template-columns:repeat(3,1fr);}
+  .plan-card.featured{transform:none;}
+  .plan-card.featured:hover{transform:translateY(-3px);}
+  .compare-table{display:none;}
+}
+@media(max-width:860px){
+  .plans-grid{grid-template-columns:repeat(2,1fr);gap:12px;}
+  .plans-wrap,.compare-wrap,.faq-wrap{padding-left:20px;padding-right:20px;}
+  .cta-strip{flex-direction:column;padding:36px 28px;margin:40px 20px;}
+  .cs-actions{flex-direction:column;width:100%;}
+  .cs-btn{text-align:center;}
+}
+@media(max-width:600px){
+  .topbar{padding:0 16px;}
+  .hero{padding:52px 20px 40px;}
+  .plans-grid{grid-template-columns:1fr;max-width:380px;margin-left:auto;margin-right:auto;}
+  .plan-card.featured{transform:none;}
+  .billing-toggle{flex-wrap:wrap;justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="tb-brand" href="./index.html">
+    <div class="tb-dot">
+      <svg viewBox="0 0 14 14" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+    </div>
+    <span>Afya <span>Kamili</span></span>
+  </a>
+  <div class="tb-spacer"></div>
+  <a href="./index.html" class="tb-back">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11L4 7l5-4"/></svg>
+    Retour au tableau de bord
+  </a>
+</header>
+
+<div class="page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero">
+    <div class="hero-eyebrow">Formules & Tarifs</div>
+    <h1 class="hero-title">Choisissez la formule<br><span>adaptée à votre établissement</span></h1>
+    <p class="hero-sub">Pas de frais cachés. Annulez à tout moment. Paiement via mobile money CinetPay.</p>
+
+    <div class="billing-toggle">
+      <span class="bt-label off" id="lblMonthly">Mensuel</span>
+      <button class="bt-switch" id="billingSwitch" onclick="toggleBilling()"></button>
+      <span class="bt-label" id="lblAnnual">Annuel</span>
+      <span class="bt-save">−15 %</span>
+    </div>
+  </section>
+
+  <!-- ══ PLANS ══ -->
+  <div class="plans-wrap">
+    <div class="plans-grid" id="plansGrid">
+
+      <!-- ─ CORE (gratuit) ─ -->
+      <div class="plan-card" id="card-none">
+        <div>
+          <span class="plan-badge badge-free">Gratuit</span>
+          <div class="plan-name">Core</div>
+          <div class="plan-tagline">L'essentiel pour démarrer et gérer votre équipe.</div>
+        </div>
+        <div class="plan-price-wrap">
+          <div class="plan-price free-price">0 $</div>
+          <div class="plan-price-annual">Pour toujours gratuit</div>
+        </div>
+        <div class="plan-modules">
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Administration</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Ressources humaines</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Gestion des utilisateurs</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Rôles & permissions</div>
+          <div class="pm-item dim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="7.5" rx="2"/><path d="M5.5 7V5.5a2.5 2.5 0 015 0V7"/></svg>Modules cliniques</div>
+          <div class="pm-item dim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="7.5" rx="2"/><path d="M5.5 7V5.5a2.5 2.5 0 015 0V7"/></svg>Comptabilité</div>
+        </div>
+        <button class="plan-cta cta-outline" onclick="selectPlan('none')">Commencer gratuitement</button>
+      </div>
+
+      <!-- ─ STARTER ─ -->
+      <div class="plan-card" id="card-starter">
+        <div>
+          <span class="plan-badge badge-starter">Starter</span>
+          <div class="plan-name">Starter</div>
+          <div class="plan-tagline">Pour les pharmacies indépendantes, en autonomie totale.</div>
+        </div>
+        <div class="plan-price-wrap">
+          <div class="plan-price"><sup>$</sup><span id="price-starter">15</span><sub>/mois</sub></div>
+          <div class="plan-price-annual" id="annual-starter">ou <strong>$153/an</strong> — économisez $27</div>
+        </div>
+        <div class="plan-modules">
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Tout Core inclus</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Pharmacie complète</div>
+          <span class="pm-sub">Stock, ventes comptoir, alertes, OHADA</span>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Caisse & Comptabilité</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Alertes péremption</div>
+          <div class="pm-item dim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="7.5" rx="2"/><path d="M5.5 7V5.5a2.5 2.5 0 015 0V7"/></svg>Gestion médicale</div>
+          <div class="pm-item dim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="7.5" rx="2"/><path d="M5.5 7V5.5a2.5 2.5 0 015 0V7"/></svg>Hospitalisation & Urgences</div>
+        </div>
+        <button class="plan-cta cta-outline" onclick="selectPlan('starter')">Choisir Starter</button>
+      </div>
+
+      <!-- ─ CLINIC (mise en avant) ─ -->
+      <div class="plan-card featured" id="card-clinic">
+        <div class="plan-popular">Le plus populaire</div>
+        <div>
+          <span class="plan-badge badge-clinic">Clinic</span>
+          <div class="plan-name">Clinic</div>
+          <div class="plan-tagline">La solution complète pour cliniques et hôpitaux de proximité.</div>
+        </div>
+        <div class="plan-price-wrap">
+          <div class="plan-price"><sup>$</sup><span id="price-clinic">80</span><sub>/mois</sub></div>
+          <div class="plan-price-annual" id="annual-clinic">ou <strong>$816/an</strong> — économisez $144</div>
+        </div>
+        <div class="plan-modules">
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Tout Starter inclus</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Gestion médicale complète</div>
+          <span class="pm-sub">Dossiers, consultations, prescriptions</span>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Hospitalisation & Lits</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Urgences & Triage</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Comptabilité & Facturation</div>
+          <div class="pm-item dim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="7.5" rx="2"/><path d="M5.5 7V5.5a2.5 2.5 0 015 0V7"/></svg>Labo & Imagerie</div>
+        </div>
+        <button class="plan-cta cta-accent" onclick="selectPlan('clinic')">Choisir Clinic</button>
+      </div>
+
+      <!-- ─ DIAGNO ─ -->
+      <div class="plan-card" id="card-diagno">
+        <div>
+          <span class="plan-badge badge-diagno">Diagno</span>
+          <div class="plan-name">Diagno</div>
+          <div class="plan-tagline">Pour les centres de diagnostic et laboratoires médicaux.</div>
+        </div>
+        <div class="plan-price-wrap">
+          <div class="plan-price"><sup>$</sup><span id="price-diagno">60</span><sub>/mois</sub></div>
+          <div class="plan-price-annual" id="annual-diagno">ou <strong>$612/an</strong> — économisez $108</div>
+        </div>
+        <div class="plan-modules">
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Tout Starter inclus</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Gestion médicale (consultations)</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Laboratoire d'analyses</div>
+          <span class="pm-sub">Résultats, certificats, normes</span>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Imagerie médicale</div>
+          <span class="pm-sub">Radio, IRM, scanner, DICOM</span>
+          <div class="pm-item dim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="7.5" rx="2"/><path d="M5.5 7V5.5a2.5 2.5 0 015 0V7"/></svg>Hospitalisation & Urgences</div>
+        </div>
+        <button class="plan-cta cta-outline" onclick="selectPlan('diagno')">Choisir Diagno</button>
+      </div>
+
+      <!-- ─ ENTERPRISE ─ -->
+      <div class="plan-card" id="card-enterprise">
+        <div>
+          <span class="plan-badge badge-enterprise">Enterprise</span>
+          <div class="plan-name">Enterprise</div>
+          <div class="plan-tagline">Accès illimité pour les grands hôpitaux et réseaux de santé.</div>
+        </div>
+        <div class="plan-price-wrap">
+          <div class="plan-price"><sup>$</sup><span id="price-enterprise">150</span><sub>/mois</sub></div>
+          <div class="plan-price-annual" id="annual-enterprise">ou <strong>$1,530/an</strong> — économisez $270</div>
+        </div>
+        <div class="plan-modules">
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Tout Clinic + Diagno inclus</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Agenda & Rendez-vous</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Rapports & Analytics</div>
+          <span class="pm-sub">KPIs, tableaux de bord avancés</span>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>Support prioritaire 24/7</div>
+          <div class="pm-item"><svg class="pm-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg>API accès & intégrations</div>
+        </div>
+        <button class="plan-cta cta-primary" onclick="selectPlan('enterprise')">Choisir Enterprise</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ COMPARISON TABLE ══ -->
+  <div class="compare-wrap" style="padding-bottom:0;">
+    <div class="compare-title">Comparaison détaillée des modules</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th style="width:28%">Module</th>
+          <th>Core</th>
+          <th>Starter</th>
+          <th class="col-highlight">Clinic</th>
+          <th>Diagno</th>
+          <th>Enterprise</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="cat-row"><td colspan="6">Inclus dans tous les plans</td></tr>
+        <tr>
+          <td>Administration & RH</td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td class="col-highlight"><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr class="cat-row"><td colspan="6">Pharmacie & Comptabilité</td></tr>
+        <tr>
+          <td>Pharmacie (stock, ventes, OHADA)</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td class="col-highlight"><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr>
+          <td>Comptabilité & Caisse (OHADA)</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td class="col-highlight"><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr class="cat-row"><td colspan="6">Clinique & Hospitalier</td></tr>
+        <tr>
+          <td>Gestion médicale & Dossiers</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td class="col-highlight"><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-part"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 8h8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr>
+          <td>Hospitalisation & Lits</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td class="col-highlight"><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr>
+          <td>Urgences & Triage</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td class="col-highlight"><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr class="cat-row"><td colspan="6">Diagnostic & Imagerie</td></tr>
+        <tr>
+          <td>Laboratoire d'analyses</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td class="col-highlight"><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr>
+          <td>Imagerie médicale (DICOM)</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td class="col-highlight"><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr class="cat-row"><td colspan="6">Gestion avancée</td></tr>
+        <tr>
+          <td>Rendez-vous & Agenda</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td class="col-highlight"><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr>
+          <td>Rapports & Analytics avancés</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td class="col-highlight"><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+        <tr>
+          <td>API & Intégrations tierces</td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td class="col-highlight"><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-no"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12L12 4M4 4l8 8"/></svg></span></td>
+          <td><span class="check-yes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8l3.5 3.5L13 4.5"/></svg></span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:11.5px;color:var(--mid);margin-top:12px;text-align:center;">
+      ⚡ Diagno inclut la gestion médicale en consultation uniquement (sans hospitalisation ni urgences)
+    </p>
+  </div>
+
+  <!-- ══ FAQ ══ -->
+  <div class="faq-wrap">
+    <div class="faq-title">Questions fréquentes</div>
+
+    <div class="faq-item open">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Comment fonctionne le paiement ?
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+      </div>
+      <div class="faq-a">Nous utilisons CinetPay, la plateforme de paiement mobile money leader en Afrique. Vous pouvez payer par Orange Money, Airtel Money, M-Pesa et d'autres opérateurs selon votre pays. Le paiement par carte bancaire est également disponible.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Puis-je changer de formule à tout moment ?
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+      </div>
+      <div class="faq-a">Oui. Vous pouvez passer à une formule supérieure à tout moment, la différence sera calculée au prorata. Pour un downgrade, le changement prend effet à la prochaine date de renouvellement. Aucune donnée n'est perdue lors d'un changement de formule.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Est-ce que la formule Starter est vraiment indépendante ?
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+      </div>
+      <div class="faq-a">Absolument. La formule Starter est conçue pour les pharmacies indépendantes qui n'ont pas besoin de gestion médicale de patients. Vous bénéficiez de la gestion des stocks, des ventes au comptoir, de la comptabilité OHADA et des alertes de péremption, sans avoir à payer pour des modules cliniques dont vous n'avez pas besoin.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Quelle est la différence entre Clinic et Diagno ?
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+      </div>
+      <div class="faq-a">Clinic est pensé pour les structures qui hospitalisent des patients : cliniques, hôpitaux généraux, maternités. Il inclut hospitalisation, lits, urgences et toute la gestion clinique. Diagno cible les centres de diagnostic et laboratoires d'analyses : il inclut le labo, l'imagerie DICOM et les consultations médicales, mais pas l'hospitalisation ni les urgences.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Mes données sont-elles isolées des autres établissements ?
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+      </div>
+      <div class="faq-a">Oui. Afya Kamili est une plateforme multi-tenant à isolation totale. Chaque établissement dispose de son propre espace de données, complètement séparé des autres clients. Aucune donnée patient ne peut être accédée par un autre établissement.</div>
+    </div>
+
+  </div>
+
+  <!-- ══ CTA STRIP ══ -->
+  <div class="cta-strip" style="margin-top:64px;">
+    <div class="cs-text">
+      <div class="cs-title">Prêt à digitaliser votre établissement ?</div>
+      <div class="cs-sub">Configuration en moins de 10 minutes. Aucune installation requise.</div>
+    </div>
+    <div class="cs-actions">
+      <a href="./login.html" class="cs-btn primary">Créer mon compte gratuit</a>
+      <a href="#plansGrid" class="cs-btn outline">Comparer les formules</a>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+/* ── BILLING TOGGLE ── */
+let isAnnual = false;
+const PRICES = { starter:15, clinic:80, diagno:60, enterprise:150 };
+const SAVINGS = { starter:'$27', clinic:'$144', diagno:'$108', enterprise:'$270' };
+
+function toggleBilling() {
+  isAnnual = !isAnnual;
+  const sw = document.getElementById('billingSwitch');
+  sw.classList.toggle('annual', isAnnual);
+  document.getElementById('lblMonthly').classList.toggle('off', isAnnual);
+  document.getElementById('lblAnnual').classList.toggle('off', !isAnnual);
+
+  Object.keys(PRICES).forEach(plan => {
+    const monthly = PRICES[plan];
+    const annual  = Math.round(monthly * 12 * 0.85);
+    const perMonth= Math.round(annual / 12);
+    document.getElementById('price-' + plan).textContent = isAnnual ? perMonth : monthly;
+    const annualEl = document.getElementById('annual-' + plan);
+    if (annualEl) {
+      annualEl.innerHTML = isAnnual
+        ? `facturé <strong>$${annual}/an</strong> — vous économisez ${SAVINGS[plan]}`
+        : `ou <strong>$${annual}/an</strong> — économisez ${SAVINGS[plan]}`;
+    }
+  });
+}
+
+/* ── SELECT PLAN ── */
+function selectPlan(plan) {
+  localStorage.setItem('afya_plan', plan);
+  // Simule un paiement CinetPay (à connecter)
+  if (plan === 'none') {
+    window.location.href = './index.html?plan=none';
+    return;
+  }
+  // Affiche un feedback visuel avant redirection
+  const btn = document.querySelector(`#card-${plan} .plan-cta`);
+  if (btn) {
+    btn.textContent = '✓ Formule activée !';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = 'var(--ink)';
+  }
+  setTimeout(() => {
+    window.location.href = `./index.html?plan=${plan}`;
+  }, 900);
+}
+
+/* ── FAQ ACCORDION ── */
+function toggleFaq(qEl) {
+  const item = qEl.closest('.faq-item');
+  item.classList.toggle('open');
+}
+
+/* ── HIGHLIGHT PLAN FROM URL ── */
+(function(){
+  const p = new URLSearchParams(location.search).get('highlight');
+  if (!p) return;
+  const card = document.getElementById('card-' + p);
+  if (card) {
+    card.style.outline = '2.5px solid var(--accent)';
+    card.style.outlineOffset = '3px';
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+  }
+})();
+</script>
+</body>
+</html>

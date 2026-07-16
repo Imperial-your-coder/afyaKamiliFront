@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Afya Kamili — Aperçu catalogue</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --ink:#12120f; --beige:#F0EEE6; --beige2:#E8E5DA; --neon:#EFFF3A;
+    --mid:#8a8a82; --card:#fff; --border:rgba(0,0,0,0.06);
+  }
+  body{ font-family:Manrope,sans-serif; background:#c8c6bd; display:flex;
+        align-items:center; justify-content:center; min-height:100vh; padding:20px; gap:30px; flex-wrap:wrap; }
+
+  .phone{ width:390px; height:844px; background:var(--beige); border-radius:44px;
+          overflow:hidden; position:relative; box-shadow:0 40px 100px rgba(0,0,0,0.35);
+          border:10px solid #1a1a1a; }
+  .screen{ width:100%; height:100%; overflow-y:auto; overflow-x:hidden; position:relative; }
+  .screen::-webkit-scrollbar{ display:none; }
+
+  /* ─── HEADER : profil façon Medimax ─── */
+  .top{ padding:56px 22px 16px; display:flex; align-items:center; justify-content:space-between; }
+  .greet{ font-size:12.5px; color:var(--mid); font-weight:600; margin-bottom:2px; }
+  .pname{ font-size:20px; font-weight:800; color:var(--ink); letter-spacing:-0.5px; }
+  .prole{ font-size:11.5px; color:var(--mid); font-weight:600; }
+  .avatar{ width:46px; height:46px; border-radius:50%; background:var(--neon);
+           display:flex; align-items:center; justify-content:center; font-weight:800;
+           color:var(--ink); font-size:15px; box-shadow:0 6px 18px rgba(239,255,58,0.4); }
+
+  /* ─── SEARCH ─── */
+  .search{ margin:6px 22px 20px; display:flex; align-items:center; gap:11px;
+           background:var(--card); border-radius:17px; padding:14px 17px;
+           box-shadow:0 4px 20px rgba(0,0,0,0.04); }
+  .search input{ border:none; outline:none; background:none; font-family:inherit;
+                 font-size:14px; color:var(--ink); flex:1; font-weight:500; }
+  .search .filt{ width:34px; height:34px; border-radius:11px; background:var(--ink);
+                 display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  /* ─── HERO : fond bleu + organe flottant (comme le dashboard) ─── */
+  .hero{ margin:0 22px 24px; height:186px; border-radius:26px; position:relative;
+         overflow:hidden; background:radial-gradient(ellipse at 62% 45%, #123456 0%, #0a1f38 55%, #061424 100%);
+         box-shadow:0 20px 50px rgba(10,31,56,0.4); }
+  .hero-scan{ position:absolute; left:0; right:0; height:2px;
+              background:linear-gradient(90deg,transparent,rgba(0,184,255,0.5),transparent);
+              animation:scanMove 4s linear infinite; }
+  @keyframes scanMove{ 0%{top:0} 100%{top:100%} }
+  .hero-organ{ position:absolute; right:-6px; top:50%; transform:translateY(-50%);
+               width:180px; height:180px; display:flex; align-items:center; justify-content:center; }
+  .hero-organ img{ width:150px; height:150px; object-fit:contain;
+                   filter:drop-shadow(0 0 40px rgba(0,190,255,0.55));
+                   animation:floatOrgan 5.5s ease-in-out infinite; }
+  @keyframes floatOrgan{ 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-14px) rotate(1deg)} }
+  .hero-txt{ position:absolute; left:22px; top:26px; z-index:2; max-width:180px; }
+  .hero-tag{ font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+             color:var(--neon); margin-bottom:8px; }
+  .hero-title{ font-size:21px; font-weight:800; color:#fff; line-height:1.15; letter-spacing:-0.5px; }
+  .hero-sub{ font-size:12px; color:rgba(255,255,255,0.6); margin-top:8px; line-height:1.4; }
+  .hero-dots{ position:absolute; left:22px; bottom:20px; display:flex; gap:6px; z-index:2; }
+  .hero-dots span{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.25); }
+  .hero-dots span.on{ width:20px; border-radius:999px; background:var(--neon); }
+
+  /* ─── SECTION ─── */
+  .sec{ padding:0 22px; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .sec-t{ font-size:16.5px; font-weight:800; color:var(--ink); letter-spacing:-0.3px; }
+  .sec-a{ font-size:12px; font-weight:700; color:var(--mid); }
+
+  /* ─── CATÉGORIES (chips) ─── */
+  .cats{ display:flex; gap:9px; padding:0 22px 20px; overflow-x:auto; }
+  .cats::-webkit-scrollbar{ display:none; }
+  .chip{ flex-shrink:0; padding:9px 16px; border-radius:13px; background:var(--card);
+         font-size:12.5px; font-weight:700; color:var(--mid); white-space:nowrap;
+         box-shadow:0 2px 10px rgba(0,0,0,0.03); }
+  .chip.on{ background:var(--ink); color:#fff; }
+
+  /* ─── GRILLE PRODUITS ─── */
+  .grid{ padding:0 22px 30px; display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+  .pcard{ background:var(--card); border-radius:24px; padding:14px; position:relative;
+          box-shadow:0 8px 30px rgba(0,0,0,0.05); transition:transform .25s ease, box-shadow .25s ease; }
+  .pcard:active{ transform:scale(0.97); }
+  .pcard .fav{ position:absolute; top:14px; right:14px; width:30px; height:30px;
+               border-radius:50%; background:var(--beige); display:flex; align-items:center;
+               justify-content:center; z-index:2; }
+  .pcard .fav svg{ width:15px; height:15px; }
+  .pimg{ height:104px; border-radius:17px; display:flex; align-items:center;
+         justify-content:center; margin-bottom:13px; position:relative; overflow:hidden; }
+  .pimg svg{ width:46px; height:46px; color:#fff; opacity:0.92; z-index:1; }
+  .pimg .shine{ position:absolute; inset:0; background:radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%); }
+  .pname{ font-size:14px; font-weight:800; color:var(--ink); letter-spacing:-0.2px; margin-bottom:3px; }
+  .pform{ font-size:11px; color:var(--mid); font-weight:600; margin-bottom:11px; }
+  .pfoot{ display:flex; align-items:center; justify-content:space-between; }
+  .pprice{ font-size:15px; font-weight:800; color:var(--ink); }
+  .pprice small{ font-size:10px; color:var(--mid); font-weight:600; }
+  .padd{ width:30px; height:30px; border-radius:10px; background:var(--neon);
+         display:flex; align-items:center; justify-content:center;
+         box-shadow:0 4px 12px rgba(239,255,58,0.5); }
+  .padd svg{ width:16px; height:16px; color:var(--ink); }
+  .pstock{ position:absolute; top:14px; left:14px; font-size:9px; font-weight:800;
+           padding:3px 8px; border-radius:999px; text-transform:uppercase; letter-spacing:0.3px; z-index:2; }
+  .stk-ok{ background:rgba(34,197,94,0.15); color:#16a34a; }
+  .stk-low{ background:rgba(245,158,11,0.15); color:#d97706; }
+
+  /* ─── MODALE PRODUIT translucide façon Candesartan ─── */
+  .overlay{ position:absolute; inset:0; background:rgba(10,20,35,0.5); backdrop-filter:blur(8px);
+            display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .35s ease; z-index:50; }
+  .overlay.show{ opacity:1; pointer-events:all; }
+  .sheet{ width:100%; background:linear-gradient(180deg, rgba(255,255,255,0.9), #fff 30%);
+          backdrop-filter:blur(30px); border-radius:34px 34px 0 0; padding:12px 24px 32px;
+          transform:translateY(100%); transition:transform .4s cubic-bezier(.22,1,.36,1);
+          max-height:82%; overflow-y:auto; }
+  .overlay.show .sheet{ transform:translateY(0); }
+  .sheet::-webkit-scrollbar{ display:none; }
+  .grip{ width:40px; height:5px; border-radius:999px; background:rgba(0,0,0,0.12); margin:0 auto 18px; }
+  .sheet-img{ height:190px; border-radius:26px; display:flex; align-items:center; justify-content:center;
+              margin-bottom:20px; position:relative; overflow:hidden;
+              background:radial-gradient(ellipse at 55% 40%, #1a4a7a, #0a2540); }
+  .sheet-img img{ width:130px; height:130px; object-fit:contain; filter:drop-shadow(0 0 30px rgba(0,190,255,0.5));
+                  animation:floatOrgan 5s ease-in-out infinite; }
+  .sheet-img .badge{ position:absolute; top:16px; right:16px; background:var(--neon); color:var(--ink);
+                     font-size:11px; font-weight:800; padding:6px 12px; border-radius:999px; }
+  .sheet-name{ font-size:23px; font-weight:800; color:var(--ink); letter-spacing:-0.5px; }
+  .sheet-form{ font-size:13px; color:var(--mid); font-weight:600; margin-top:3px; margin-bottom:18px; }
+  .sheet-tabs{ display:flex; gap:8px; margin-bottom:18px; }
+  .stab{ flex:1; text-align:center; padding:9px; border-radius:12px; font-size:12px; font-weight:700;
+         background:var(--beige); color:var(--mid); }
+  .stab.on{ background:var(--ink); color:#fff; }
+  .sheet-desc{ font-size:13px; line-height:1.6; color:#555; margin-bottom:20px; }
+  .sheet-stats{ display:flex; gap:11px; margin-bottom:22px; }
+  .sstat{ flex:1; background:var(--beige); border-radius:16px; padding:13px; }
+  .sstat-l{ font-size:10px; font-weight:700; color:var(--mid); text-transform:uppercase; letter-spacing:0.4px; }
+  .sstat-v{ font-size:17px; font-weight:800; color:var(--ink); margin-top:3px; }
+  .sheet-foot{ display:flex; align-items:center; gap:14px; }
+  .sheet-price{ flex:1; }
+  .sheet-price-l{ font-size:11px; color:var(--mid); font-weight:600; }
+  .sheet-price-v{ font-size:24px; font-weight:800; color:var(--ink); letter-spacing:-0.5px; }
+  .sheet-btn{ flex:1.4; background:var(--ink); color:#fff; border:none; font-family:inherit;
+              font-size:14.5px; font-weight:800; padding:16px; border-radius:17px;
+              display:flex; align-items:center; justify-content:center; gap:8px; }
+  .sheet-btn svg{ width:17px; height:17px; }
+
+  .hint{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+         font-size:12px; color:#555; background:#fff; padding:8px 16px; border-radius:999px;
+         box-shadow:0 4px 16px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="screen">
+
+    <div class="top">
+      <div>
+        <div class="greet">Bonjour 👋</div>
+        <div class="pname">Jean Test</div>
+        <div class="prole">Pharmacien · Pharmacie Test</div>
+      </div>
+      <div class="avatar">JT</div>
+    </div>
+
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#8a8a82" stroke-width="1.8"><circle cx="7" cy="7" r="4.5"/><path d="M12.5 12.5l-2.5-2.5" stroke-linecap="round"/></svg>
+      <input placeholder="Rechercher un médicament…">
+      <div class="filt"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#EFFF3A" stroke-width="1.8"><path d="M2 4h12M4 8h8M6 12h4" stroke-linecap="round"/></svg></div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-scan"></div>
+      <div class="hero-txt">
+        <div class="hero-tag">Afya Kamili</div>
+        <div class="hero-title">Votre pharmacie, intelligente</div>
+        <div class="hero-sub">142 références en stock</div>
+      </div>
+      <div class="hero-organ"><img id="heroOrgan" src="" alt=""></div>
+      <div class="hero-dots"><span class="on"></span><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-t">Catégories</div>
+      <div class="sec-a">Voir tout</div>
+    </div>
+    <div class="cats">
+      <div class="chip on">Tous</div>
+      <div class="chip">Antibiotiques</div>
+      <div class="chip">Analgésiques</div>
+      <div class="chip">Antipaludéens</div>
+      <div class="chip">Vitamines</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-t">Catalogue</div>
+      <div class="sec-a">142 articles</div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+  </div>
+
+  <!-- MODALE PRODUIT translucide -->
+  <div class="overlay" id="ov" onclick="if(event.target===this)closeSheet()">
+    <div class="sheet">
+      <div class="grip"></div>
+      <div class="sheet-img" id="sheetImg">
+        <span class="badge">En stock</span>
+        <img id="sheetOrgan" src="" alt="">
+      </div>
+      <div class="sheet-name" id="sheetName">Paracétamol</div>
+      <div class="sheet-form" id="sheetForm">Comprimé · 500mg</div>
+      <div class="sheet-tabs">
+        <div class="stab on">Description</div>
+        <div class="stab">Posologie</div>
+        <div class="stab">Stock</div>
+      </div>
+      <div class="sheet-desc">Antalgique et antipyrétique de référence. Soulage la douleur légère à modérée et fait baisser la fièvre. Bien toléré aux doses recommandées.</div>
+      <div class="sheet-stats">
+        <div class="sstat"><div class="sstat-l">En stock</div><div class="sstat-v">500 <span style="font-size:11px;color:#8a8a82">cp</span></div></div>
+        <div class="sstat"><div class="sstat-l">Plaquette</div><div class="sstat-v">fc2800</div></div>
+        <div class="sstat"><div class="sstat-l">Comprimé</div><div class="sstat-v">fc300</div></div>
+      </div>
+      <div class="sheet-foot">
+        <div class="sheet-price">
+          <div class="sheet-price-l">Prix boîte</div>
+          <div class="sheet-price-v">fc12000</div>
+        </div>
+        <button class="sheet-btn">
+          <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>
+          Vendre
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hint">Clique une carte produit · les organes tournent tout seuls</div>
+
+<script>
+  const ORGANS = [
+    { img:'./media/lung2.png',   bg:'radial-gradient(ellipse at 62% 45%, #123456, #0a1f38 55%, #061424)' },
+    { img:'./media/heart.png',   bg:'radial-gradient(ellipse at 62% 45%, #4a1010, #2a0808 55%, #140404)' },
+    { img:'./media/brain.png',   bg:'radial-gradient(ellipse at 62% 45%, #2a1040, #180828 55%, #0c0418)' },
+    { img:'./media/stomach.png', bg:'radial-gradient(ellipse at 62% 45%, #3a2a00, #241a00 55%, #120d00)' },
+    { img:'./media/skeleton.png',bg:'radial-gradient(ellipse at 62% 45%, #103020, #081810 55%, #040c08)' },
+  ];
+
+  const MEDS = [
+    { name:'Paracétamol', form:'Comprimé · 500mg', price:'fc12000', stock:'ok', ic:'pill',
+      g:'linear-gradient(135deg,#378ADD,#185FA5)' },
+    { name:'Amoxicilline', form:'Gélule · 250mg', price:'fc8500', stock:'ok', ic:'capsule',
+      g:'linear-gradient(135deg,#1D9E75,#0F6E56)' },
+    { name:'Artéméther-L.', form:'Comprimé · 20mg', price:'fc15000', stock:'low', ic:'pill',
+      g:'linear-gradient(135deg,#D4537E,#993556)' },
+    { name:'Ibuprofène', form:'Comprimé · 400mg', price:'fc6000', stock:'ok', ic:'pill',
+      g:'linear-gradient(135deg,#BA7517,#854F0B)' },
+    { name:'Vitamine C', form:'Effervescent · 1g', price:'fc4500', stock:'ok', ic:'capsule',
+      g:'linear-gradient(135deg,#EF9F27,#BA7517)' },
+    { name:'Oméprazole', form:'Gélule · 20mg', price:'fc9000', stock:'ok', ic:'capsule',
+      g:'linear-gradient(135deg,#7F77DD,#534AB7)' },
+  ];
+
+  const ICONS = {
+    pill:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="8" width="18" height="8" rx="4"/><path d="M12 8v8"/></svg>',
+    capsule:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="7" width="16" height="10" rx="5"/><path d="M12 7v10" stroke-dasharray="2 2"/></svg>',
+  };
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = MEDS.map(m => `
+    <div class="pcard" onclick="openSheet('${m.name}','${m.form}','${m.price}','${m.g}')">
+      <div class="pstock ${m.stock==='ok'?'stk-ok':'stk-low'}">${m.stock==='ok'?'En stock':'Stock bas'}</div>
+      <div class="fav"><svg viewBox="0 0 16 16" fill="none" stroke="#12120f" stroke-width="1.6"><path d="M8 14s-5-3.5-5-7a3 3 0 015-2 3 3 0 015 2c0 3.5-5 7-5 7z"/></svg></div>
+      <div class="pimg" style="background:${m.g}"><div class="shine"></div>${ICONS[m.ic]}</div>
+      <div class="pname">${m.name}</div>
+      <div class="pform">${m.form}</div>
+      <div class="pfoot">
+        <div class="pprice">${m.price} <small>/boîte</small></div>
+        <div class="padd"><svg viewBox="0 0 16 16" fill="none" stroke="#12120f" stroke-width="2.2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></div>
+      </div>
+    </div>`).join('');
+
+  function openSheet(name, form, price, g){
+    document.getElementById('sheetName').textContent = name;
+    document.getElementById('sheetForm').textContent = form;
+    document.querySelector('.sheet-price-v').textContent = price;
+    document.getElementById('sheetImg').style.background = ORGANS[curOrgan].bg;
+    document.getElementById('sheetOrgan').src = ORGANS[curOrgan].img;
+    document.getElementById('ov').classList.add('show');
+  }
+  function closeSheet(){ document.getElementById('ov').classList.remove('show'); }
+
+  /* Organes qui tournent tout seuls, comme le dashboard */
+  let curOrgan = 0;
+  const hero = document.querySelector('.hero');
+  const heroImg = document.getElementById('heroOrgan');
+  function rotateOrgan(){
+    hero.style.background = ORGANS[curOrgan].bg;
+    heroImg.src = ORGANS[curOrgan].img;
+    document.querySelectorAll('.hero-dots span').forEach((d,i)=>d.classList.toggle('on', i===curOrgan));
+    curOrgan = (curOrgan + 1) % ORGANS.length;
+  }
+  rotateOrgan();
+  setInterval(rotateOrgan, 4000);
+</script>
+</body>
+</html>

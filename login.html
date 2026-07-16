@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Afya Kamili — Connexion</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- ══ COUCHE API — doit être chargée avant tout ══ -->
+<script src="./js/afya_api.js"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { 'manrope': ['Manrope', 'sans-serif'] },
+      colors: { 'accent': '#EFFF3A', 'ink': '#111111', 'mid': '#9A9A95' }
+    }
+  }
+}
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
+
+.left{order:1;}.right{order:2;}
+.page.mode-signup .left{order:2;}.page.mode-signup .right{order:1;}
+.left,.right{transition:flex-basis 0.55s cubic-bezier(.65,0,.35,1),order 0s;}
+
+.ambient{transition:background 1.8s ease;}
+.scan{animation:scanMove 9s linear infinite;}
+@keyframes scanMove{0%{top:-2px}100%{top:100%}}
+
+.organ-slot{opacity:0;transition:opacity 0.9s ease,filter 0.9s ease;pointer-events:none;}
+.organ-slot.active{opacity:1;pointer-events:auto;}
+.organ-slot img{animation:floatOrgan 5.5s ease-in-out infinite;pointer-events:none;}
+@keyframes floatOrgan{0%,100%{transform:translateY(0) rotate(-0.4deg)}50%{transform:translateY(-20px) rotate(0.4deg)}}
+
+.dot{transition:transform 0.2s,box-shadow 0.2s;pointer-events:auto !important;cursor:pointer !important;}
+/* Le conteneur des points laisse passer les clics vers les points eux-mêmes */
+.organ-slot > div[class*="z-\[22\]"]{pointer-events:none;}
+.organ-slot.active .dot{pointer-events:auto !important;}
+.dot::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px solid rgba(0,184,255,0.3);animation:pRing 2.4s ease-out infinite;pointer-events:none;}
+@keyframes pRing{0%{transform:scale(0.75);opacity:0.7}100%{transform:scale(2.2);opacity:0}}
+.dot:hover{transform:scale(1.35);box-shadow:0 0 20px rgba(0,184,255,1);}
+
+.cline{stroke:rgba(111,231,255,0.38);stroke-width:1.2;fill:none;stroke-dasharray:5 4;opacity:0;transition:opacity 0.45s;}
+.cline.show{opacity:1;}
+
+.mcard{opacity:0;transform:translateY(8px) scale(0.95);transition:opacity 0.38s,transform 0.38s;}
+.mcard.show{opacity:1;transform:translateY(0) scale(1);animation:cFloat 4.5s ease-in-out infinite;}
+.mcard.always{opacity:1;transform:translateY(0) scale(1);animation:cFloat 4.5s ease-in-out infinite;}
+@keyframes cFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* ════════════════════════════════════
+   WIZARD — steps stacked, same position
+   KEY: all steps absolute except .active
+   which is relative → container height
+   never jumps, no scroll possible.
+════════════════════════════════════ */
+.wizard-stage {
+  position: relative;
+  /* height is set by the tallest step (step 6 review).
+     We fix it so every step occupies the exact same
+     vertical real-estate → zero layout shift. */
+  min-height: 320px;
+}
+.wizard-step {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  /* start off-screen RIGHT for forward, LEFT for back
+     (toggled by JS class) */
+  transform: translateX(28px);
+  transition: opacity 0.32s ease, transform 0.36s cubic-bezier(.34,1.1,.64,1);
+  /* critical: no layout participation while hidden */
+}
+.wizard-step.enter-from-left {
+  transform: translateX(-28px);
+}
+/* Active step sits in the flow → gives height to .wizard-stage */
+.wizard-step.active {
+  position: relative;
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(0) !important;
+}
+/* Exit animations */
+.wizard-step.exit-right {
+  opacity: 0;
+  transform: translateX(28px);
+  pointer-events: none;
+}
+.wizard-step.exit-left {
+  opacity: 0;
+  transform: translateX(-28px);
+  pointer-events: none;
+}
+
+.wizard-progress-step::after{
+  content:'';position:absolute;inset:0;background:#111111;
+  transform:scaleX(0);transform-origin:left;
+  transition:transform 0.45s cubic-bezier(.65,0,.35,1);border-radius:999px;
+}
+.wizard-progress-step.done::after{transform:scaleX(1);}
+.wizard-progress-step.current::after{background:#EFFF3A;transform:scaleX(1);}
+
+.pw-match-row{transition:all 0.25s ease;}
+.auth-toast{opacity:0;pointer-events:none;transition:opacity 0.3s,transform 0.3s;}
+.auth-toast.show{opacity:1;}
+
+/* Login / signup crossfade
+   ⚠ visibility:hidden est ESSENTIEL : opacity:0 seul laisse le formulaire
+   caché focusable au clavier → les frappes partaient dans suEstablishment. */
+#loginForm,#signupForm{transition:opacity 0.4s ease,transform 0.4s ease,visibility 0.4s;}
+#signupForm{visibility:hidden;}
+.page.mode-signup #loginForm{opacity:0;transform:translateX(-20px);pointer-events:none;visibility:hidden;}
+.page.mode-signup #signupForm{opacity:1;transform:translateX(0);pointer-events:all;visibility:visible;}
+
+/* ════════════════════════════════════
+   MOBILE RESPONSIVE — SCROLL FIX
+   Permet le défilement sur les appareils mobiles
+   pour atteindre le bouton "Créer mon compte"
+════════════════════════════════════ */
+@media(max-width:900px){
+  html,body{
+    overflow:auto !important;
+    height:auto !important;
+    overflow-x:hidden;
+  }
+  .page{
+    flex-direction:column;
+    height:auto !important;
+    min-height:100dvh;
+    overflow:visible !important;
+    display:flex;
+  }
+  .page.mode-signup .left,.page.mode-signup .right{order:initial;}
+  .page .left{order:1!important;flex:none !important;}
+  .page .right{order:2!important;flex:1 0 auto !important;}
+  .left{
+    height:34vh;
+    min-height:200px;
+    max-height:280px;
+    flex-shrink:0;
+  }
+  .right{
+    min-height:auto;
+    overflow-y:visible !important;
+    height:auto !important;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding-top:30px;
+    padding-bottom:40px;
+  }
+  
+  /* Forcer le formulaire signup à être visible et scrollable */
+  #signupForm{
+    position:relative !important;
+    opacity:1 !important;
+    pointer-events:all !important;
+    transform:none !important;
+    top:auto !important;
+    left:auto !important;
+    width:100%;
+    max-width:380px;
+    margin:0 auto;
+    padding-bottom:30px;
+  }
+  
+  /* Cacher le login quand mode-signup actif */
+  .page.mode-signup #loginForm{
+    display:none;
+  }
+  .page:not(.mode-signup) #signupForm{
+    display:none;
+  }
+  .page:not(.mode-signup) #loginForm{
+    display:block;
+  }
+  
+  /* Wizard stage : hauteur naturelle sur mobile */
+  .wizard-stage{
+    min-height:auto !important;
+    height:auto !important;
+    overflow:visible !important;
+  }
+  
+  /* Steps en flux normal pour permettre le scroll */
+  .wizard-step{
+    position:relative !important;
+    opacity:1 !important;
+    pointer-events:all !important;
+    transform:none !important;
+    height:auto !important;
+    min-height:auto;
+    transition:none;
+    margin-bottom:16px;
+  }
+  
+  /* Cacher les steps inactifs sur mobile */
+  .wizard-step:not(.active){
+    display:none !important;
+  }
+  
+  /* Step actif reste visible */
+  .wizard-step.active{
+    display:block !important;
+    position:relative !important;
+    opacity:1 !important;
+    pointer-events:all !important;
+    transform:none !important;
+  }
+  
+  /* Désactiver les animations d'entrée/sortie sur mobile */
+  .wizard-step.enter-from-left,
+  .wizard-step.exit-right,
+  .wizard-step.exit-left{
+    display:none !important;
+    opacity:0 !important;
+    transform:none !important;
+  }
+}
+
+@media(max-width:600px){
+  .left{
+    height:30vh;
+    min-height:170px;
+    max-height:230px;
+  }
+  .right{
+    padding-top:24px;
+    padding-bottom:40px;
+  }
+  .wizard-stage{
+    min-height:auto !important;
+  }
+  #signupForm{
+    padding-left:12px;
+    padding-right:12px;
+    padding-bottom:40px;
+  }
+  
+  /* Boutons plus faciles à toucher sur mobile */
+  #wizardNextBtn{
+    padding-top:16px;
+    padding-bottom:16px;
+  }
+  #wizardBackBtn{
+    width:48px;
+    height:48px;
+  }
+}
+</style>
+</head>
+<body class="m-0 p-0 font-manrope">
+<div class="page flex h-screen w-screen overflow-hidden" id="page">
+
+<!-- ═══ LEFT — ORGAN CAROUSEL ═══ -->
+<div class="left flex-[0_0_62%] relative overflow-hidden flex items-center justify-center bg-[#060B12]" id="leftPanel">
+  <div class="ambient absolute inset-0 pointer-events-none z-0" id="ambient"></div>
+  <div class="scan absolute w-full h-[1.5px] bg-gradient-to-r from-transparent via-[rgba(0,184,255,0.2)] to-transparent pointer-events-none z-[6]"></div>
+  <canvas class="pcanvas absolute inset-0 w-full h-full z-[4] pointer-events-none" id="pcanvas"></canvas>
+
+  <div class="absolute top-7 left-8 flex items-center gap-2.5 z-50">
+    <div class="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+    </div>
+    <span class="text-[19px] font-extrabold text-white tracking-[-0.4px]">Afya <span class="text-accent">Kamili</span></span>
+  </div>
+
+  <div class="organ-scene relative w-[580px] h-[600px] flex items-center justify-center z-10" id="organScene">
+    <svg class="lines-svg absolute inset-0 w-full h-full z-[16] pointer-events-none overflow-visible" id="linesSvg" viewBox="0 0 580 600"></svg>
+    <div class="absolute bottom-[44px] left-1/2 -translate-x-1/2 w-[300px] h-8 rounded-[50%] blur-[14px] z-[1] transition-all duration-[1.8s]" id="platform"></div>
+    <div class="absolute bottom-[54px] left-1/2 -translate-x-1/2 w-[220px] h-[14px] rounded-[50%] border border-[rgba(0,200,255,0.2)] shadow-[0_0_22px_rgba(0,180,255,0.16)] z-[2] transition-all duration-[1.5s]" id="platformRing"></div>
+
+    <div class="organ-slot active absolute inset-0 flex items-center justify-center z-[12]" id="slot-0">
+      <img src="./media/lung2.png" alt="Poumons" class="w-[460px] h-auto pointer-events-none select-none">
+      <div class="absolute inset-0 z-[22] pointer-events-none">
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="0" data-i="0" style="left:44%;top:8%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="0" data-i="1" style="left:27%;top:35%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="0" data-i="2" style="left:68%;top:27%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="0" data-i="3" style="left:21%;top:65%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="0" data-i="4" style="left:73%;top:67%"></div>
+      </div>
+    </div>
+    <div class="organ-slot absolute inset-0 flex items-center justify-center z-[12]" id="slot-1">
+      <img src="./media/heart.png" alt="Cœur" class="w-[460px] h-auto pointer-events-none select-none">
+      <div class="absolute inset-0 z-[22] pointer-events-none">
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="1" data-i="0" style="left:50%;top:10%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="1" data-i="1" style="left:28%;top:38%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="1" data-i="2" style="left:65%;top:32%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="1" data-i="3" style="left:35%;top:65%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="1" data-i="4" style="left:62%;top:70%"></div>
+      </div>
+    </div>
+    <div class="organ-slot absolute inset-0 flex items-center justify-center z-[12]" id="slot-2">
+      <img src="./media/brain.png" alt="Cerveau" class="w-[460px] h-auto pointer-events-none select-none">
+      <div class="absolute inset-0 z-[22] pointer-events-none">
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="2" data-i="0" style="left:40%;top:12%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="2" data-i="1" style="left:22%;top:42%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="2" data-i="2" style="left:66%;top:28%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="2" data-i="3" style="left:55%;top:60%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="2" data-i="4" style="left:30%;top:70%"></div>
+      </div>
+    </div>
+    <div class="organ-slot absolute inset-0 flex items-center justify-center z-[12]" id="slot-3">
+      <img src="./media/stomach.png" alt="Estomac" class="w-[460px] h-auto pointer-events-none select-none">
+      <div class="absolute inset-0 z-[22] pointer-events-none">
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="3" data-i="0" style="left:48%;top:14%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="3" data-i="1" style="left:25%;top:40%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="3" data-i="2" style="left:68%;top:30%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="3" data-i="3" style="left:20%;top:65%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="3" data-i="4" style="left:65%;top:68%"></div>
+      </div>
+    </div>
+    <div class="organ-slot absolute inset-0 flex items-center justify-center z-[12]" id="slot-4">
+      <img src="./media/skeleton.png" alt="Squelette" class="w-[320px] h-auto pointer-events-none select-none">
+      <div class="absolute inset-0 z-[22] pointer-events-none">
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="4" data-i="0" style="left:48%;top:8%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="4" data-i="1" style="left:30%;top:28%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="4" data-i="2" style="left:65%;top:32%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="4" data-i="3" style="left:22%;top:58%"></div>
+        <div class="dot absolute w-[13px] h-[13px] rounded-full bg-[#040810] border-[2.5px] border-[rgba(255,255,255,0.88)] cursor-pointer pointer-events-auto shadow-[0_0_10px_rgba(0,184,255,0.55),0_0_0_4px_rgba(0,184,255,0.1)]" data-slot="4" data-i="4" style="left:65%;top:62%"></div>
+      </div>
+    </div>
+    <div id="cardsContainer" class="absolute inset-0 z-30 pointer-events-none"></div>
+  </div>
+
+  <div class="absolute bottom-[52px] left-1/2 -translate-x-1/2 flex gap-2.5 z-50 items-center" id="organNav">
+    <div class="onav-dot w-2 h-2 rounded-full bg-[rgba(255,255,255,0.2)] cursor-pointer border-[1.5px] border-[rgba(255,255,255,0.15)] active" data-target="0"></div>
+    <div class="onav-dot w-2 h-2 rounded-full bg-[rgba(255,255,255,0.2)] cursor-pointer border-[1.5px] border-[rgba(255,255,255,0.15)]" data-target="1"></div>
+    <div class="onav-dot w-2 h-2 rounded-full bg-[rgba(255,255,255,0.2)] cursor-pointer border-[1.5px] border-[rgba(255,255,255,0.15)]" data-target="2"></div>
+    <div class="onav-dot w-2 h-2 rounded-full bg-[rgba(255,255,255,0.2)] cursor-pointer border-[1.5px] border-[rgba(255,255,255,0.15)]" data-target="3"></div>
+    <div class="onav-dot w-2 h-2 rounded-full bg-[rgba(255,255,255,0.2)] cursor-pointer border-[1.5px] border-[rgba(255,255,255,0.15)]" data-target="4"></div>
+  </div>
+  <div class="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 text-xs font-bold tracking-[2px] uppercase text-[rgba(255,255,255,0.35)] whitespace-nowrap" id="organLabel">Système respiratoire</div>
+  <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-[140px] h-0.5 rounded-full bg-[rgba(255,255,255,0.1)] z-50 overflow-hidden"><div class="h-full w-0 rounded-full bg-accent" id="timerBar"></div></div>
+  <div class="absolute bottom-[18px] left-0 right-0 text-center z-40"><span class="text-[10px] text-[rgba(255,255,255,0.18)] tracking-[1.8px] uppercase font-medium">Système de Gestion Hospitalière — Afya Kamili v1.0</span></div>
+</div>
+
+<!-- ═══ RIGHT — FORMS ═══ -->
+<div class="right flex-1 bg-[#F4F4EF] flex items-center justify-center py-6 px-6 md:px-[52px] relative overflow-hidden">
+  <div class="absolute w-[480px] h-[480px] rounded-full bg-[radial-gradient(circle,rgba(239,255,58,0.07)_0%,transparent_70%)] -top-[120px] -right-[100px] pointer-events-none"></div>
+  <div class="absolute w-[300px] h-[300px] rounded-full bg-[radial-gradient(circle,rgba(0,184,255,0.04)_0%,transparent_70%)] -bottom-[80px] -left-[60px] pointer-events-none"></div>
+
+  <div class="relative w-full max-w-[380px] z-10">
+
+    <!-- ═══ LOGIN FORM ═══ -->
+    <div class="w-full" id="loginForm">
+      <div class="flex items-center gap-2.5 mb-6">
+        <div class="w-[34px] h-[34px] rounded-full bg-accent flex items-center justify-center flex-shrink-0">
+          <svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round"><path d="M8 1v14M1 8h14"/></svg>
+        </div>
+        <span class="text-lg font-extrabold text-ink tracking-[-0.3px]">Afya <span class="text-[#7a7a75]">Kamili</span></span>
+      </div>
+      <h1 class="text-[32px] font-extrabold text-ink tracking-[-1px] mb-1.5">Bienvenue</h1>
+      <p class="text-[13.5px] text-mid mb-7">Connectez-vous pour continuer</p>
+      <div class="mb-3.5">
+        <label class="block text-[11px] font-bold text-[#5a5a55] tracking-[0.5px] uppercase mb-1.5">Téléphone ou email</label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#BCBCB6]"><svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 2.5h2.5L7 6 5.3 7.3a8 8 0 005.4 5.4L12 11l3.5 1.5V15c0 .8-.7 1.5-1.5 1.5C7 16.5-.5 9-.5 2.5.5 1.7 1.7 1 2.5 1"/></svg></span>
+          <input type="text" id="loginPhone" autocomplete="username" placeholder="0990 000 000 ou nom@email.com" class="w-full py-3.5 px-[18px] pl-11 rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-sm text-ink outline-none placeholder:text-[#BCBCB6] focus:border-accent focus:bg-[rgba(255,255,255,0.95)] focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+        </div>
+        <div class="text-[11px] text-mid mt-1.5" id="loginHint"></div>
+      </div>
+      <div class="mb-3.5">
+        <label class="block text-[11px] font-bold text-[#5a5a55] tracking-[0.5px] uppercase mb-1.5">Mot de passe</label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#BCBCB6]"><svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/></svg></span>
+          <input type="password" id="pwInput" placeholder="••••••••••" class="w-full py-3.5 px-[18px] pl-11 pr-12 rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-sm text-ink outline-none placeholder:text-[#BCBCB6] focus:border-accent focus:bg-[rgba(255,255,255,0.95)] focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+          <button class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#BCBCB6] cursor-pointer bg-transparent border-none p-1 hover:text-ink" id="pwToggle" type="button">
+            <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="flex items-center justify-between my-4 mb-6">
+        <label class="flex items-center gap-2 cursor-pointer text-[12.5px] font-medium text-mid"><input type="checkbox" class="w-4 h-4 accent-accent"> Se souvenir de moi</label>
+        <a class="text-[12.5px] font-bold text-ink cursor-pointer no-underline hover:underline" href="#">Mot de passe oublié ?</a>
+      </div>
+      <button class="w-full py-4 rounded-full bg-ink text-white text-[14.5px] font-bold border-none cursor-pointer flex items-center justify-center gap-2.5 hover:bg-[#1a1a1a] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] active:translate-y-0 transition-all mb-5 disabled:opacity-60 disabled:cursor-wait" id="loginBtn" type="button">
+        <span id="loginBtnLabel">Se connecter</span>
+        <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center" id="loginBtnIcon"><svg class="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 10L10 2M10 2H4M10 2v6"/></svg></div>
+      </button>
+      <div class="flex items-center gap-3 mb-[18px]"><div class="flex-1 h-px bg-[rgba(0,0,0,0.1)]"></div><span class="text-[11.5px] text-[#BCBCB6] font-medium">ou continuer avec</span><div class="flex-1 h-px bg-[rgba(0,0,0,0.1)]"></div></div>
+      <button class="w-full py-[13px] px-5 rounded-full border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-[13px] font-semibold text-ink cursor-pointer flex items-center justify-center gap-2.5 hover:bg-[rgba(255,255,255,0.95)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-all mb-2.5">
+        <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continuer avec Google
+      </button>
+      <div class="text-center mt-7 text-xs text-mid">Pas encore de compte ? <button class="bg-transparent border-none text-ink font-bold cursor-pointer p-0 hover:underline" onclick="switchMode('signup')">Créer mon compte</button></div>
+    </div>
+
+    <!-- ═══ SIGNUP FORM ═══ -->
+    <div class="w-full absolute top-0 left-0 opacity-0 pointer-events-none" id="signupForm" style="max-width:460px;transform:translateX(20px)">
+
+      <div class="flex items-center gap-2.5 mb-4">
+        <div class="w-[34px] h-[34px] rounded-full bg-accent flex items-center justify-center flex-shrink-0">
+          <svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round"><path d="M8 1v14M1 8h14"/></svg>
+        </div>
+        <span class="text-lg font-extrabold text-ink tracking-[-0.3px]">Afya <span class="text-[#7a7a75]">Kamili</span></span>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="flex items-center gap-1.5 mb-2" id="wizardProgress">
+        <div class="flex-1 h-1 rounded-full bg-[rgba(0,0,0,0.08)] relative overflow-hidden wizard-progress-step current" data-step="1"></div>
+        <div class="flex-1 h-1 rounded-full bg-[rgba(0,0,0,0.08)] relative overflow-hidden wizard-progress-step" data-step="2"></div>
+        <div class="flex-1 h-1 rounded-full bg-[rgba(0,0,0,0.08)] relative overflow-hidden wizard-progress-step" data-step="3"></div>
+        <div class="flex-1 h-1 rounded-full bg-[rgba(0,0,0,0.08)] relative overflow-hidden wizard-progress-step" data-step="4"></div>
+        <div class="flex-1 h-1 rounded-full bg-[rgba(0,0,0,0.08)] relative overflow-hidden wizard-progress-step" data-step="5"></div>
+        <div class="flex-1 h-1 rounded-full bg-[rgba(0,0,0,0.08)] relative overflow-hidden wizard-progress-step" data-step="6"></div>
+      </div>
+      <div class="text-[11px] font-bold text-mid tracking-[0.6px] uppercase mb-1.5">
+        <span class="text-ink font-extrabold" id="wizardStepNum">Étape 1 / 6</span>
+      </div>
+
+      <!-- WIZARD STAGE — all steps stacked -->
+      <div class="wizard-stage" id="wizardStage">
+
+        <!-- STEP 1 -->
+        <div class="wizard-step active" data-step="1">
+          <h1 class="text-2xl font-extrabold text-ink tracking-[-1px] mb-1.5">Votre établissement</h1>
+          <p class="text-[13.5px] text-mid mb-5">Quel est le nom de votre structure ?</p>
+          <label class="block text-[11px] font-bold text-[#5a5a55] tracking-[0.5px] uppercase mb-1.5">Nom de l'établissement *</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#BCBCB6]"><svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 14V4l5-2.5L12 4v10M2 14h13M5 7h1.5M5 10h1.5M9.5 7H11M9.5 10H11M6.5 14v-3h2v3"/></svg></span>
+            <input type="text" id="suEstablishment" placeholder="Ex : Clinique Saint-Joseph" class="w-full py-3.5 px-[18px] pl-11 rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-sm text-ink outline-none placeholder:text-[#BCBCB6] focus:border-accent focus:bg-[rgba(255,255,255,0.95)] focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+          </div>
+          <div class="text-[11px] text-[#dc2626] font-semibold mt-1.5 hidden items-center gap-1.5" id="err-establishment">
+            <svg class="w-3 h-3 flex-shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v4M8 11h.01"/></svg>
+            Le nom de l'établissement est requis
+          </div>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="wizard-step" data-step="2">
+          <h1 class="text-2xl font-extrabold text-ink tracking-[-1px] mb-1.5">Vous êtes...</h1>
+          <p class="text-[13.5px] text-mid mb-5">Le propriétaire ou gérant de l'établissement</p>
+          <label class="block text-[11px] font-bold text-[#5a5a55] tracking-[0.5px] uppercase mb-1.5">Nom du propriétaire / gérant *</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#BCBCB6]"><svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="5.3" r="3"/><path d="M2 14c0-3 2.6-5 6-5s6 2 6 5"/></svg></span>
+            <input type="text" id="suOwnerName" placeholder="Nom et prénom" class="w-full py-3.5 px-[18px] pl-11 rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-sm text-ink outline-none placeholder:text-[#BCBCB6] focus:border-accent focus:bg-[rgba(255,255,255,0.95)] focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+          </div>
+          <div class="text-[11px] text-[#dc2626] font-semibold mt-1.5 hidden items-center gap-1.5" id="err-ownername">
+            <svg class="w-3 h-3 flex-shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v4M8 11h.01"/></svg>
+            Le nom du propriétaire est requis
+          </div>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="wizard-step" data-step="3">
+          <h1 class="text-2xl font-extrabold text-ink tracking-[-1px] mb-1.5">Votre contact</h1>
+          <p class="text-[13.5px] text-mid mb-5">Pour vous joindre en cas de besoin</p>
+          <label class="block text-[11px] font-bold text-[#5a5a55] tracking-[0.5px] uppercase mb-1.5">Téléphone *</label>
+          <div class="flex gap-2">
+            <div class="flex-[0_0_150px] relative">
+              <select id="suCountryCode" class="w-full h-full py-3.5 px-2.5 pl-3.5 rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-[13px] font-semibold text-ink outline-none appearance-none cursor-pointer focus:border-accent focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+                <option value="+243" data-iso="CD" selected>🇨🇩 +243 — RD Congo</option>
+                <option value="+242" data-iso="CG">🇨🇬 +242 — Congo</option>
+                <option value="+225" data-iso="CI">🇨🇮 +225 — Côte d'Ivoire</option>
+                <option value="+221" data-iso="SN">🇸🇳 +221 — Sénégal</option>
+                <option value="+237" data-iso="CM">🇨🇲 +237 — Cameroun</option>
+                <option value="+226" data-iso="BF">🇧🇫 +226 — Burkina Faso</option>
+                <option value="+223" data-iso="ML">🇲🇱 +223 — Mali</option>
+                <option value="+229" data-iso="BJ">🇧🇯 +229 — Bénin</option>
+                <option value="+228" data-iso="TG">🇹🇬 +228 — Togo</option>
+                <option value="+227" data-iso="NE">🇳🇪 +227 — Niger</option>
+                <option value="+224" data-iso="GN">🇬🇳 +224 — Guinée</option>
+                <option value="+241" data-iso="GA">🇬🇦 +241 — Gabon</option>
+                <option value="+235" data-iso="TD">🇹🇩 +235 — Tchad</option>
+                <option value="+236" data-iso="CF">🇨🇫 +236 — Centrafrique</option>
+                <option value="+250" data-iso="RW">🇷🇼 +250 — Rwanda</option>
+                <option value="+257" data-iso="BI">🇧🇮 +257 — Burundi</option>
+                <option value="+256" data-iso="UG">🇺🇬 +256 — Ouganda</option>
+                <option value="+254" data-iso="KE">🇰🇪 +254 — Kenya</option>
+                <option value="+255" data-iso="TZ">🇹🇿 +255 — Tanzanie</option>
+                <option value="+260" data-iso="ZM">🇿🇲 +260 — Zambie</option>
+                <option value="+244" data-iso="AO">🇦🇴 +244 — Angola</option>
+                <option value="+258" data-iso="MZ">🇲🇿 +258 — Mozambique</option>
+                <option value="+263" data-iso="ZW">🇿🇼 +263 — Zimbabwe</option>
+                <option value="+27" data-iso="ZA">🇿🇦 +27 — Afrique du Sud</option>
+                <option value="+234" data-iso="NG">🇳🇬 +234 — Nigeria</option>
+                <option value="+233" data-iso="GH">🇬🇭 +233 — Ghana</option>
+                <option value="+251" data-iso="ET">🇪🇹 +251 — Éthiopie</option>
+                <option value="+212" data-iso="MA">🇲🇦 +212 — Maroc</option>
+                <option value="+213" data-iso="DZ">🇩🇿 +213 — Algérie</option>
+                <option value="+216" data-iso="TN">🇹🇳 +216 — Tunisie</option>
+                <option value="+20" data-iso="EG">🇪🇬 +20 — Égypte</option>
+                <option value="+261" data-iso="MG">🇲🇬 +261 — Madagascar</option>
+                <option value="+33" data-iso="FR">🇫🇷 +33 — France</option>
+                <option value="+32" data-iso="BE">🇧🇪 +32 — Belgique</option>
+                <option value="+41" data-iso="CH">🇨🇭 +41 — Suisse</option>
+                <option value="+1" data-iso="CA">🇨🇦 +1 — Canada</option>
+                <option value="+1" data-iso="US">🇺🇸 +1 — États-Unis</option>
+                <option value="+44" data-iso="GB">🇬🇧 +44 — Royaume-Uni</option>
+              </select>
+              <div class="absolute right-3 top-1/2 w-[7px] h-[7px] border-r-[1.6px] border-b-[1.6px] border-[#9A9A95] -translate-y-[65%] rotate-45 pointer-events-none"></div>
+            </div>
+            <div class="relative flex-1">
+              <input type="tel" id="suPhone" placeholder="990 000 000" class="w-full py-3.5 px-[18px] rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-sm text-ink outline-none placeholder:text-[#BCBCB6] focus:border-accent focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+            </div>
+          </div>
+          <div class="text-[11px] text-[#dc2626] font-semibold mt-1.5 hidden items-center gap-1.5" id="err-phone">
+            <svg class="w-3 h-3 flex-shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v4M8 11h.01"/></svg>
+            Numéro de téléphone requis
+          </div>
+        </div>
+
+        <!-- STEP 4 -->
+        <div class="wizard-step" data-step="4">
+          <h1 class="text-2xl font-extrabold text-ink tracking-[-1px] mb-1.5">Personnalisez</h1>
+          <p class="text-[13.5px] text-mid mb-4">Ces informations sont facultatives</p>
+          <div class="flex items-center gap-3.5 mb-4">
+            <div class="w-14 h-14 rounded-full flex-shrink-0 border-[1.5px] border-dashed border-[rgba(0,0,0,0.18)] bg-[rgba(255,255,255,0.5)] flex items-center justify-center cursor-pointer relative overflow-hidden hover:border-accent hover:bg-[rgba(239,255,58,0.06)] transition-all" id="avatarDrop">
+              <svg class="w-5 h-5 text-[#BCBCB6]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              <img id="avatarPreview" alt="Photo" class="w-full h-full object-cover hidden absolute inset-0">
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-0.5">
+                <div class="text-[12.5px] font-bold text-ink">Photo de profil</div>
+                <span class="text-[9.5px] font-bold text-[#B7B7AE] bg-[rgba(0,0,0,0.045)] px-2 py-0.5 rounded-full">Facultatif</span>
+              </div>
+              <div class="text-[11px] text-mid">JPG ou PNG, 2 Mo max</div>
+              <span class="text-[10.5px] font-bold text-[#dc2626] cursor-pointer mt-1 hidden" id="avatarRemove">Retirer la photo</span>
+            </div>
+            <input type="file" id="avatarInput" accept="image/png,image/jpeg" class="hidden">
+          </div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-[11px] font-bold text-[#5a5a55] tracking-[0.5px] uppercase">Adresse email</label>
+            <span class="text-[9.5px] font-bold text-[#B7B7AE] bg-[rgba(0,0,0,0.045)] px-2 py-0.5 rounded-full">Facultatif</span>
+          </div>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#BCBCB6]"><svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="1.5" y="3.5" width="13" height="9" rx="2"/><path d="M1.5 5.5l6.5 4 6.5-4"/></svg></span>
+            <input type="email" id="suEmail" placeholder="nom@hopital.org" class="w-full py-3.5 px-[18px] pl-11 rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-sm text-ink outline-none placeholder:text-[#BCBCB6] focus:border-accent focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+          </div>
+        </div>
+
+        <!-- STEP 5 -->
+        <div class="wizard-step" data-step="5">
+          <h1 class="text-2xl font-extrabold text-ink tracking-[-1px] mb-1.5">Sécurisez l'accès</h1>
+          <p class="text-[13.5px] text-mid mb-4">Choisissez un mot de passe robuste</p>
+          <div class="mb-3">
+            <label class="block text-[11px] font-bold text-[#5a5a55] tracking-[0.5px] uppercase mb-1.5">Mot de passe *</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#BCBCB6]"><svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/></svg></span>
+              <input type="password" id="suPassword" placeholder="Au moins 8 caractères" class="w-full py-3.5 px-[18px] pl-11 pr-12 rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-sm text-ink outline-none placeholder:text-[#BCBCB6] focus:border-accent focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+              <button class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#BCBCB6] cursor-pointer bg-transparent border-none p-1 hover:text-ink" id="suPwToggle1" type="button"><svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-[#5a5a55] tracking-[0.5px] uppercase mb-1.5">Confirmer le mot de passe *</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#BCBCB6]"><svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/></svg></span>
+              <input type="password" id="suPasswordConfirm" placeholder="••••••••••" class="w-full py-3.5 px-[18px] pl-11 pr-12 rounded-[18px] border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-sm text-ink outline-none placeholder:text-[#BCBCB6] focus:border-accent focus:shadow-[0_0_0_3px_rgba(239,255,58,0.18)]">
+              <button class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#BCBCB6] cursor-pointer bg-transparent border-none p-1 hover:text-ink" id="suPwToggle2" type="button"><svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button>
+            </div>
+            <div class="pw-match-row flex items-center gap-1.5 mt-1.5 text-[11.5px] font-semibold overflow-hidden" id="pwMatchRow" style="height:0;opacity:0">
+              <svg class="w-[13px] h-[13px] flex-shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3.5 3.5L13 5"/></svg>
+              <span id="pwMatchText">Les mots de passe correspondent</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 6 — Review -->
+        <div class="wizard-step" data-step="6">
+          <h1 class="text-2xl font-extrabold text-ink tracking-[-1px] mb-1.5">Vérifiez et validez</h1>
+          <p class="text-[13.5px] text-mid mb-3">Un dernier coup d'œil avant de créer le compte</p>
+          <div class="space-y-2">
+            <div class="bg-[rgba(255,255,255,0.6)] border border-[rgba(0,0,0,0.08)] rounded-2xl p-3 flex items-center justify-between gap-2.5">
+              <div><div class="text-[10px] font-bold text-mid uppercase tracking-[0.5px] mb-0.5">Établissement</div><div class="text-[13px] font-bold text-ink" id="reviewEstablishment">—</div></div>
+              <button class="text-[11px] font-bold text-ink bg-[rgba(0,0,0,0.05)] px-3 py-1.5 rounded-full border-none cursor-pointer hover:bg-[rgba(0,0,0,0.1)] transition-all whitespace-nowrap" onclick="goToStep(1)">Modifier</button>
+            </div>
+            <div class="bg-[rgba(255,255,255,0.6)] border border-[rgba(0,0,0,0.08)] rounded-2xl p-3 flex items-center justify-between gap-2.5">
+              <div><div class="text-[10px] font-bold text-mid uppercase tracking-[0.5px] mb-0.5">Propriétaire</div><div class="text-[13px] font-bold text-ink" id="reviewOwner">—</div></div>
+              <button class="text-[11px] font-bold text-ink bg-[rgba(0,0,0,0.05)] px-3 py-1.5 rounded-full border-none cursor-pointer hover:bg-[rgba(0,0,0,0.1)] transition-all whitespace-nowrap" onclick="goToStep(2)">Modifier</button>
+            </div>
+            <div class="bg-[rgba(255,255,255,0.6)] border border-[rgba(0,0,0,0.08)] rounded-2xl p-3 flex items-center justify-between gap-2.5">
+              <div><div class="text-[10px] font-bold text-mid uppercase tracking-[0.5px] mb-0.5">Téléphone</div><div class="text-[13px] font-bold text-ink" id="reviewPhone">—</div></div>
+              <button class="text-[11px] font-bold text-ink bg-[rgba(0,0,0,0.05)] px-3 py-1.5 rounded-full border-none cursor-pointer hover:bg-[rgba(0,0,0,0.1)] transition-all whitespace-nowrap" onclick="goToStep(3)">Modifier</button>
+            </div>
+            <div class="bg-[rgba(255,255,255,0.6)] border border-[rgba(0,0,0,0.08)] rounded-2xl p-3 flex items-center justify-between gap-2.5">
+              <div><div class="text-[10px] font-bold text-mid uppercase tracking-[0.5px] mb-0.5">Email</div><div class="text-[13px] font-bold text-ink" id="reviewEmail">Non renseigné</div></div>
+              <button class="text-[11px] font-bold text-ink bg-[rgba(0,0,0,0.05)] px-3 py-1.5 rounded-full border-none cursor-pointer hover:bg-[rgba(0,0,0,0.1)] transition-all whitespace-nowrap" onclick="goToStep(4)">Modifier</button>
+            </div>
+          </div>
+          <div class="flex items-start gap-2.5 mt-3 p-3 rounded-2xl bg-[rgba(0,0,0,0.03)] border border-[rgba(0,0,0,0.06)]">
+            <input type="checkbox" id="suConsent" class="w-[17px] h-[17px] accent-accent cursor-pointer mt-0.5 flex-shrink-0">
+            <label for="suConsent" class="text-xs leading-[1.55] text-[#5a5a55] cursor-pointer">En cliquant sur <strong class="text-ink font-bold">Créer mon compte</strong>, vous reconnaissez être le propriétaire ou le gérant de cet établissement.</label>
+          </div>
+        </div>
+
+      </div><!-- /wizard-stage -->
+
+      <!-- Navigation -->
+      <div class="flex gap-2.5 mt-4">
+        <button class="flex-shrink-0 w-[52px] h-[52px] rounded-full border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer hover:bg-white hover:border-[rgba(0,0,0,0.18)] hover:-translate-x-0.5 transition-all hidden" id="wizardBackBtn" type="button">
+          <svg class="w-4 h-4 text-ink" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13L5 8l5-5"/></svg>
+        </button>
+        <button class="flex-1 py-4 rounded-full bg-ink text-white text-[14.5px] font-bold border-none cursor-pointer flex items-center justify-center gap-2.5 hover:bg-[#1a1a1a] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] active:translate-y-0 transition-all" id="wizardNextBtn" type="button">
+          <span id="wizardNextLabel">Suivant</span>
+          <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center"><svg class="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 10L10 2M10 2H4M10 2v6"/></svg></div>
+        </button>
+      </div>
+      <div class="text-center mt-4 text-xs text-mid">Déjà un compte ? <button class="bg-transparent border-none text-ink font-bold cursor-pointer p-0 hover:underline" onclick="switchMode('login')">Se connecter</button></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- Toast -->
+<div class="auth-toast fixed top-7 left-1/2 -translate-x-1/2 -translate-y-3 bg-ink text-white text-[13px] font-semibold py-[13px] px-6 rounded-full z-[999] flex items-center gap-2.5 shadow-[0_16px_40px_rgba(0,0,0,0.25)]" id="authToast">
+  <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3.5 3.5L13 5"/></svg>
+  <span id="authToastText">Compte créé avec succès</span>
+</div>
+
+<script>
+// ── ORGANS DATA ──
+const ORGANS=[{id:0,label:'Système respiratoire',ambient:'radial-gradient(ellipse at 50% 55%, #0b1d32 0%, #060b15 55%, #030609 100%)',platformColor:'rgba(0,180,255,0.5)',glowColor:'rgba(0,190,255,0.6)',cards:[{id:'c0-0',pos:{l:'-65px',t:'30px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Fréq. cardiaque</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">98 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">bpm</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">↑ 3 bpm vs hier</div>`},{id:'c0-1',pos:{l:'-80px',t:'185px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Saturation O₂</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">98 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">%</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>`},{id:'c0-2',pos:{r:'-75px',t:'65px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Tension artérielle</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">120<span style="font-size:13px;color:rgba(255,255,255,0.4)"> / </span>80</div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">mmHg — Stable</div>`},{id:'c0-3',pos:{l:'-55px',b:'135px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Température</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">36.8 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">°C</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>`},{id:'c0-4',pos:{r:'-85px',b:'115px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">ECG</div><svg style="width:108px;height:28px;margin-top:5px;display:block" viewBox="0 0 108 28" fill="none"><polyline points="0,14 10,14 14,4 18,24 22,8 26,20 30,14 42,14 46,2 50,26 54,10 58,18 62,14 108,14" stroke="#00B8FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Rythme sinusal normal</div>`},{id:'c0-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Consultation</div><div style="font-size:14px;font-weight:700;color:#fff;margin-top:2px">Aujourd'hui</div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">10:00 — 11:30</div>`},{id:'c0-a2',pos:{l:'-30px',t:'305px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut médical</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Stable</span></div>`}]},{id:1,label:'Système cardiovasculaire',ambient:'radial-gradient(ellipse at 50% 55%, #2a0a0a 0%, #160505 55%, #070202 100%)',platformColor:'rgba(255,60,60,0.4)',glowColor:'rgba(255,80,80,0.55)',cards:[{id:'c1-0',pos:{l:'-70px',t:'25px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Fréquence cardiaque</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">89 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">bpm</span></div>`},{id:'c1-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut cardiaque</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px #f59e0b"></div><span style="font-size:13px;font-weight:800;color:#fbbf24">Surveillance</span></div>`}]},{id:2,label:'Système nerveux central',ambient:'radial-gradient(ellipse at 50% 55%, #1a0a20 0%, #0e0515 55%, #050208 100%)',platformColor:'rgba(160,80,255,0.4)',glowColor:'rgba(160,80,255,0.55)',cards:[{id:'c2-0',pos:{l:'-70px',t:'30px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Activité cérébrale</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">Alpha <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">8–12 Hz</span></div>`},{id:'c2-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut neurologique</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Normal</span></div>`}]},{id:3,label:'Système digestif',ambient:'radial-gradient(ellipse at 50% 55%, #1a1400 0%, #100d00 55%, #060502 100%)',platformColor:'rgba(255,180,0,0.38)',glowColor:'rgba(255,160,0,0.5)',cards:[{id:'c3-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut digestif</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Normal</span></div>`}]},{id:4,label:'Système ostéo-articulaire',ambient:'radial-gradient(ellipse at 50% 55%, #0d1a10 0%, #070e08 55%, #020403 100%)',platformColor:'rgba(100,220,140,0.38)',glowColor:'rgba(80,200,120,0.5)',cards:[{id:'c4-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Densité osseuse</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">T +0.8</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>`}]}];
+
+// ── STATE ──
+let currentOrgan=0,dotStates={},timerInterval=null;
+const DURATION=20000;
+
+// ── PARTICLES ──
+const cv=document.getElementById('pcanvas'),cx2=cv.getContext('2d');
+let W,H,pts=[];
+function rsz(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight}
+rsz();window.addEventListener('resize',rsz);
+for(let i=0;i<100;i++)pts.push({x:Math.random()*1400,y:Math.random()*800,r:Math.random()*1.6+.3,a:Math.random()*.35+.05,vx:(Math.random()-.5)*.15,vy:(Math.random()-.5)*.13-.04,h:185+Math.random()*30});
+(function loop(){cx2.clearRect(0,0,W,H);pts.forEach(p=>{cx2.beginPath();cx2.arc(p.x,p.y,p.r,0,Math.PI*2);cx2.fillStyle=`hsla(${p.h},100%,76%,${p.a})`;cx2.fill();p.x+=p.vx;p.y+=p.vy;if(p.x<-5||p.x>W+5||p.y<-5||p.y>H+5){p.x=Math.random()*W;p.y=H+4}});requestAnimationFrame(loop)})();
+
+// ── RENDER CARDS ──
+const container=document.getElementById('cardsContainer');
+function renderCards(organ){container.innerHTML='';organ.cards.forEach(card=>{const div=document.createElement('div');div.className='mcard absolute bg-[rgba(255,255,255,0.11)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.2)] rounded-[22px] py-[13px] px-[17px] shadow-[0_18px_50px_rgba(0,0,0,0.28)] z-30 min-w-[136px]'+(card.always?' always':'');div.id=card.id;div.style.pointerEvents=card.always?'all':'none';if(card.pos.l)div.style.left=card.pos.l;if(card.pos.r)div.style.right=card.pos.r;if(card.pos.t)div.style.top=card.pos.t;if(card.pos.b)div.style.bottom=card.pos.b;div.innerHTML=card.html;container.appendChild(div)})}
+
+// ── LINES ──
+const linesSvg=document.getElementById('linesSvg');
+const DOT_PCTS=[[{x:.44,y:.08},{x:.27,y:.35},{x:.68,y:.27},{x:.21,y:.65},{x:.73,y:.67}],[{x:.50,y:.10},{x:.28,y:.38},{x:.65,y:.32},{x:.35,y:.65},{x:.62,y:.70}],[{x:.40,y:.12},{x:.22,y:.42},{x:.66,y:.28},{x:.55,y:.60},{x:.30,y:.70}],[{x:.48,y:.14},{x:.25,y:.40},{x:.68,y:.30},{x:.20,y:.65},{x:.65,y:.68}],[{x:.48,y:.08},{x:.30,y:.28},{x:.65,y:.32},{x:.22,y:.58},{x:.65,y:.62}]];
+const CARD_ANCH=[[{x:100,y:100},{x:65,y:260},{x:490,y:150},{x:80,y:410},{x:495,y:425}],[{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:410},{x:490,y:420}],[{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:400},{x:490,y:420}],[{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:405},{x:490,y:420}],[{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:405},{x:490,y:420}]];
+const LW_IMG=460,LH_IMG=490,SX=(580-LW_IMG)/2,SY=(600-LH_IMG)/2;
+function buildLines(slotIdx){linesSvg.innerHTML='';DOT_PCTS[slotIdx].forEach((pct,i)=>{const d={x:SX+pct.x*LW_IMG,y:SY+pct.y*LH_IMG},c=CARD_ANCH[slotIdx][i],mx=(d.x+c.x)/2,my=(d.y+c.y)/2-16,path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',`M${d.x} ${d.y} Q${mx} ${my} ${c.x} ${c.y}`);path.classList.add('cline');path.id=`ln-${slotIdx}-${i}`;linesSvg.appendChild(path)})}
+
+function switchOrgan(idx,resetTimer=true){currentOrgan=idx;dotStates={};const organ=ORGANS[idx];document.getElementById('ambient').style.background=organ.ambient;document.getElementById('platform').style.background=`radial-gradient(ellipse,${organ.platformColor} 0%,rgba(0,0,0,0) 72%)`;document.getElementById('organLabel').textContent=organ.label;document.querySelectorAll('.onav-dot').forEach((d,i)=>{if(i===idx){d.classList.add('active');d.style.width='24px';d.style.borderRadius='999px';d.style.background='#EFFF3A';d.style.borderColor='transparent'}else{d.classList.remove('active');d.style.width='8px';d.style.borderRadius='50%';d.style.background='rgba(255,255,255,0.2)';d.style.borderColor='rgba(255,255,255,0.15)'}});document.querySelectorAll('.organ-slot').forEach(s=>s.classList.remove('active'));setTimeout(()=>document.getElementById(`slot-${idx}`).classList.add('active'),80);renderCards(organ);buildLines(idx);[0,2,3].forEach((ci,j)=>setTimeout(()=>toggleCard(idx,ci,true),600+j*280));if(resetTimer)resetTimerBar()}
+function toggleCard(slotIdx,cardIdx,forceOn){const key=`${slotIdx}-${cardIdx}`,on=forceOn!==undefined?forceOn:!dotStates[key];dotStates[key]=on;const organ=ORGANS[slotIdx],card=organ.cards[cardIdx];if(!card||card.always)return;const cardEl=document.getElementById(card.id),lineEl=document.getElementById(`ln-${slotIdx}-${cardIdx}`),dots=document.querySelectorAll(`#slot-${slotIdx} .dot`),dot=dots[cardIdx];if(cardEl){cardEl.classList.toggle('show',on);cardEl.style.pointerEvents=on?'all':'none'}if(lineEl)lineEl.classList.toggle('show',on);if(dot){if(on){dot.style.background='rgba(0,184,255,0.9)';dot.style.borderColor='#fff'}else{dot.style.background='#040810';dot.style.borderColor='rgba(255,255,255,0.88)'}}}
+function resetTimerBar(){const bar=document.getElementById('timerBar');bar.style.transition='none';bar.style.width='0%';void bar.offsetWidth;bar.style.transition=`width ${DURATION}ms linear`;bar.style.width='100%';clearTimeout(timerInterval);timerInterval=setTimeout(()=>switchOrgan((currentOrgan+1)%ORGANS.length),DURATION)}
+
+document.getElementById('organScene').addEventListener('click',e=>{const dot=e.target.closest('.dot');if(!dot)return;const slotIdx=+dot.dataset.slot;if(slotIdx!==currentOrgan)return;toggleCard(slotIdx,+dot.dataset.i)});
+document.querySelectorAll('.onav-dot').forEach(d=>d.addEventListener('click',()=>switchOrgan(+d.dataset.target)));
+document.querySelector('.left').addEventListener('mousemove',e=>{const r=e.currentTarget.getBoundingClientRect(),cx3=(e.clientX-r.left)/r.width-.5,cy3=(e.clientY-r.top)/r.height-.5,slot=document.querySelector('.organ-slot.active');if(slot)slot.style.transform=`rotateY(${cx3*7}deg) rotateX(${-cy3*5}deg)`});
+document.querySelector('.left').addEventListener('mouseleave',()=>{const slot=document.querySelector('.organ-slot.active');if(slot)slot.style.transform=''});
+
+// ── PASSWORD TOGGLE LOGIN ──
+document.getElementById('pwToggle').addEventListener('click',()=>{const pw=document.getElementById('pwInput');pw.type=pw.type==='password'?'text':'password'});
+
+// ── MODE SWITCH ──
+const pageEl=document.getElementById('page');
+function switchMode(mode){
+  if(mode==='signup'){pageEl.classList.add('mode-signup');resetWizard()}
+  else{pageEl.classList.remove('mode-signup')}
+}
+
+// ── SIGNUP PW ──
+const suPassword=document.getElementById('suPassword'),suPasswordConfirm=document.getElementById('suPasswordConfirm');
+document.getElementById('suPwToggle1').addEventListener('click',()=>suPassword.type=suPassword.type==='password'?'text':'password');
+document.getElementById('suPwToggle2').addEventListener('click',()=>suPasswordConfirm.type=suPasswordConfirm.type==='password'?'text':'password');
+const pwMatchRow=document.getElementById('pwMatchRow'),pwMatchText=document.getElementById('pwMatchText');
+function checkPasswordMatch(){const pw=suPassword.value,pwc=suPasswordConfirm.value;if(!pwc){pwMatchRow.style.height='0';pwMatchRow.style.opacity='0';suPasswordConfirm.style.borderColor='';return}pwMatchRow.style.height='20px';pwMatchRow.style.opacity='1';if(pw===pwc){pwMatchRow.style.color='#16a34a';pwMatchText.textContent='Les mots de passe correspondent';suPasswordConfirm.style.borderColor=''}else{pwMatchRow.style.color='#dc2626';pwMatchText.textContent='Les mots de passe ne correspondent pas';suPasswordConfirm.style.borderColor='#FF5A5A'}}
+suPassword.addEventListener('input',checkPasswordMatch);suPasswordConfirm.addEventListener('input',checkPasswordMatch);
+
+// ── AVATAR ──
+const avatarDrop=document.getElementById('avatarDrop'),avatarInput=document.getElementById('avatarInput'),avatarPreview=document.getElementById('avatarPreview'),avatarRemove=document.getElementById('avatarRemove');
+avatarDrop.addEventListener('click',()=>avatarInput.click());
+avatarInput.addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;if(file.size>2*1024*1024){showToast('La photo ne doit pas dépasser 2 Mo.',true);avatarInput.value='';return}if(!['image/jpeg','image/png'].includes(file.type)){showToast('Format accepté : JPG ou PNG uniquement.',true);avatarInput.value='';return}const reader=new FileReader();reader.onload=ev=>{avatarPreview.src=ev.target.result;avatarPreview.classList.remove('hidden');avatarDrop.querySelector('svg').style.display='none';avatarRemove.classList.remove('hidden')};reader.readAsDataURL(file)});
+avatarRemove.addEventListener('click',e=>{e.stopPropagation();avatarInput.value='';avatarPreview.src='';avatarPreview.classList.add('hidden');avatarDrop.querySelector('svg').style.display='';avatarRemove.classList.add('hidden')});
+
+// ── VALIDATION ──
+function setFieldError(el,errEl,on){if(el){el.style.borderColor=on?'#FF5A5A':'';el.style.background=on?'rgba(255,90,90,0.04)':''}if(errEl)errEl.style.display=on?'flex':'none'}
+function clearAllErrors(){setFieldError(document.getElementById('suEstablishment'),document.getElementById('err-establishment'),false);setFieldError(document.getElementById('suOwnerName'),document.getElementById('err-ownername'),false);setFieldError(document.getElementById('suPhone'),document.getElementById('err-phone'),false)}
+
+// ── TOAST ──
+let toastTimer=null;
+function showToast(msg,isError=false){const t=document.getElementById('authToast'),tx=document.getElementById('authToastText');tx.textContent=msg;t.style.background=isError?'#dc2626':'#111111';t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';t.style.pointerEvents='all';clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(-12px)';t.style.pointerEvents='none'},3800)}
+
+// ════════════════════════════════════════
+// WIZARD ENGINE — clean animation
+// The KEY fix: never toggle position:absolute/relative
+// during an animation. Instead use opacity+transform only.
+// The active step has position:relative (gives height).
+// All others have position:absolute (no layout effect).
+// Transitions are CSS-only for smoothness.
+// ════════════════════════════════════════
+const TOTAL_STEPS=6;
+let currentStep=1;
+const wizardStage=document.getElementById('wizardStage'),wizardProgress=document.getElementById('wizardProgress'),wizardStepNum=document.getElementById('wizardStepNum'),wizardBackBtn=document.getElementById('wizardBackBtn'),wizardNextBtn=document.getElementById('wizardNextBtn'),wizardNextLabel=document.getElementById('wizardNextLabel');
+
+function getStepEl(n){return wizardStage.querySelector(`.wizard-step[data-step="${n}"]`)}
+
+function validateStep(n){
+  clearAllErrors();
+  if(n===1){const el=document.getElementById('suEstablishment');if(!el.value.trim()){setFieldError(el,document.getElementById('err-establishment'),true);return false}}
+  if(n===2){const el=document.getElementById('suOwnerName');if(!el.value.trim()){setFieldError(el,document.getElementById('err-ownername'),true);return false}}
+  if(n===3){const el=document.getElementById('suPhone');if(!el.value.trim()){setFieldError(el,document.getElementById('err-phone'),true);return false}}
+  if(n===5){if(!suPassword.value||suPassword.value.length<8){showToast('Le mot de passe doit contenir au moins 8 caractères.',true);return false}if(suPassword.value!==suPasswordConfirm.value){checkPasswordMatch();showToast('Les mots de passe ne correspondent pas.',true);return false}}
+  if(n===6){if(!document.getElementById('suConsent').checked){showToast('Veuillez confirmer être le propriétaire ou le gérant.',true);return false}}
+  return true;
+}
+
+function populateReview(){
+  document.getElementById('reviewEstablishment').textContent=document.getElementById('suEstablishment').value.trim()||'—';
+  document.getElementById('reviewOwner').textContent=document.getElementById('suOwnerName').value.trim()||'—';
+  const phone=document.getElementById('suPhone').value.trim(),code=document.getElementById('suCountryCode').value;
+  document.getElementById('reviewPhone').textContent=phone?`${code} ${phone}`:'—';
+  document.getElementById('reviewEmail').textContent=document.getElementById('suEmail').value.trim()||'Non renseigné';
+}
+
+function updateProgress(){
+  wizardProgress.querySelectorAll('.wizard-progress-step').forEach(dot=>{
+    const s=parseInt(dot.dataset.step,10);
+    dot.classList.remove('done','current');
+    if(s<currentStep)dot.classList.add('done');
+    else if(s===currentStep)dot.classList.add('current');
+  });
+  wizardStepNum.textContent=`Étape ${currentStep} / ${TOTAL_STEPS}`;
+}
+
+function goToStep(targetStep){
+  if(targetStep===currentStep||targetStep<1||targetStep>TOTAL_STEPS)return;
+  const direction=targetStep>currentStep?'forward':'back';
+  const oldEl=getStepEl(currentStep);
+  const newEl=getStepEl(targetStep);
+  if(!oldEl||!newEl)return;
+
+  if(targetStep===TOTAL_STEPS)populateReview();
+
+  // 1. Freeze the OLD step in place (keep it absolute, apply exit transform)
+  oldEl.classList.remove('active');
+  oldEl.classList.add(direction==='forward'?'exit-left':'exit-right');
+
+  // 2. Position the NEW step ready to enter (off-screen, same layer)
+  //    No position change yet — stays absolute
+  newEl.classList.remove('exit-left','exit-right','active','enter-from-left');
+  if(direction==='back') newEl.classList.add('enter-from-left');
+  // force browser to paint this off-screen position BEFORE adding active
+  newEl.getBoundingClientRect();
+
+  // 3. NOW make it active (position:relative → gives layout height)
+  //    The CSS transition handles the transform→0 smoothly
+  newEl.classList.add('active');
+
+  // 4. Clean up the old step after transition ends
+  const cleanup=()=>{
+    oldEl.classList.remove('exit-left','exit-right');
+    oldEl.removeEventListener('transitionend',cleanup);
+  };
+  oldEl.addEventListener('transitionend',cleanup,{once:true});
+
+  currentStep=targetStep;
+  updateProgress();
+  wizardBackBtn.classList.toggle('hidden',currentStep===1);
+  wizardNextLabel.textContent=currentStep===TOTAL_STEPS?'Créer mon compte':'Suivant';
+}
+
+function resetWizard(){
+  wizardStage.querySelectorAll('.wizard-step').forEach(s=>{
+    s.classList.remove('active','exit-left','exit-right','enter-from-left');
+  });
+  currentStep=1;
+  getStepEl(1).classList.add('active');
+  updateProgress();
+  wizardBackBtn.classList.add('hidden');
+  wizardNextLabel.textContent='Suivant';
+}
+
+wizardNextBtn.addEventListener('click',()=>{
+  if(!validateStep(currentStep))return;
+  if(currentStep===TOTAL_STEPS){submitSignup();return}
+  goToStep(currentStep+1);
+});
+wizardBackBtn.addEventListener('click',()=>goToStep(currentStep-1));
+document.getElementById('signupForm').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault();wizardNextBtn.click()}});
+
+/* ══════════════════════════════════════════════════════════
+   ══  CÂBLAGE API  ══
+   Connexion + inscription réelles via AfyaAPI.
+══════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════
+   TÉLÉPHONE — le front NE normalise PAS.
+   Parser des numéros internationaux à la main est un piège
+   (le « 0 » se retire en RDC mais PAS en Côte d'Ivoire…).
+   On envoie le numéro brut + le code pays ISO ; le serveur
+   tranche avec libphonenumber, qui connaît chaque pays.
+══════════════════════════════════════════════════════════ */
+
+/** Est-ce un email ? */
+function isEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').trim())}
+
+/** Le numéro porte-t-il un indicatif ? (+243… ou 00243…) */
+function hasCountryCode(v){
+  const s=(v||'').replace(/[\s\-().]/g,'');
+  return s.startsWith('+')||s.startsWith('00');
+}
+
+/** Code ISO du pays sélectionné dans le wizard (ex. "CD") */
+function selectedIso(){
+  const sel=document.getElementById('suCountryCode');
+  return sel?.options[sel.selectedIndex]?.dataset.iso || null;
+}
+
+/* Aide en direct sous le champ de connexion */
+(function(){
+  const input=document.getElementById('loginPhone');
+  const hint =document.getElementById('loginHint');
+  if(!input||!hint)return;
+  input.addEventListener('input',()=>{
+    const v=input.value.trim();
+    if(!v){hint.textContent='';return}
+    if(isEmail(v)){hint.textContent='Connexion par email';hint.style.color='#9A9A95';return}
+    if(!hasCountryCode(v)){
+      hint.textContent="Ajoutez votre indicatif pays — ex. +243 990 000 001";
+      hint.style.color='#dc2626';
+    }else{
+      hint.textContent='';
+    }
+  });
+})();
+
+/** Extrait le message d'erreur le plus parlant */
+function apiErrorMessage(e){
+  if(e && typeof e.firstError==='function') return e.firstError();
+  return e?.message || 'Une erreur est survenue.';
+}
+
+/** Spinner sur un bouton */
+function btnLoading(btn,on){
+  if(!btn)return;
+  if(on){
+    btn.dataset.html=btn.innerHTML;
+    btn.disabled=true;
+    btn.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span><span style="margin-left:8px">Patientez…</span>';
+  }else{
+    btn.disabled=false;
+    if(btn.dataset.html)btn.innerHTML=btn.dataset.html;
+  }
+}
+(function(){const s=document.createElement('style');s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';document.head.appendChild(s)})();
+
+/** Mémorise les infos utiles au dashboard */
+function persistSession(user){
+  if(user?.tenant?.modules){
+    localStorage.setItem('afya_modules',JSON.stringify(user.tenant.modules));
+  }
+  localStorage.setItem('afya_user',JSON.stringify({
+    name:user.name,
+    is_owner:user.is_owner,
+    establishment:user.tenant?.establishment_name,
+    status:user.tenant?.status,
+    trial_ends_at:user.tenant?.trial_ends_at
+  }));
+}
+
+/* ── CONNEXION (téléphone avec indicatif, OU email) ── */
+async function doLogin(){
+  const idEl=document.getElementById('loginPhone');
+  const pwEl=document.getElementById('pwInput');
+  const btn=document.getElementById('loginBtn');
+
+  const raw=idEl.value.trim();
+  const password=pwEl.value;
+
+  if(!raw){showToast('Saisissez votre téléphone ou votre email.',true);idEl.focus();return}
+
+  // Indicatif obligatoire pour un numéro (on ne devine pas le pays)
+  if(!isEmail(raw)&&!hasCountryCode(raw)){
+    showToast("Indiquez votre indicatif pays — ex. +243 990 000 001",true);
+    idEl.focus();
+    return;
+  }
+
+  if(!password){showToast('Saisissez votre mot de passe.',true);pwEl.focus();return}
+
+  const identifier = isEmail(raw) ? raw.toLowerCase() : raw;
+
+  btnLoading(btn,true);
+  try{
+    const res=await AfyaAPI.auth.login(identifier,password);
+    persistSession(res.user);
+    showToast(`Bienvenue ${res.user.name} !`,false);
+    setTimeout(()=>window.location.href='./index.html',900);
+  }catch(e){
+    btnLoading(btn,false);
+    showToast(apiErrorMessage(e),true);
+    console.error('Login:',e);
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click',doLogin);
+['loginPhone','pwInput'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();doLogin()}
+  });
+});
+
+/* ── INSCRIPTION (fin du wizard) ── */
+async function submitSignup(){
+  const btn=document.getElementById('wizardNextBtn');
+
+  const payload={
+    establishment_name:   document.getElementById('suEstablishment').value.trim(),
+    owner_name:           document.getElementById('suOwnerName').value.trim(),
+    // Numéro brut + code ISO : le serveur normalise via libphonenumber
+    phone:                document.getElementById('suCountryCode').value
+                          + document.getElementById('suPhone').value.trim(),
+    country_iso:          selectedIso(),
+    email:                document.getElementById('suEmail').value.trim().toLowerCase()||null,
+    password:             suPassword.value,
+    password_confirmation:suPasswordConfirm.value,
+    terms_accepted:       true
+  };
+
+  btnLoading(btn,true);
+  try{
+    const res=await AfyaAPI.auth.register(payload);
+    persistSession(res.user);
+    showToast('Compte créé ! Essai gratuit de 14 jours activé.',false);
+    setTimeout(()=>window.location.href='./index.html',1400);
+  }catch(e){
+    btnLoading(btn,false);
+    if(e?.validationErrors?.phone){
+      showToast(e.validationErrors.phone[0],true);
+      goToStep(3);
+      return;
+    }
+    if(e?.validationErrors?.email){
+      showToast(e.validationErrors.email[0],true);
+      goToStep(4);
+      return;
+    }
+    showToast(apiErrorMessage(e),true);
+    console.error('Register:',e);
+  }
+}
+
+/* ── Si déjà connecté ── */
+if(AfyaAPI.auth.isLoggedIn()){
+  // window.location.href='./index.html';
+}
+
+// ── INIT ──
+switchOrgan(0);
+updateProgress();
+</script>
+</body>
+</html>

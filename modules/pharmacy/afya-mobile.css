@@ -1,0 +1,321 @@
+/* ═══════════════════════════════════════════════════════════
+   AFYA KAMILI — REFONTE UI/UX « APPLE »
+   À charger APRÈS index.css (surcharge ciblée, ne réécrit rien).
+
+   <link rel="stylesheet" href="./index.css">
+   <link rel="stylesheet" href="./afya-mobile.css">   ← ajouter cette ligne
+
+   Objectifs :
+   - Cartes médicaments incrustées dans le décor (pas de fond blanc "bootstrap")
+   - Modales translucides façon Candesartan (verre dépoli)
+   - Barre de navigation en bas (remplace la sidebar sur mobile)
+   - Typographie soignée, plus aérée
+═══════════════════════════════════════════════════════════ */
+
+:root{
+  --glass: rgba(248,248,243,0.72);
+  --glass-brd: rgba(255,255,255,0.6);
+  --shadow-soft: 0 10px 40px rgba(0,0,0,0.06);
+  --shadow-card: 0 6px 22px rgba(0,0,0,0.05);
+}
+
+/* Police plus soignée : léger lissage + interlettrage */
+body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+
+/* ══════════════════════════════════════════════════
+   1. CARTES MÉDICAMENTS — incrustées dans le décor
+   Fini le rectangle blanc : la carte partage le fond,
+   n'a qu'une ombre douce et des coins généreux.
+══════════════════════════════════════════════════ */
+.med-grid{
+  gap:16px !important;
+}
+
+.med-card{
+  background:transparent !important;
+  border:none !important;
+  border-radius:22px !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  overflow:visible !important;
+  transition:transform .25s cubic-bezier(.22,1,.36,1) !important;
+}
+.med-card:active{ transform:scale(0.96) !important; }
+.med-card:hover{ transform:translateY(-3px) !important; }
+
+/* L'image devient le cœur visuel de la carte, avec dégradé */
+.med-img-wrap{
+  border-radius:20px !important;
+  aspect-ratio:1/1 !important;
+  overflow:hidden !important;
+  position:relative !important;
+  margin-bottom:11px !important;
+  box-shadow:var(--shadow-card) !important;
+  background:linear-gradient(150deg,#EEF1E8,#E4E7DC) !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+}
+.med-img-wrap::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 30% 22%,rgba(255,255,255,0.5),transparent 55%);
+  pointer-events:none;
+}
+.med-img-placeholder{
+  width:100% !important;height:100% !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+}
+.med-img-placeholder img{
+  width:100% !important;height:100% !important;object-fit:cover !important;
+}
+
+/* Corps de carte : texte posé directement sur le beige, sans encadré */
+.med-card-body{
+  padding:0 4px !important;
+  background:transparent !important;
+}
+.med-card-name{
+  font-size:14.5px !important;font-weight:800 !important;
+  letter-spacing:-0.3px !important;color:var(--ink) !important;
+  margin-bottom:2px !important;line-height:1.2 !important;
+}
+.med-card-form{
+  font-size:11px !important;color:var(--mid) !important;font-weight:600 !important;
+  margin-bottom:8px !important;
+}
+.med-card-price{
+  font-size:15px !important;font-weight:800 !important;color:var(--ink) !important;
+  letter-spacing:-0.3px !important;
+}
+.med-card-currency{
+  font-size:10px !important;color:var(--mid) !important;font-weight:600 !important;
+}
+
+/* Footer : le bouton "+" jaune arrondi */
+.med-card-footer{
+  padding:0 4px !important;margin-top:6px !important;
+  border:none !important;background:transparent !important;
+}
+
+/* Badges stock/péremption : pastilles flottantes sur l'image */
+.med-tag{
+  position:absolute !important;z-index:3 !important;
+  top:10px !important;left:10px !important;
+  font-size:9px !important;font-weight:800 !important;
+  padding:4px 9px !important;border-radius:999px !important;
+  text-transform:uppercase !important;letter-spacing:0.3px !important;
+  backdrop-filter:blur(8px) !important;
+}
+.tag-controlled{ background:rgba(160,80,255,0.85) !important;color:#fff !important; }
+.tag-expired{ background:rgba(255,90,90,0.9) !important;color:#fff !important; }
+.tag-expiring{ background:rgba(245,158,11,0.9) !important;color:#fff !important;left:auto !important;right:10px !important; }
+
+/* Pastille de stock en haut à droite de l'image */
+.med-card.stock-crit .med-img-wrap::before,
+.med-card.stock-warn .med-img-wrap::before,
+.med-card.stock-ok .med-img-wrap::before{
+  content:'';position:absolute;top:11px;right:11px;z-index:3;
+  width:9px;height:9px;border-radius:50%;
+  box-shadow:0 0 0 3px rgba(255,255,255,0.5);
+}
+.med-card.stock-ok   .med-img-wrap::before{ background:#22c55e; }
+.med-card.stock-warn .med-img-wrap::before{ background:#f59e0b; }
+.med-card.stock-crit .med-img-wrap::before{ background:#ef4444; }
+
+/* ══════════════════════════════════════════════════
+   2. MODALES TRANSLUCIDES — verre dépoli (Candesartan)
+══════════════════════════════════════════════════ */
+.modal-overlay{
+  background:rgba(15,20,30,0.4) !important;
+  backdrop-filter:blur(10px) !important;
+  -webkit-backdrop-filter:blur(10px) !important;
+  align-items:flex-end !important;
+}
+@media(min-width:760px){
+  .modal-overlay{ align-items:center !important; }
+}
+
+.modal-overlay .modal{
+  background:linear-gradient(180deg, rgba(255,255,255,0.82), rgba(248,248,243,0.95) 26%) !important;
+  backdrop-filter:blur(30px) saturate(1.4) !important;
+  -webkit-backdrop-filter:blur(30px) saturate(1.4) !important;
+  border:1px solid var(--glass-brd) !important;
+  border-radius:32px 32px 0 0 !important;
+  box-shadow:0 -20px 60px rgba(0,0,0,0.25) !important;
+}
+@media(min-width:760px){
+  .modal-overlay .modal{ border-radius:28px !important; }
+}
+
+/* Petite poignée en haut des modales mobiles */
+.modal-overlay .modal .modal-hd::before{
+  content:'';position:absolute;top:9px;left:50%;transform:translateX(-50%);
+  width:40px;height:5px;border-radius:999px;background:rgba(0,0,0,0.12);
+}
+.modal-overlay .modal .modal-hd{ position:relative;padding-top:20px !important; }
+
+/* La fiche médicament : image en grand, façon Candesartan */
+.med-hero-img{
+  border-radius:24px !important;
+  background:radial-gradient(ellipse at 55% 40%, #1a4a7a, #0a2540) !important;
+  min-height:180px !important;
+  box-shadow:0 14px 40px rgba(10,37,64,0.35) !important;
+}
+.med-hero-img img{ filter:drop-shadow(0 8px 24px rgba(0,190,255,0.4)) !important; }
+
+/* ══════════════════════════════════════════════════
+   3. TYPOGRAPHIE plus soignée
+══════════════════════════════════════════════════ */
+.sec-hd-title{ letter-spacing:-0.5px !important;font-weight:800 !important; }
+.sec-hd-sub{ font-weight:500 !important; }
+.tb-brand{ letter-spacing:-0.4px !important; }
+
+/* ══════════════════════════════════════════════════
+   4. BARRE DE NAVIGATION EN BAS (mobile)
+   Remplace la sidebar. Verre dépoli, façon iOS.
+══════════════════════════════════════════════════ */
+.bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:rgba(248,248,243,0.82);
+  backdrop-filter:blur(24px) saturate(1.5);
+  -webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border-top:1px solid var(--border);
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom,0));
+  justify-content:space-around;align-items:center;
+}
+.bottom-nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 10px;border-radius:14px;cursor:pointer;
+  color:var(--mid);transition:all .2s;flex:1;max-width:80px;
+}
+.bottom-nav-item svg{ width:22px;height:22px;stroke-width:1.8; }
+.bottom-nav-item span{ font-size:9.5px;font-weight:700;letter-spacing:0.1px; }
+.bottom-nav-item.active{ color:var(--ink); }
+.bottom-nav-item.active svg{ stroke-width:2.2; }
+.bottom-nav-item .bn-badge{
+  position:absolute;top:2px;right:14px;min-width:15px;height:15px;
+  background:var(--red);color:#fff;font-size:8.5px;font-weight:800;
+  border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px;
+}
+
+@media(max-width:760px){
+  .bottom-nav{ display:flex; }
+  .ph-main{ padding-bottom:88px !important; }
+  /* On masque l'ancienne tab-bar horizontale du haut sur mobile */
+  .tab-bar{ display:none !important; }
+}
+
+/* ══════════════════════════════════════════════════
+   5. HERO à fond bleu + organe flottant (catalogue)
+══════════════════════════════════════════════════ */
+.afya-hero{
+  margin:0 0 22px;height:172px;border-radius:26px;position:relative;overflow:hidden;
+  background:radial-gradient(ellipse at 62% 45%, #123456 0%, #0a1f38 55%, #061424 100%);
+  box-shadow:0 18px 46px rgba(10,31,56,0.35);
+}
+.afya-hero-scan{
+  position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(0,184,255,0.5),transparent);
+  animation:afyaScan 4s linear infinite;
+}
+@keyframes afyaScan{ 0%{top:0} 100%{top:100%} }
+.afya-hero-organ{
+  position:absolute;right:-8px;top:50%;transform:translateY(-50%);
+  width:170px;height:170px;display:flex;align-items:center;justify-content:center;
+}
+.afya-hero-organ img{
+  width:140px;height:140px;object-fit:contain;
+  filter:drop-shadow(0 0 38px rgba(0,190,255,0.5));
+  animation:afyaFloat 5.5s ease-in-out infinite;
+}
+@keyframes afyaFloat{ 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-13px) rotate(1deg)} }
+.afya-hero-txt{ position:absolute;left:22px;top:26px;z-index:2;max-width:180px; }
+.afya-hero-tag{ font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:8px; }
+.afya-hero-title{ font-size:20px;font-weight:800;color:#fff;line-height:1.15;letter-spacing:-0.5px; }
+.afya-hero-sub{ font-size:12px;color:rgba(255,255,255,0.6);margin-top:8px; }
+.afya-hero-dots{ position:absolute;left:22px;bottom:18px;display:flex;gap:6px;z-index:2; }
+.afya-hero-dots span{ width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.25);transition:all .3s; }
+.afya-hero-dots span.on{ width:20px;border-radius:999px;background:var(--accent); }
+
+@media(min-width:760px){ .afya-hero{ display:none; } }
+
+/* ══════════════════════════════════════════════════
+   6. PROFIL en haut du catalogue (mobile) façon Medimax
+══════════════════════════════════════════════════ */
+.afya-profile{ display:none; }
+@media(max-width:760px){
+  .afya-profile{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 0 18px;
+  }
+  .afya-profile-greet{ font-size:12.5px;color:var(--mid);font-weight:600;margin-bottom:2px; }
+  .afya-profile-name{ font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;line-height:1.1; }
+  .afya-profile-role{ font-size:11.5px;color:var(--mid);font-weight:600;margin-top:2px; }
+  .afya-profile-av{
+    width:46px;height:46px;border-radius:50%;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-weight:800;
+    color:var(--ink);font-size:15px;box-shadow:0 6px 18px rgba(239,255,58,0.4);flex-shrink:0;
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   7. SCROLLBARS masquées partout (feel natif app)
+══════════════════════════════════════════════════ */
+.cats-scroll::-webkit-scrollbar,
+.acct-kpi-scroll::-webkit-scrollbar{ display:none; }
+.cats-scroll,.acct-kpi-scroll{ scrollbar-width:none;-ms-overflow-style:none; }
+
+/* ═══════════════════════════════════════════════════
+   8. CORRECTIFS (retour utilisateur)
+═══════════════════════════════════════════════════ */
+
+/* 8a. Sur mobile : masquer complètement la sidebar ET son hamburger.
+       La nav bar du bas remplace tout. */
+@media(max-width:760px){
+  .ham-btn, #hamBtn{ display:none !important; }
+  .sidebar, #sidebar,
+  .sidebar-overlay, #sidebarOverlay{ display:none !important; }
+}
+
+/* 8b. Cartes médicaments : contour léger + taille RÉGULIÈRE
+       Fini le "chaque carte suit la taille de son image".
+       L'image a un ratio fixe, la carte un contour discret. */
+.med-card{
+  border:1px solid rgba(0,0,0,0.07) !important;
+  border-radius:20px !important;
+  padding:10px !important;
+  background:rgba(255,255,255,0.35) !important;   /* très léger, s'incruste dans le décor */
+  box-shadow:0 4px 16px rgba(0,0,0,0.03) !important;
+}
+.med-img-wrap{
+  aspect-ratio:1/1 !important;   /* TOUJOURS carré, quelle que soit l'image */
+  height:auto !important;
+  width:100% !important;
+}
+
+/* 8c. Onglet STOCK : grille régulière, cartes de taille identique */
+#stockGrid{
+  display:grid !important;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr)) !important;
+  gap:14px !important;
+}
+#stockGrid .med-card{
+  display:flex !important;flex-direction:column !important;
+}
+#stockGrid .med-img-wrap{
+  aspect-ratio:1/1 !important;   /* carré ici aussi, plus de hauteur 48px variable */
+  height:auto !important;
+}
+#stockGrid .med-card-body{ flex:1 !important; }
+
+/* 8d. Loader discret (barre) pour le journal qui met du temps */
+#journalBusy{
+  height:2.5px;border-radius:999px;overflow:hidden;margin:0 0 10px;
+  background:rgba(0,0,0,0.05);position:relative;display:none;
+}
+#journalBusy.on{ display:block; }
+#journalBusy::after{
+  content:'';position:absolute;top:0;left:0;height:100%;width:40%;border-radius:999px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  animation:journalSlide 1.1s ease-in-out infinite;
+}
+@keyframes journalSlide{ 0%{left:-40%} 100%{left:100%} }
