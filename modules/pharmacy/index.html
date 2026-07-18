@@ -540,33 +540,10 @@
           <option>Psychotropes</option><option>Antiacides</option><option>Contraceptifs</option><option>Autres</option>
         </select>
       </div>
-      <div class="sec-divider">Prix & Stock</div>
-      <div class="field-row">
-        <div class="field"><label class="field-lbl">Prix de vente * <span style="font-size:9px;color:var(--mid)">(unité de base)</span></label><input class="ph-input" id="addPrice" type="number" step="0.01" min="0" placeholder="0.00"></div>
-        <div class="field"><label class="field-lbl">Stock initial (boîtes)</label><input class="ph-input" id="addStock" type="number" min="0" placeholder="0"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label class="field-lbl">Seuil d'alerte minimum</label><input class="ph-input" id="addMinStock" type="number" min="0" placeholder="10"></div>
-        <div class="field"><label class="field-lbl">Date de péremption <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addExpiry" type="date"></div>
-      </div>
-      <div class="sec-divider">Conditionnement & Unités de vente</div>
-      <div class="field-row">
-        <div class="field"><label class="field-lbl">Unités/boîte <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addPackSize" type="number" min="1" placeholder="Ex : 30 comprimés"></div>
-        <div class="field"><label class="field-lbl">Unités/plaquette <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addUnitsPerStrip" type="number" min="1" placeholder="Ex : 10 comprimés"></div>
-      </div>
-      <div class="field">
-        <label class="field-lbl">Ventes autorisées</label>
-        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px">
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;background:var(--card)"><input type="checkbox" class="sale-unit-cb" value="unite" style="accent-color:var(--ink)"> Unité</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;background:var(--card)"><input type="checkbox" class="sale-unit-cb" value="plaquette" style="accent-color:var(--ink)"> Plaquette</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;background:var(--card)"><input type="checkbox" class="sale-unit-cb" value="boite" checked style="accent-color:var(--ink)"> Boîte</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;background:var(--card)"><input type="checkbox" class="sale-unit-cb" value="flacon" style="accent-color:var(--ink)"> Flacon</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;background:var(--card)"><input type="checkbox" class="sale-unit-cb" value="sachet" style="accent-color:var(--ink)"> Sachet</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;background:var(--card)"><input type="checkbox" class="sale-unit-cb" value="tube" style="accent-color:var(--ink)"> Tube</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;background:var(--card)"><input type="checkbox" class="sale-unit-cb" value="ampoule" style="accent-color:var(--ink)"> Ampoule</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;background:var(--card)"><input type="checkbox" class="sale-unit-cb" value="carton" style="accent-color:var(--ink)"> Carton (gros)</label>
-        </div>
-      </div>
+      <!-- Conditionnement, prix, stock et ventes autorisées :
+           généré par pharmacy.js selon la forme galénique choisie -->
+      <div id="packagingBlock"></div>
+
       <div class="sec-divider">Emplacement & Fabricant</div>
       <div class="field"><label class="field-lbl">Emplacement <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addLocation" placeholder="Ex : Rayonnage A – Étagère 2, Réfrigérateur, Armoire sécurisée…"></div>
       <div class="field"><label class="field-lbl">Fabricant <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addManufacturer" placeholder="Ex : Pfizer, Sanofi, Pharmafrique…"></div>

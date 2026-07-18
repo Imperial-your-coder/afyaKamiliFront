@@ -518,6 +518,7 @@
       }
     }
 
+    renderPackagingBlock();   // (re)construit le formulaire selon la forme galénique
     onPackagingInput();
   };
 
@@ -625,18 +626,18 @@
       ? `
       <div class="field-row">
         <div class="field">
-          <label class="field-lbl">Plaquettes par boîte</label>
+          <label class="field-lbl">Nombre de plaquettes dans une boîte</label>
           <input class="ph-input" id="addStripsPerBox" type="number" min="1" placeholder="Ex : 5">
         </div>
         <div class="field">
-          <label class="field-lbl">${scheme.basePlural.charAt(0).toUpperCase() + scheme.basePlural.slice(1)} par plaquette</label>
+          <label class="field-lbl">Nombre de ${scheme.basePlural} dans une plaquette</label>
           <input class="ph-input" id="addUnitsPerStrip" type="number" min="1" placeholder="Ex : 10">
         </div>
       </div>`
       : `
       <div class="field-row">
         <div class="field">
-          <label class="field-lbl">${scheme.basePlural.charAt(0).toUpperCase() + scheme.basePlural.slice(1)} par boîte</label>
+          <label class="field-lbl">Nombre de ${scheme.basePlural} dans une boîte</label>
           <input class="ph-input" id="addUnitsPerBox" type="number" min="1" value="1" placeholder="Ex : 1">
         </div>
         <div class="field"></div>
@@ -1839,6 +1840,13 @@
       widenFileInput();
 
       await loadRefs();
+
+      // Le formulaire de conditionnement se reconstruit quand on change
+      // la forme galénique (comprimé, gel, sirop, ampoule…)
+      document.getElementById('addForm')?.addEventListener('change', () => {
+        renderPackagingBlock();
+        onPackagingInput();
+      });
 
       // On charge le CATALOGUE en priorité (c'est l'écran affiché).
       // Le reste (settings, alertes) se charge en arrière-plan sans bloquer,
