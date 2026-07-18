@@ -3,7 +3,7 @@
 
    index.js n'est PAS modifié : on surcharge ses fonctions.
 
-   Ordre dans index.html :
+   Ordre dans index :
      <script src="../../js/afya_api.js" defer></script>
      <script src="./index.js"           defer></script>
      <script src="./pharmacy.js"        defer></script>
@@ -19,11 +19,11 @@
   /* ═══ 0. AUTHENTIFICATION ═══ */
   AfyaAPI.setAuthExpiredHandler(() => {
     toast('Session expirée, reconnectez-vous', 'error');
-    setTimeout(() => { window.location.href = '../../login.html'; }, 1500);
+    setTimeout(() => { window.location.href = '../../login'; }, 1500);
   });
 
   if (!AfyaAPI.auth.isLoggedIn()) {
-    window.location.href = '../../login.html';
+    window.location.href = '../../login';
     return;
   }
 
@@ -1640,7 +1640,7 @@
         <div style="font-size:11.5px;color:#9A9A95;font-weight:600;margin-top:2px">
           ${user?.tenant?.establishment_name || ''}</div>
       </div>
-      <a href="../../index.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+      <a href="../../index" style="display:flex;align-items:center;gap:10px;padding:10px 12px;
          border-radius:10px;font-size:13px;font-weight:600;color:#111;text-decoration:none">
         Tableau de bord</a>
       <div style="height:1px;background:rgba(0,0,0,.07);margin:6px 4px"></div>
@@ -1676,7 +1676,7 @@
       finally {
         localStorage.removeItem('afya_modules');
         localStorage.removeItem('afya_user');
-        window.location.href = '../../login.html';
+        window.location.href = '../../login';
       }
     });
   }
@@ -1833,7 +1833,7 @@
 
       if (user.tenant?.modules && !user.tenant.modules.includes('pharmacy')) {
         toast('Module Pharmacie non actif', 'error');
-        setTimeout(() => { window.location.href = '../../pricing.html'; }, 2000);
+        setTimeout(() => { window.location.href = '../../pricing'; }, 2000);
         return;
       }
 

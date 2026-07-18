@@ -254,14 +254,14 @@ html,body{min-height:100vh;background:var(--bg);font-family:var(--font);color:va
 <body>
 
 <header class="topbar">
-  <a class="tb-brand" href="./index.html">
+  <a class="tb-brand" href="./index">
     <div class="tb-dot">
       <svg viewBox="0 0 14 14" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
     </div>
     <span>Afya <span>Kamili</span></span>
   </a>
   <div class="tb-spacer"></div>
-  <a href="./index.html" class="tb-back">
+  <a href="./index" class="tb-back">
     <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11L4 7l5-4"/></svg>
     Retour au tableau de bord
   </a>
@@ -572,7 +572,7 @@ html,body{min-height:100vh;background:var(--bg);font-family:var(--font);color:va
       <div class="cs-sub">Configuration en moins de 10 minutes. Aucune installation requise.</div>
     </div>
     <div class="cs-actions">
-      <a href="./login.html" class="cs-btn primary">Créer mon compte gratuit</a>
+      <a href="./login" class="cs-btn primary">Créer mon compte gratuit</a>
       <a href="#plansGrid" class="cs-btn outline">Comparer les formules</a>
     </div>
   </div>
@@ -611,7 +611,7 @@ function selectPlan(plan) {
   localStorage.setItem('afya_plan', plan);
   // Simule un paiement CinetPay (à connecter)
   if (plan === 'none') {
-    window.location.href = './index.html?plan=none';
+    window.location.href = './index?plan=none';
     return;
   }
   // Affiche un feedback visuel avant redirection
@@ -622,7 +622,7 @@ function selectPlan(plan) {
     btn.style.color = 'var(--ink)';
   }
   setTimeout(() => {
-    window.location.href = `./index.html?plan=${plan}`;
+    window.location.href = `./index?plan=${plan}`;
   }, 900);
 }
 

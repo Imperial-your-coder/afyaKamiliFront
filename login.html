@@ -635,7 +635,7 @@ for(let i=0;i<100;i++)pts.push({x:Math.random()*1400,y:Math.random()*800,r:Math.
 
 // ── RENDER CARDS ──
 const container=document.getElementById('cardsContainer');
-function renderCards(organ){container.innerHTML='';organ.cards.forEach(card=>{const div=document.createElement('div');div.className='mcard absolute bg-[rgba(255,255,255,0.11)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.2)] rounded-[22px] py-[13px] px-[17px] shadow-[0_18px_50px_rgba(0,0,0,0.28)] z-30 min-w-[136px]'+(card.always?' always':'');div.id=card.id;div.style.pointerEvents=card.always?'all':'none';if(card.pos.l)div.style.left=card.pos.l;if(card.pos.r)div.style.right=card.pos.r;if(card.pos.t)div.style.top=card.pos.t;if(card.pos.b)div.style.bottom=card.pos.b;div.innerHTML=card.html;container.appendChild(div)})}
+function renderCards(organ){container.innerHTML='';organ.cards.forEach(card=>{const div=document.createElement('div');div.className='mcard absolute bg-[rgba(255,255,255,0.11)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.2)] rounded-[22px] py-[13px] px-[17px] shadow-[0_18px_50px_rgba(0,0,0,0.28)] z-30 min-w-[136px]'+(card.always?' always':'');div.id=card.id;div.style.pointerEvents=card.always?'all':'none';if(card.pos.l)div.style.left=card.pos.l;if(card.pos.r)div.style.right=card.pos.r;if(card.pos.t)div.style.top=card.pos.t;if(card.pos.b)div.style.bottom=card.pos.b;div.innerHTML=card;container.appendChild(div)})}
 
 // ── LINES ──
 const linesSvg=document.getElementById('linesSvg');
@@ -839,12 +839,12 @@ function apiErrorMessage(e){
 function btnLoading(btn,on){
   if(!btn)return;
   if(on){
-    btn.dataset.html=btn.innerHTML;
+    btn.dataset=btn.innerHTML;
     btn.disabled=true;
     btn.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span><span style="margin-left:8px">Patientez…</span>';
   }else{
     btn.disabled=false;
-    if(btn.dataset.html)btn.innerHTML=btn.dataset.html;
+    if(btn.dataset)btn.innerHTML=btn.dataset;
   }
 }
 (function(){const s=document.createElement('style');s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';document.head.appendChild(s)})();
@@ -890,7 +890,7 @@ async function doLogin(){
     const res=await AfyaAPI.auth.login(identifier,password);
     persistSession(res.user);
     showToast(`Bienvenue ${res.user.name} !`,false);
-    setTimeout(()=>window.location.href='./index.html',900);
+    setTimeout(()=>window.location.href='./index',900);
   }catch(e){
     btnLoading(btn,false);
     showToast(apiErrorMessage(e),true);
@@ -927,7 +927,7 @@ async function submitSignup(){
     const res=await AfyaAPI.auth.register(payload);
     persistSession(res.user);
     showToast('Compte créé ! Essai gratuit de 14 jours activé.',false);
-    setTimeout(()=>window.location.href='./index.html',1400);
+    setTimeout(()=>window.location.href='./index',1400);
   }catch(e){
     btnLoading(btn,false);
     if(e?.validationErrors?.phone){
@@ -947,7 +947,7 @@ async function submitSignup(){
 
 /* ── Si déjà connecté ── */
 if(AfyaAPI.auth.isLoggedIn()){
-  // window.location.href='./index.html';
+  // window.location.href='./index';
 }
 
 // ── INIT ──

@@ -78,7 +78,7 @@ const ALL_MODULES = [
     id: 'admin',
     name: 'Administration & RH',
     desc: 'Utilisateurs, rôles, permissions, personnel et congés.',
-    link: './modules/admin/index.html',
+    link: './modules/admin/index',
     free: true,
     plan: null,
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -92,7 +92,7 @@ const ALL_MODULES = [
     id: 'pharmacy',
     name: 'Pharmacie',
     desc: 'Stock, ventes comptoir, OHADA, alertes péremption.',
-    link: './modules/pharmacy/index.html',
+    link: './modules/pharmacy/index',
     free: false,
     plan: 'starter',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -106,7 +106,7 @@ const ALL_MODULES = [
     id: 'medical',
     name: 'Gestion médicale',
     desc: 'Dossiers, consultations, prescriptions, workspace anatomique.',
-    link: './modules/medical/index.html',
+    link: './modules/medical/index',
     free: false,
     plan: 'clinic',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -119,7 +119,7 @@ const ALL_MODULES = [
     id: 'hospitalization',
     name: 'Hospitalisation',
     desc: 'Admission, lits, séjour, transferts de patients.',
-    link: './modules/hospitalization/index.html',
+    link: './modules/hospitalization/index',
     free: false,
     plan: 'clinic',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -131,7 +131,7 @@ const ALL_MODULES = [
     id: 'emergency',
     name: 'Urgences',
     desc: 'Triage, priorités, prise en charge rapide.',
-    link: './modules/emergency/index.html',
+    link: './modules/emergency/index',
     free: false,
     plan: 'clinic',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -142,7 +142,7 @@ const ALL_MODULES = [
     id: 'accounting',
     name: 'Comptabilité & Caisse',
     desc: 'Grand livre, journaux OHADA, encaissements, clôtures.',
-    link: './modules/accounting/index.html',
+    link: './modules/accounting/index',
     free: false,
     plan: 'clinic',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -156,7 +156,7 @@ const ALL_MODULES = [
     id: 'laboratory',
     name: 'Laboratoire',
     desc: 'Analyses, résultats, certificats d\'examens.',
-    link: './modules/laboratory/index.html',
+    link: './modules/laboratory/index',
     free: false,
     plan: 'diagno',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -168,7 +168,7 @@ const ALL_MODULES = [
     id: 'imaging',
     name: 'Imagerie médicale',
     desc: 'Radio, IRM, scanner, archivage DICOM.',
-    link: './modules/imaging/index.html',
+    link: './modules/imaging/index',
     free: false,
     plan: 'diagno',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -183,7 +183,7 @@ const ALL_MODULES = [
     id: 'appointments',
     name: 'Rendez-vous',
     desc: 'Planification, agenda, rappels automatiques.',
-    link: './modules/appointments/index.html',
+    link: './modules/appointments/index',
     free: false,
     plan: 'enterprise',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -195,7 +195,7 @@ const ALL_MODULES = [
     id: 'reports',
     name: 'Rapports & Analytics',
     desc: 'Tableaux de bord, KPIs, analyses avancées.',
-    link: './modules/reports/index.html',
+    link: './modules/reports/index',
     free: false,
     plan: 'enterprise',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -243,7 +243,7 @@ function buildCard(m) {
         </svg>
       </div>`
     : `<div class="marrow lock"
-         onclick="event.preventDefault();window.location.href='./pricing.html?highlight=${m.plan}'">
+         onclick="event.preventDefault();window.location.href='./pricing?highlight=${m.plan}'">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <rect x="3.5" y="7" width="9" height="7.5" rx="2"/>
           <path d="M5.5 7V5.5a2.5 2.5 0 015 0V7"/>
@@ -266,7 +266,7 @@ function buildCard(m) {
   if (!isUnlocked) {
     el.style.cursor = 'pointer';
     el.addEventListener('click', () => {
-      window.location.href = `./pricing.html?highlight=${m.plan}`;
+      window.location.href = `./pricing?highlight=${m.plan}`;
     });
   }
 

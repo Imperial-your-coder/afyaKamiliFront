@@ -139,7 +139,7 @@ class ApiError extends Error {
 /* Hook global appelé quand le token expire (redéfinis-le dans ta page) */
 let onAuthExpired = () => {
   console.warn('Session expirée');
-  // window.location.href = '/login.html';
+  // window.location.href = '/login';
 };
 
 /* ───────────────────────────────────────────────

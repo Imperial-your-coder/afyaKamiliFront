@@ -8,7 +8,7 @@
    - modules déverrouillés (remplace la simulation de index.js)
    - menu avatar + déconnexion
 
-   Ordre dans index.html :  afya_api.js → index.js → dashboard.js
+   Ordre dans index :  afya_api.js → index.js → dashboard.js
 ══════════════════════════════════════════════════════════ */
 
 (function () {
@@ -16,10 +16,10 @@
 
   /* ── Garde d'authentification ── */
   if (!AfyaAPI.auth.isLoggedIn()) {
-    window.location.href = './login.html';
+    window.location.href = './login';
     return;
   }
-  AfyaAPI.setAuthExpiredHandler(() => { window.location.href = './login.html'; });
+  AfyaAPI.setAuthExpiredHandler(() => { window.location.href = './login'; });
 
   /* Codes API → ids du front */
   const API_TO_FRONT = {
@@ -189,7 +189,7 @@
     if (!isUnlocked) {
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => {
-        window.location.href = `./pricing.html?highlight=${m.plan || 'starter'}`;
+        window.location.href = `./pricing?highlight=${m.plan || 'starter'}`;
       });
     }
     return el;
@@ -236,7 +236,7 @@
           localStorage.removeItem('afya_modules');
           localStorage.removeItem('afya_user');
           localStorage.removeItem('afya_plan');
-          window.location.href = './login.html';
+          window.location.href = './login';
         }
       });
     }

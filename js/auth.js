@@ -1,13 +1,13 @@
 /* ═══════════════════════════════════════════════════════════
    AFYA KAMILI — CÂBLAGE AUTHENTIFICATION
-   Branche login.html sur l'API (login + inscription wizard).
+   Branche login sur l'API (login + inscription wizard).
 
-   À charger APRÈS afya_api.js, à la fin de login.html :
+   À charger APRÈS afya_api.js, à la fin de login :
      <script src="./js/afya_api.js"></script>
      <script src="./js/auth.js"></script>
 
-   ⚠️ UNE MODIF requise dans login.html (ligne ~374) :
-      Remplace  onclick="window.location.href='./index.html'"
+   ⚠️ UNE MODIF requise dans login (ligne ~374) :
+      Remplace  onclick="window.location.href='./index'"
       par       id="loginBtn"
 ═══════════════════════════════════════════════════════════ */
 
@@ -17,11 +17,11 @@
   /* Si déjà connecté → va direct au dashboard */
   if (AfyaAPI.auth.isLoggedIn()) {
     // Décommente si tu veux la redirection auto :
-    // window.location.href = './index.html';
+    // window.location.href = './index';
   }
 
   /* ───────────────────────────────────────────────
-     Helpers UI (réutilise showToast de login.html)
+     Helpers UI (réutilise showToast de login)
   ─────────────────────────────────────────────── */
   function toast(msg, isError = false) {
     if (typeof showToast === 'function') showToast(msg, isError);
@@ -97,7 +97,7 @@
       }));
 
       toast(`Bienvenue ${res.user.name} !`, false);
-      setTimeout(() => { window.location.href = './index.html'; }, 900);
+      setTimeout(() => { window.location.href = './index'; }, 900);
     } catch (e) {
       setBtnLoading(btn, false);
       toast(errorMessage(e), true);
@@ -138,7 +138,7 @@
 
   /* ═══════════════════════════════════════════
      2. INSCRIPTION (wizard 6 étapes)
-     On remplace submitSignup() défini dans login.html
+     On remplace submitSignup() défini dans login
   ═══════════════════════════════════════════ */
   window.submitSignup = async function () {
     const btn = document.getElementById('wizardNextBtn');
@@ -176,7 +176,7 @@
       }));
 
       toast('Compte créé ! Essai gratuit de 14 jours activé.', false);
-      setTimeout(() => { window.location.href = './index.html'; }, 1400);
+      setTimeout(() => { window.location.href = './index'; }, 1400);
     } catch (e) {
       setBtnLoading(btn, false);
 
