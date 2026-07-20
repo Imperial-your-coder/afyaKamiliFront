@@ -557,7 +557,7 @@ const AfyaAPI = {
   /* ═══ ADMINISTRATION — personnel ═══ */
   admin: {
     /** Rôles et modules attribuables + mode du formulaire */
-    async refs()            { return await request('GET', '/admin/roles'); },
+    async refs()            { return await request('GET', '/admin/staff-refs'); },
     /** Liste du personnel */
     async staff(params = {}) {
       const q = new URLSearchParams(
