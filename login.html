@@ -350,7 +350,7 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
       </div>
       <div class="flex items-center justify-between my-4 mb-6">
         <label class="flex items-center gap-2 cursor-pointer text-[12.5px] font-medium text-mid"><input type="checkbox" class="w-4 h-4 accent-accent"> Se souvenir de moi</label>
-        <a class="text-[12.5px] font-bold text-ink cursor-pointer no-underline hover:underline" href="#">Mot de passe oublié ?</a>
+        <a class="text-[12.5px] font-bold text-ink cursor-pointer no-underline hover:underline" href="./forgot-password">Mot de passe oublié ?</a>
       </div>
       <button class="w-full py-4 rounded-full bg-ink text-white text-[14.5px] font-bold border-none cursor-pointer flex items-center justify-center gap-2.5 hover:bg-[#1a1a1a] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] active:translate-y-0 transition-all mb-4 disabled:opacity-60 disabled:cursor-wait" id="loginBtn" type="button">
         <span id="loginBtnLabel">Se connecter</span>
@@ -1076,9 +1076,35 @@ function btnLoading(btn,on,failed){
 }
 (function(){const s=document.createElement('style');s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';document.head.appendChild(s)})();
 
+
+/* Où envoyer l'utilisateur après la connexion ?
+   Un employé qui n'a accès qu'à un seul module entre directement
+   dedans : le tableau de bord ne lui apprendrait rien. */
+const MODULE_PATHS={
+  pharmacy:'./modules/pharmacy/index',
+  patients:'./modules/patients/index',
+  administration:'./modules/admin/index',
+  consultations:'./modules/patients/index',
+  laboratory:'./modules/laboratory/index',
+  imaging:'./modules/imaging/index'
+};
+
+function landingPage(user){
+  const mods=(user&&user.modules)||[];
+  // On ignore l'administration : elle accompagne un métier, elle n'en est pas un
+  const business=mods.filter(function(m){return m!=='administration'});
+  if(business.length===1&&MODULE_PATHS[business[0]]){
+    return MODULE_PATHS[business[0]];
+  }
+  return './index';
+}
+
 function persistSession(user){
   if(user?.tenant?.modules){
     localStorage.setItem('afya_modules',JSON.stringify(user.tenant.modules));
+  }
+  if(user?.modules){
+    localStorage.setItem('afya_user_modules',JSON.stringify(user.modules));
   }
   localStorage.setItem('afya_user',JSON.stringify({
     name:user.name,
@@ -1115,7 +1141,8 @@ async function doLogin(){
     const res=await AfyaAPI.auth.login(identifier,password);
     persistSession(res.user);
     showToast(`Bienvenue ${res.user.name} !`,false);
-    setTimeout(()=>window.location.href='./index',900);
+    const dest=landingPage(res.user);
+    setTimeout(()=>window.location.href=dest,900);
   }catch(e){
     btnLoading(btn,false,true);
     showToast(apiErrorMessage(e),true);

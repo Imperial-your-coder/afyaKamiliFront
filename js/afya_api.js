@@ -139,7 +139,7 @@ class ApiError extends Error {
 /* Hook global appelé quand le token expire (redéfinis-le dans ta page) */
 let onAuthExpired = () => {
   console.warn('Session expirée');
-  // window.location.href = '/login';
+  // window.location.href = '/login.html';
 };
 
 /* ───────────────────────────────────────────────
@@ -552,6 +552,26 @@ const AfyaAPI = {
   settings: {
     async get()          { return await request('GET', '/pharmacy/settings'); },
     async update(payload) { return await request('PUT', '/pharmacy/settings', payload); },
+  },
+
+  /* ═══ ADMINISTRATION — personnel ═══ */
+  admin: {
+    /** Rôles et modules attribuables + mode du formulaire */
+    async refs()            { return await request('GET', '/admin/roles'); },
+    /** Liste du personnel */
+    async staff(params = {}) {
+      const q = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== '' && v != null)
+      ).toString();
+      return await request('GET', '/admin/staff' + (q ? '?' + q : ''));
+    },
+    async createStaff(payload)        { return await request('POST',  '/admin/staff', payload); },
+    async updateStaff(id, payload)    { return await request('PUT',   `/admin/staff/${id}`, payload); },
+    async setStatus(id, status)       { return await request('PATCH', `/admin/staff/${id}/status`, { status }); },
+    async resetPassword(id, password, password_confirmation) {
+      return await request('POST', `/admin/staff/${id}/password`, { password, password_confirmation });
+    },
+    async deleteStaff(id)             { return await request('DELETE', `/admin/staff/${id}`); },
   },
 
   /* ═══ ABONNEMENTS ═══ */

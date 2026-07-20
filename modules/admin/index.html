@@ -196,75 +196,12 @@ label span{display:block;font-size:10.5px;font-weight:800;text-transform:upperca
     <button class="close" id="closeDrawer">×</button>
   </div>
 
-  <form id="userForm">
-  <div class="drawer-body">
+  <form id="userForm" autocomplete="off">
 
+    <!-- ═══ COMPTE DE CONNEXION ═══ -->
     <div class="subsection-title">Compte de connexion</div>
 
     <div class="form-grid">
-      <label>
-        <span>Nom affiché *</span>
-        <input class="input" name="name" required placeholder="Dr. Jean Mukendi">
-      </label>
-
-      <label>
-        <span>Email *</span>
-        <input class="input" type="email" name="email" required placeholder="user@hopital.org">
-      </label>
-
-      <label>
-        <span>Téléphone</span>
-        <input class="input" name="phone" placeholder="+243...">
-      </label>
-
-      <label>
-        <span>Statut du compte *</span>
-        <select class="select" name="status" required>
-          <option value="active">Actif</option>
-          <option value="suspended">Suspendu</option>
-          <option value="inactive">Inactif</option>
-        </select>
-      </label>
-
-      <label>
-        <span>Mot de passe temporaire *</span>
-        <input class="input" type="password" name="password" required placeholder="••••••••">
-      </label>
-
-      <label>
-        <span>Confirmation *</span>
-        <input class="input" type="password" name="password_confirmation" required placeholder="••••••••">
-      </label>
-    </div>
-
-    <br>
-
-    <div class="subsection-title">Profil utilisateur</div>
-
-    <div class="form-grid">
-      <label>
-        <span>Titre</span>
-        <select class="select" name="title">
-          <option value="">Aucun</option>
-          <option>Dr.</option>
-          <option>Pr.</option>
-          <option>Mr.</option>
-          <option>Mme</option>
-          <option>Mlle</option>
-          <option>Inf.</option>
-        </select>
-      </label>
-
-      <label>
-        <span>Sexe</span>
-        <select class="select" name="gender">
-          <option value="">Non renseigné</option>
-          <option value="male">Homme</option>
-          <option value="female">Femme</option>
-          <option value="other">Autre</option>
-        </select>
-      </label>
-
       <label>
         <span>Prénom *</span>
         <input class="input" name="first_name" required placeholder="Jean">
@@ -276,244 +213,166 @@ label span{display:block;font-size:10.5px;font-weight:800;text-transform:upperca
       </label>
 
       <label>
-        <span>Post-nom / deuxième prénom</span>
-        <input class="input" name="middle_name" placeholder="Optionnel">
+        <span>Téléphone * <small style="font-weight:500;text-transform:none;letter-spacing:0">— servira à se connecter</small></span>
+        <div style="display:flex;gap:8px">
+          <select class="input" name="country_iso" id="countryIso" style="flex:0 0 132px">
+            <option value="CD" data-dial="+243" selected>&#127976; +243 RDC</option>
+            <option value="CG" data-dial="+242">&#127976; +242 Congo</option>
+            <option value="RW" data-dial="+250">&#127479; +250 Rwanda</option>
+            <option value="BI" data-dial="+257">&#127463; +257 Burundi</option>
+            <option value="UG" data-dial="+256">&#127482; +256 Ouganda</option>
+            <option value="TZ" data-dial="+255">&#127481; +255 Tanzanie</option>
+            <option value="KE" data-dial="+254">&#127472; +254 Kenya</option>
+            <option value="ZM" data-dial="+260">&#127487; +260 Zambie</option>
+            <option value="AO" data-dial="+244">&#127462; +244 Angola</option>
+            <option value="CM" data-dial="+237">&#127464; +237 Cameroun</option>
+            <option value="CI" data-dial="+225">&#127464; +225 Côte d'Ivoire</option>
+            <option value="SN" data-dial="+221">&#127480; +221 Sénégal</option>
+          </select>
+          <input class="input" name="phone" required placeholder="990 000 000" style="flex:1">
+        </div>
       </label>
 
       <label>
-        <span>Date de naissance</span>
-        <input class="input" type="date" name="date_of_birth">
+        <span>Email <small style="font-weight:500;text-transform:none;letter-spacing:0">— facultatif</small></span>
+        <input class="input" type="email" name="email" placeholder="nom@exemple.com">
       </label>
 
       <label>
-        <span>Numéro d’identification</span>
-        <input class="input" name="national_id" placeholder="Carte ID / matricule national">
+        <span>Mot de passe temporaire *</span>
+        <input class="input" type="password" name="password" required placeholder="6 caractères minimum">
       </label>
 
       <label>
-        <span>Date d’embauche</span>
-        <input class="input" type="date" name="hire_date">
+        <span>Confirmation *</span>
+        <input class="input" type="password" name="password_confirmation" required placeholder="Retapez le mot de passe">
       </label>
 
       <label>
-        <span>Spécialité</span>
-        <input class="input" name="specialty" placeholder="Cardiologie, pédiatrie...">
-      </label>
-
-      <label>
-        <span>N° licence médicale</span>
-        <input class="input" name="medical_license_number" placeholder="Ordre des médecins...">
-      </label>
-
-      <label>
-        <span>Département</span>
-        <select class="select" name="department_id">
-          <option value="">Sélectionner</option>
-          <option value="1">Administration</option>
-          <option value="2">Médical</option>
-          <option value="3">Laboratoire</option>
-          <option value="4">Pharmacie</option>
-          <option value="5">Caisse</option>
+        <span>Rôle *</span>
+        <select class="input" name="role_id" id="roleSelect" required>
+          <option value="">Chargement…</option>
         </select>
       </label>
 
       <label>
-        <span>Service</span>
-        <select class="select" name="service_id">
-          <option value="">Sélectionner</option>
-          <option value="1">Médecine générale</option>
-          <option value="2">Urgences</option>
-          <option value="3">Pédiatrie</option>
-          <option value="4">Laboratoire</option>
-          <option value="5">Pharmacie</option>
-          <option value="6">Accueil</option>
+        <span>Statut du compte *</span>
+        <select class="input" name="status" required>
+          <option value="active" selected>Actif</option>
+          <option value="suspended">Suspendu</option>
+          <option value="inactive">Inactif</option>
         </select>
-      </label>
-
-      <label class="field full">
-        <span>Bio / Notes internes</span>
-        <input class="input" name="bio" placeholder="Informations utiles sur le membre du personnel">
       </label>
     </div>
 
     <br>
 
-    <div class="subsection-title">Accès & rôle</div>
+    <!-- ═══ MODULES AUTORISÉS ═══ -->
+    <div class="subsection-title">Modules autorisés</div>
+    <p style="font-size:12.5px;color:#8B8D86;margin:-6px 0 12px;line-height:1.5">
+      Cet employé n'aura accès qu'aux modules cochés. S'il n'en a qu'un,
+      il entrera directement dedans à la connexion.
+    </p>
+    <div id="moduleBoxes" style="display:flex;flex-wrap:wrap;gap:8px">
+      <span style="font-size:13px;color:#8B8D86">Chargement…</span>
+    </div>
 
-    <div class="form-grid">
-      <label>
-        <span>Rôle *</span>
-        <select class="select" name="role_id" required>
-          <option value="">Sélectionner</option>
-          <option value="1">Administrateur</option>
-          <option value="2">Médecin</option>
-          <option value="3">Infirmier</option>
-          <option value="4">Réceptionniste</option>
-          <option value="5">Laborantin</option>
-          <option value="6">Pharmacien</option>
-          <option value="7">Caissier</option>
-        </select>
+    <!-- ═══ PROFIL DÉTAILLÉ — masqué pour les pharmacies ═══ -->
+    <div data-clinical hidden>
+      <br>
+      <div class="subsection-title">Profil détaillé</div>
+
+      <div class="form-grid">
+        <label>
+          <span>Titre</span>
+          <select class="input" name="title">
+            <option value="">Aucun</option>
+            <option>Dr</option><option>Pr</option><option>M.</option>
+            <option>Mme</option><option>Mlle</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Sexe</span>
+          <select class="input" name="gender">
+            <option value="">Non renseigné</option>
+            <option value="male">Homme</option>
+            <option value="female">Femme</option>
+            <option value="other">Autre</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Post-nom</span>
+          <input class="input" name="middle_name" placeholder="Optionnel">
+        </label>
+
+        <label>
+          <span>Date de naissance</span>
+          <input class="input" type="date" name="date_of_birth">
+        </label>
+
+        <label>
+          <span>Numéro d'identification</span>
+          <input class="input" name="national_id" placeholder="Optionnel">
+        </label>
+
+        <label>
+          <span>Date d'embauche</span>
+          <input class="input" type="date" name="hire_date">
+        </label>
+
+        <label>
+          <span>Spécialité</span>
+          <input class="input" name="specialty" placeholder="Ex : Pédiatrie">
+        </label>
+
+        <label>
+          <span>Licence médicale</span>
+          <input class="input" name="medical_license_number" placeholder="Numéro d'ordre">
+        </label>
+
+        <label>
+          <span>Département</span>
+          <select class="input" name="department_id">
+            <option value="">Sélectionner</option>
+            <option value="1">Administration</option>
+            <option value="2">Médical</option>
+            <option value="3">Laboratoire</option>
+            <option value="4">Pharmacie</option>
+            <option value="5">Caisse</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Service</span>
+          <select class="input" name="service_id">
+            <option value="">Sélectionner</option>
+            <option value="1">Médecine générale</option>
+            <option value="2">Urgences</option>
+            <option value="3">Pédiatrie</option>
+            <option value="4">Laboratoire</option>
+            <option value="5">Pharmacie</option>
+            <option value="6">Accueil</option>
+          </select>
+        </label>
+      </div>
+
+      <br>
+      <label style="display:block">
+        <span>Notes internes</span>
+        <textarea class="input" name="bio" rows="3" placeholder="Optionnel"></textarea>
       </label>
     </div>
 
-  </div>
-
-  <div class="drawer-actions">
-    <button type="button" class="btn btn-soft" id="cancelBtn">Annuler</button>
-    <button type="submit" class="btn btn-primary">Enregistrer localement</button>
-  </div>
-</form>
+    <div class="drawer-actions">
+      <button type="button" class="btn btn-soft" id="cancelBtn">Annuler</button>
+      <button type="submit" class="btn btn-primary">Créer l'utilisateur</button>
+    </div>
+  </form>
 </aside>
 
-<script>
-let users=[
-  {
-    name:'Dr. Admin',
-    email:'admin@afya.local',
-    phone:'+243 990 000 001',
-    role:'Administrateur',
-    service:'Administration',
-    status:'active'
-  },
-  {
-    name:'Dr. Sarah Mbala',
-    email:'sarah.mbala@afya.local',
-    phone:'+243 990 000 002',
-    role:'Médecin',
-    service:'Médecine générale',
-    status:'active'
-  },
-  {
-    name:'Jean Mukendi',
-    email:'jean.mukendi@afya.local',
-    phone:'+243 990 000 003',
-    role:'Réceptionniste',
-    service:'Accueil',
-    status:'active'
-  }
-];
-
-const drawer=document.getElementById('drawer');
-const backdrop=document.getElementById('backdrop');
-const tableArea=document.getElementById('tableArea');
-const searchInput=document.getElementById('searchInput');
-const roleFilter=document.getElementById('roleFilter');
-const statusFilter=document.getElementById('statusFilter');
-
-function openDrawer(){
-  drawer.classList.add('open');
-  backdrop.classList.add('open');
-}
-
-function closeDrawer(){
-  drawer.classList.remove('open');
-  backdrop.classList.remove('open');
-}
-
-document.getElementById('openCreate').addEventListener('click',openDrawer);
-document.getElementById('openCreateTable').addEventListener('click',openDrawer);
-document.getElementById('closeDrawer').addEventListener('click',closeDrawer);
-document.getElementById('cancelBtn').addEventListener('click',closeDrawer);
-backdrop.addEventListener('click',closeDrawer);
-
-function initials(name){
-  return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-}
-
-function render(){
-  const q=searchInput.value.toLowerCase().trim();
-  const role=roleFilter.value;
-  const status=statusFilter.value;
-
-  const filtered=users.filter(u=>{
-    const matchText=[u.name,u.email,u.phone,u.role,u.service].join(' ').toLowerCase().includes(q);
-    const matchRole=!role || u.role===role;
-    const matchStatus=!status || u.status===status;
-    return matchText && matchRole && matchStatus;
-  });
-
-  document.getElementById('kpiUsers').textContent=users.length;
-  document.getElementById('kpiActive').textContent=users.filter(u=>u.status==='active').length;
-  document.getElementById('kpiSuspended').textContent=users.filter(u=>u.status==='suspended').length;
-  document.getElementById('kpiRoles').textContent=new Set(users.map(u=>u.role)).size;
-
-  if(filtered.length===0){
-    tableArea.innerHTML=`<div class="empty">Aucun utilisateur trouvé.</div>`;
-    return;
-  }
-
-  tableArea.innerHTML=`
-    <table>
-      <thead>
-        <tr>
-          <th>Utilisateur</th>
-          <th>Email</th>
-          <th>Téléphone</th>
-          <th>Rôle</th>
-          <th>Service</th>
-          <th>Statut</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${filtered.map((u,i)=>`
-          <tr>
-            <td>
-              <div class="user-cell">
-                <div class="avatar">${initials(u.name)}</div>
-                <strong>${u.name}</strong>
-              </div>
-            </td>
-            <td>${u.email}</td>
-            <td>${u.phone || '-'}</td>
-            <td>${u.role}</td>
-            <td>${u.service}</td>
-            <td><span class="badge ${u.status==='active'?'active':'suspended'}">${u.status==='active'?'Actif':'Suspendu'}</span></td>
-            <td>
-              <div class="actions-cell">
-                <button class="icon-btn" title="Modifier">✎</button>
-                <button class="icon-btn" title="Réinitialiser mot de passe">↻</button>
-                <button class="icon-btn" title="Suspendre">⏻</button>
-              </div>
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-}
-
-searchInput.addEventListener('input',render);
-roleFilter.addEventListener('change',render);
-statusFilter.addEventListener('change',render);
-
-document.getElementById('userForm').addEventListener('submit',e=>{
-  e.preventDefault();
-
-  const fd=new FormData(e.target);
-  const password=fd.get('password');
-  const confirmation=fd.get('password_confirmation');
-
-  if(password!==confirmation){
-    alert('Les mots de passe ne correspondent pas.');
-    return;
-  }
-
-  users.unshift({
-    name:fd.get('name'),
-    email:fd.get('email'),
-    phone:fd.get('phone'),
-    role:fd.get('role'),
-    service:fd.get('service'),
-    status:fd.get('status')
-  });
-
-  e.target.reset();
-  closeDrawer();
-  render();
-});
-
-render();
-</script>
+<script src="../../js/afya_api.js" defer></script>
+<script src="./admin.js" defer></script>
 </body>
 </html>
