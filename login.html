@@ -39,7 +39,6 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
 @keyframes floatOrgan{0%,100%{transform:translateY(0) rotate(-0.4deg)}50%{transform:translateY(-20px) rotate(0.4deg)}}
 
 .dot{transition:transform 0.2s,box-shadow 0.2s;pointer-events:auto !important;cursor:pointer !important;}
-/* Le conteneur des points laisse passer les clics vers les points eux-mêmes */
 .organ-slot > div[class*="z-\[22\]"]{pointer-events:none;}
 .organ-slot.active .dot{pointer-events:auto !important;}
 .dot::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px solid rgba(0,184,255,0.3);animation:pRing 2.4s ease-out infinite;pointer-events:none;}
@@ -54,17 +53,8 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
 .mcard.always{opacity:1;transform:translateY(0) scale(1);animation:cFloat 4.5s ease-in-out infinite;}
 @keyframes cFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 
-/* ════════════════════════════════════
-   WIZARD — steps stacked, same position
-   KEY: all steps absolute except .active
-   which is relative → container height
-   never jumps, no scroll possible.
-════════════════════════════════════ */
 .wizard-stage {
   position: relative;
-  /* height is set by the tallest step (step 6 review).
-     We fix it so every step occupies the exact same
-     vertical real-estate → zero layout shift. */
   min-height: 320px;
 }
 .wizard-step {
@@ -72,23 +62,18 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
   inset: 0;
   opacity: 0;
   pointer-events: none;
-  /* start off-screen RIGHT for forward, LEFT for back
-     (toggled by JS class) */
   transform: translateX(28px);
   transition: opacity 0.32s ease, transform 0.36s cubic-bezier(.34,1.1,.64,1);
-  /* critical: no layout participation while hidden */
 }
 .wizard-step.enter-from-left {
   transform: translateX(-28px);
 }
-/* Active step sits in the flow → gives height to .wizard-stage */
 .wizard-step.active {
   position: relative;
   opacity: 1;
   pointer-events: all;
   transform: translateX(0) !important;
 }
-/* Exit animations */
 .wizard-step.exit-right {
   opacity: 0;
   transform: translateX(28px);
@@ -112,19 +97,11 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
 .auth-toast{opacity:0;pointer-events:none;transition:opacity 0.3s,transform 0.3s;}
 .auth-toast.show{opacity:1;}
 
-/* Login / signup crossfade
-   ⚠ visibility:hidden est ESSENTIEL : opacity:0 seul laisse le formulaire
-   caché focusable au clavier → les frappes partaient dans suEstablishment. */
 #loginForm,#signupForm{transition:opacity 0.4s ease,transform 0.4s ease,visibility 0.4s;}
 #signupForm{visibility:hidden;}
 .page.mode-signup #loginForm{opacity:0;transform:translateX(-20px);pointer-events:none;visibility:hidden;}
 .page.mode-signup #signupForm{opacity:1;transform:translateX(0);pointer-events:all;visibility:visible;}
 
-/* ════════════════════════════════════
-   MOBILE RESPONSIVE — SCROLL FIX
-   Permet le défilement sur les appareils mobiles
-   pour atteindre le bouton "Créer mon compte"
-════════════════════════════════════ */
 @media(max-width:900px){
   html,body{
     overflow:auto !important;
@@ -157,8 +134,6 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
     padding-top:30px;
     padding-bottom:40px;
   }
-  
-  /* Forcer le formulaire signup à être visible et scrollable */
   #signupForm{
     position:relative !important;
     opacity:1 !important;
@@ -171,8 +146,6 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
     margin:0 auto;
     padding-bottom:30px;
   }
-  
-  /* Cacher le login quand mode-signup actif */
   .page.mode-signup #loginForm{
     display:none;
   }
@@ -182,15 +155,11 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
   .page:not(.mode-signup) #loginForm{
     display:block;
   }
-  
-  /* Wizard stage : hauteur naturelle sur mobile */
   .wizard-stage{
     min-height:auto !important;
     height:auto !important;
     overflow:visible !important;
   }
-  
-  /* Steps en flux normal pour permettre le scroll */
   .wizard-step{
     position:relative !important;
     opacity:1 !important;
@@ -201,13 +170,9 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
     transition:none;
     margin-bottom:16px;
   }
-  
-  /* Cacher les steps inactifs sur mobile */
   .wizard-step:not(.active){
     display:none !important;
   }
-  
-  /* Step actif reste visible */
   .wizard-step.active{
     display:block !important;
     position:relative !important;
@@ -215,8 +180,6 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
     pointer-events:all !important;
     transform:none !important;
   }
-  
-  /* Désactiver les animations d'entrée/sortie sur mobile */
   .wizard-step.enter-from-left,
   .wizard-step.exit-right,
   .wizard-step.exit-left{
@@ -244,8 +207,6 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
     padding-right:12px;
     padding-bottom:40px;
   }
-  
-  /* Boutons plus faciles à toucher sur mobile */
   #wizardNextBtn{
     padding-top:16px;
     padding-bottom:16px;
@@ -352,12 +313,21 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
 
     <!-- ═══ LOGIN FORM ═══ -->
     <div class="w-full" id="loginForm">
-      <div class="flex items-center gap-2.5 mb-6">
+      <div class="flex items-center gap-2.5 mb-5">
         <div class="w-[34px] h-[34px] rounded-full bg-accent flex items-center justify-center flex-shrink-0">
           <svg class="w-[15px] h-[15px]" viewBox="0 0 16 16" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round"><path d="M8 1v14M1 8h14"/></svg>
         </div>
         <span class="text-lg font-extrabold text-ink tracking-[-0.3px]">Afya <span class="text-[#7a7a75]">Kamili</span></span>
       </div>
+
+      <!-- Petit texte mignon explicatif avec lien vers le site -->
+      <div class="mb-3">
+        <a href="https://site.afyakamili.com" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[rgba(239,255,58,0.35)] hover:bg-accent border border-[rgba(17,17,17,0.08)] text-[11.5px] font-semibold text-ink transition-all shadow-sm hover:shadow group">
+          <span>✨ C'est quoi Afya Kamili ?</span>
+          <svg class="w-3 h-3 text-ink opacity-70 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 3l5 5-5 5"/></svg>
+        </a>
+      </div>
+
       <h1 class="text-[32px] font-extrabold text-ink tracking-[-1px] mb-1.5">Bienvenue</h1>
       <p class="text-[13.5px] text-mid mb-7">Connectez-vous pour continuer</p>
       <div class="mb-3.5">
@@ -382,16 +352,18 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
         <label class="flex items-center gap-2 cursor-pointer text-[12.5px] font-medium text-mid"><input type="checkbox" class="w-4 h-4 accent-accent"> Se souvenir de moi</label>
         <a class="text-[12.5px] font-bold text-ink cursor-pointer no-underline hover:underline" href="#">Mot de passe oublié ?</a>
       </div>
-      <button class="w-full py-4 rounded-full bg-ink text-white text-[14.5px] font-bold border-none cursor-pointer flex items-center justify-center gap-2.5 hover:bg-[#1a1a1a] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] active:translate-y-0 transition-all mb-5 disabled:opacity-60 disabled:cursor-wait" id="loginBtn" type="button">
+      <button class="w-full py-4 rounded-full bg-ink text-white text-[14.5px] font-bold border-none cursor-pointer flex items-center justify-center gap-2.5 hover:bg-[#1a1a1a] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] active:translate-y-0 transition-all mb-4 disabled:opacity-60 disabled:cursor-wait" id="loginBtn" type="button">
         <span id="loginBtnLabel">Se connecter</span>
         <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center" id="loginBtnIcon"><svg class="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 10L10 2M10 2H4M10 2v6"/></svg></div>
       </button>
-      <div class="flex items-center gap-3 mb-[18px]"><div class="flex-1 h-px bg-[rgba(0,0,0,0.1)]"></div><span class="text-[11.5px] text-[#BCBCB6] font-medium">ou continuer avec</span><div class="flex-1 h-px bg-[rgba(0,0,0,0.1)]"></div></div>
-      <button class="w-full py-[13px] px-5 rounded-full border-[1.5px] border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.7)] text-[13px] font-semibold text-ink cursor-pointer flex items-center justify-center gap-2.5 hover:bg-[rgba(255,255,255,0.95)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-all mb-2.5">
-        <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Continuer avec Google
+
+      <!-- Remplacement du bouton Google par "Créer mon compte" -->
+      <div class="flex items-center gap-3 mb-3.5"><div class="flex-1 h-px bg-[rgba(0,0,0,0.1)]"></div><span class="text-[11.5px] text-[#BCBCB6] font-medium">Nouveau sur Afya Kamili ?</span><div class="flex-1 h-px bg-[rgba(0,0,0,0.1)]"></div></div>
+      <button type="button" onclick="switchMode('signup')" class="w-full py-3.5 px-5 rounded-full border-[1.5px] border-ink bg-transparent text-[14px] font-bold text-ink cursor-pointer flex items-center justify-center gap-2 hover:bg-ink hover:text-white transition-all">
+        Créer mon compte
       </button>
-      <div class="text-center mt-7 text-xs text-mid">Pas encore de compte ? <button class="bg-transparent border-none text-ink font-bold cursor-pointer p-0 hover:underline" onclick="switchMode('signup')">Créer mon compte</button></div>
+      
+      <div class="text-center mt-6 text-xs text-mid">En vous connectant, vous acceptez nos conditions d'utilisation.</div>
     </div>
 
     <!-- ═══ SIGNUP FORM ═══ -->
@@ -619,8 +591,88 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
 
 <script>
 // ── ORGANS DATA ──
-const ORGANS=[{id:0,label:'Système respiratoire',ambient:'radial-gradient(ellipse at 50% 55%, #0b1d32 0%, #060b15 55%, #030609 100%)',platformColor:'rgba(0,180,255,0.5)',glowColor:'rgba(0,190,255,0.6)',cards:[{id:'c0-0',pos:{l:'-65px',t:'30px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Fréq. cardiaque</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">98 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">bpm</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">↑ 3 bpm vs hier</div>`},{id:'c0-1',pos:{l:'-80px',t:'185px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Saturation O₂</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">98 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">%</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>`},{id:'c0-2',pos:{r:'-75px',t:'65px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Tension artérielle</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">120<span style="font-size:13px;color:rgba(255,255,255,0.4)"> / </span>80</div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">mmHg — Stable</div>`},{id:'c0-3',pos:{l:'-55px',b:'135px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Température</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">36.8 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">°C</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>`},{id:'c0-4',pos:{r:'-85px',b:'115px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">ECG</div><svg style="width:108px;height:28px;margin-top:5px;display:block" viewBox="0 0 108 28" fill="none"><polyline points="0,14 10,14 14,4 18,24 22,8 26,20 30,14 42,14 46,2 50,26 54,10 58,18 62,14 108,14" stroke="#00B8FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Rythme sinusal normal</div>`},{id:'c0-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Consultation</div><div style="font-size:14px;font-weight:700;color:#fff;margin-top:2px">Aujourd'hui</div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">10:00 — 11:30</div>`},{id:'c0-a2',pos:{l:'-30px',t:'305px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut médical</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Stable</span></div>`}]},{id:1,label:'Système cardiovasculaire',ambient:'radial-gradient(ellipse at 50% 55%, #2a0a0a 0%, #160505 55%, #070202 100%)',platformColor:'rgba(255,60,60,0.4)',glowColor:'rgba(255,80,80,0.55)',cards:[{id:'c1-0',pos:{l:'-70px',t:'25px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Fréquence cardiaque</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">89 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">bpm</span></div>`},{id:'c1-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut cardiaque</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px #f59e0b"></div><span style="font-size:13px;font-weight:800;color:#fbbf24">Surveillance</span></div>`}]},{id:2,label:'Système nerveux central',ambient:'radial-gradient(ellipse at 50% 55%, #1a0a20 0%, #0e0515 55%, #050208 100%)',platformColor:'rgba(160,80,255,0.4)',glowColor:'rgba(160,80,255,0.55)',cards:[{id:'c2-0',pos:{l:'-70px',t:'30px'},always:false,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Activité cérébrale</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">Alpha <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">8–12 Hz</span></div>`},{id:'c2-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut neurologique</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Normal</span></div>`}]},{id:3,label:'Système digestif',ambient:'radial-gradient(ellipse at 50% 55%, #1a1400 0%, #100d00 55%, #060502 100%)',platformColor:'rgba(255,180,0,0.38)',glowColor:'rgba(255,160,0,0.5)',cards:[{id:'c3-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut digestif</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Normal</span></div>`}]},{id:4,label:'Système ostéo-articulaire',ambient:'radial-gradient(ellipse at 50% 55%, #0d1a10 0%, #070e08 55%, #020403 100%)',platformColor:'rgba(100,220,140,0.38)',glowColor:'rgba(80,200,120,0.5)',cards:[{id:'c4-a1',pos:{r:'-90px',t:'265px'},always:true,html:`<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Densité osseuse</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">T +0.8</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>`}]}];
-
+const ORGANS = [
+  {
+    id: 0,
+    label: 'Système respiratoire',
+    ambient: 'radial-gradient(ellipse at 50% 55%, #0b1d32 0%, #060b15 55%, #030609 100%)',
+    platformColor: 'rgba(0,180,255,0.5)',
+    glowColor: 'rgba(0,190,255,0.6)',
+    cards: [
+      { id: 'c0-0', pos: { l: '-65px', t: '30px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Fréq. respiratoire</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">16 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">c/min</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Rythme régulier</div>` },
+      { id: 'c0-1', pos: { l: '-80px', t: '185px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Saturation O₂</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">98 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">%</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>` },
+      { id: 'c0-2', pos: { r: '-75px', t: '65px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Capacité vitale</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">4.2 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">L</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">VEMS : 102% prédict.</div>` },
+      { id: 'c0-3', pos: { l: '-55px', b: '135px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Pression Voies Aér.</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">14 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">cmH₂O</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Légère ventilation</span></div>` },
+      { id: 'c0-4', pos: { r: '-85px', b: '115px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Flux Respiratoire</div><svg style="width:108px;height:28px;margin-top:5px;display:block" viewBox="0 0 108 28" fill="none"><path d="M0 14 C 20 0, 30 0, 54 14 C 78 28, 88 28, 108 14" stroke="#00B8FF" stroke-width="1.8" fill="none"/></svg><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Cycle symétrique</div>` },
+      { id: 'c0-a1', pos: { r: '-90px', t: '265px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Consultation</div><div style="font-size:14px;font-weight:700;color:#fff;margin-top:2px">Aujourd'hui</div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">10:00 — 11:30</div>` },
+      { id: 'c0-a2', pos: { l: '-30px', t: '305px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut médical</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Stable</span></div>` }
+    ]
+  },
+  {
+    id: 1,
+    label: 'Système cardiovasculaire',
+    ambient: 'radial-gradient(ellipse at 50% 55%, #2a0a0a 0%, #160505 55%, #070202 100%)',
+    platformColor: 'rgba(255,60,60,0.4)',
+    glowColor: 'rgba(255,80,80,0.55)',
+    cards: [
+      { id: 'c1-0', pos: { l: '-70px', t: '25px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Fréquence cardiaque</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">89 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">bpm</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">↑ Légèrement élevé</div>` },
+      { id: 'c1-1', pos: { l: '-80px', t: '180px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Tension artérielle</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">125<span style="font-size:13px;color:rgba(255,255,255,0.4)"> / </span>82</div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">mmHg — Pré-hypertension</div>` },
+      { id: 'c1-2', pos: { r: '-75px', t: '65px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Volume d'éjection</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">72 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">mL</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Débit : 6.4 L/min</div>` },
+      { id: 'c1-3', pos: { l: '-55px', b: '135px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Perfusion Coronaire</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">95 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">%</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Irrigation adéquate</span></div>` },
+      { id: 'c1-4', pos: { r: '-85px', b: '115px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Electrocardiogramme</div><svg style="width:108px;height:28px;margin-top:5px;display:block" viewBox="0 0 108 28" fill="none"><polyline points="0,14 10,14 14,4 18,24 22,8 26,20 30,14 42,14 46,2 50,26 54,10 58,18 62,14 108,14" stroke="#ff4d4d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Onde P-QRS-T mesurée</div>` },
+      { id: 'c1-a1', pos: { r: '-90px', t: '265px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut cardiaque</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px #f59e0b"></div><span style="font-size:13px;font-weight:800;color:#fbbf24">Surveillance</span></div>` },
+      { id: 'c1-a2', pos: { l: '-30px', t: '305px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Rythme globale</div><div style="font-size:13px;font-weight:800;color:#fff;margin-top:4px">Tachycardie modérée</div>` }
+    ]
+  },
+  {
+    id: 2,
+    label: 'Système nerveux central',
+    ambient: 'radial-gradient(ellipse at 50% 55%, #1a0a20 0%, #0e0515 55%, #050208 100%)',
+    platformColor: 'rgba(160,80,255,0.4)',
+    glowColor: 'rgba(160,80,255,0.55)',
+    cards: [
+      { id: 'c2-0', pos: { l: '-70px', t: '30px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Activité cérébrale</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">Alpha <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">8–12 Hz</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">État d'éveil calme</div>` },
+      { id: 'c2-1', pos: { l: '-80px', t: '185px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Pression Intracrânienne</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">11 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">mmHg</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Pression optimale</span></div>` },
+      { id: 'c2-2', pos: { r: '-75px', t: '65px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Perfusion Cérébrale</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">55 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">mL/100g/m</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Flux continu normal</div>` },
+      { id: 'c2-3', pos: { l: '-55px', b: '135px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Score de Glasgow</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">15 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">/ 15</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Conscience maximale</div>` },
+      { id: 'c2-4', pos: { r: '-85px', b: '115px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Signal EEG (Tracé)</div><svg style="width:108px;height:28px;margin-top:5px;display:block" viewBox="0 0 108 28" fill="none"><path d="M0 14 Q 10 2, 20 14 T 40 14 T 60 14 T 80 14 T 108 14" stroke="#a050ff" stroke-width="1.8" fill="none"/></svg><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Ondes régulières</div>` },
+      { id: 'c2-a1', pos: { r: '-90px', t: '265px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut neurologique</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Normal</span></div>` },
+      { id: 'c2-a2', pos: { l: '-30px', t: '305px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Réflexes pupillaires</div><div style="font-size:13px;font-weight:800;color:#fff;margin-top:4px">Isocores & Réactifs</div>` }
+    ]
+  },
+  {
+    id: 3,
+    label: 'Système digestif',
+    ambient: 'radial-gradient(ellipse at 50% 55%, #1a1400 0%, #100d00 55%, #060502 100%)',
+    platformColor: 'rgba(255,180,0,0.38)',
+    glowColor: 'rgba(255,160,0,0.5)',
+    cards: [
+      { id: 'c3-0', pos: { l: '-65px', t: '30px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Bilan Enzymes (ALAT)</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">28 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">U/L</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Fonction hépatique OK</div>` },
+      { id: 'c3-1', pos: { l: '-80px', t: '185px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Bilirubine Totale</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">0.8 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">mg/dL</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>` },
+      { id: 'c3-2', pos: { r: '-75px', t: '65px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Taux d'Albumine</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">44 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">g/L</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Synthèse protéique active</div>` },
+      { id: 'c3-3', pos: { l: '-55px', b: '135px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Glucose Glycogène</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">0.95 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">g/L</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">A jeun — Régulé</div>` },
+      { id: 'c3-4', pos: { r: '-85px', b: '115px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Péristaltisme</div><svg style="width:108px;height:28px;margin-top:5px;display:block" viewBox="0 0 108 28" fill="none"><path d="M0 14 Q 15 24, 30 14 T 60 14 T 90 14 T 108 14" stroke="#ffb400" stroke-width="1.8" fill="none"/></svg><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Motilité Intestinale</div>` },
+      { id: 'c3-a1', pos: { r: '-90px', t: '265px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Statut digestif</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Normal</span></div>` },
+      { id: 'c3-a2', pos: { l: '-30px', t: '305px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Hydratation</div><div style="font-size:13px;font-weight:800;color:#fff;margin-top:4px">Bonne rétention</div>` }
+    ]
+  },
+  {
+    id: 4,
+    label: 'Système ostéo-articulaire',
+    ambient: 'radial-gradient(ellipse at 50% 55%, #0d1a10 0%, #070e08 55%, #020403 100%)',
+    platformColor: 'rgba(100,220,140,0.38)',
+    glowColor: 'rgba(80,200,120,0.5)',
+    cards: [
+      { id: 'c4-0', pos: { l: '-65px', t: '30px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Densité osseuse</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">T +0.8</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:11px;font-weight:600;color:#4ade80">Normal</span></div>` },
+      { id: 'c4-1', pos: { l: '-80px', t: '185px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Niveau de Calcium</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">2.45 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">mmol/L</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Calcémie équilibrée</div>` },
+      { id: 'c4-2', pos: { r: '-75px', t: '65px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Index Cartilagineux</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">92 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">%</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Épaisseur préservée</div>` },
+      { id: 'c4-3', pos: { l: '-55px', b: '135px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Marqueur Inflam.</div><div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.4px;line-height:1.1">2.1 <span style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.5)">mg/L</span></div><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">CRP Basse</div>` },
+      { id: 'c4-4', pos: { r: '-85px', b: '115px' }, always: false, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Mobilité Articulaire</div><svg style="width:108px;height:28px;margin-top:5px;display:block" viewBox="0 0 108 28" fill="none"><path d="M0 24 L 30 18 L 60 8 L 90 6 L 108 4" stroke="#64dc8c" stroke-width="1.8" stroke-dasharray="3 3" fill="none"/></svg><div style="font-size:10.5px;color:rgba(255,255,255,0.42);margin-top:3px">Amplitude optimale</div>` },
+      { id: 'c4-a1', pos: { r: '-90px', t: '265px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Santé squelettique</div><div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e"></div><span style="font-size:13px;font-weight:800;color:#4ade80">Excellente</span></div>` },
+      { id: 'c4-a2', pos: { l: '-30px', t: '305px' }, always: true, html: `<div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Dernier Scanner</div><div style="font-size:13px;font-weight:800;color:#fff;margin-top:4px">Il y a 2 mois</div>` }
+    ]
+  }
+];
 // ── STATE ──
 let currentOrgan=0,dotStates={},timerInterval=null;
 const DURATION=20000;
@@ -633,28 +685,150 @@ rsz();window.addEventListener('resize',rsz);
 for(let i=0;i<100;i++)pts.push({x:Math.random()*1400,y:Math.random()*800,r:Math.random()*1.6+.3,a:Math.random()*.35+.05,vx:(Math.random()-.5)*.15,vy:(Math.random()-.5)*.13-.04,h:185+Math.random()*30});
 (function loop(){cx2.clearRect(0,0,W,H);pts.forEach(p=>{cx2.beginPath();cx2.arc(p.x,p.y,p.r,0,Math.PI*2);cx2.fillStyle=`hsla(${p.h},100%,76%,${p.a})`;cx2.fill();p.x+=p.vx;p.y+=p.vy;if(p.x<-5||p.x>W+5||p.y<-5||p.y>H+5){p.x=Math.random()*W;p.y=H+4}});requestAnimationFrame(loop)})();
 
-// ── RENDER CARDS ──
+// ── RENDER CARDS (CORRIGÉ: Injecter card.html au lieu de card) ──
 const container=document.getElementById('cardsContainer');
-function renderCards(organ){container.innerHTML='';organ.cards.forEach(card=>{const div=document.createElement('div');div.className='mcard absolute bg-[rgba(255,255,255,0.11)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.2)] rounded-[22px] py-[13px] px-[17px] shadow-[0_18px_50px_rgba(0,0,0,0.28)] z-30 min-w-[136px]'+(card.always?' always':'');div.id=card.id;div.style.pointerEvents=card.always?'all':'none';if(card.pos.l)div.style.left=card.pos.l;if(card.pos.r)div.style.right=card.pos.r;if(card.pos.t)div.style.top=card.pos.t;if(card.pos.b)div.style.bottom=card.pos.b;div.innerHTML=card;container.appendChild(div)})}
+function renderCards(organ){
+  container.innerHTML='';
+  organ.cards.forEach(card=>{
+    const div=document.createElement('div');
+    div.className='mcard absolute bg-[rgba(255,255,255,0.11)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.2)] rounded-[22px] py-[13px] px-[17px] shadow-[0_18px_50px_rgba(0,0,0,0.28)] z-30 min-w-[136px]'+(card.always?' always':'');
+    div.id=card.id;
+    div.style.pointerEvents=card.always?'all':'none';
+    if(card.pos.l)div.style.left=card.pos.l;
+    if(card.pos.r)div.style.right=card.pos.r;
+    if(card.pos.t)div.style.top=card.pos.t;
+    if(card.pos.b)div.style.bottom=card.pos.b;
+    div.innerHTML=card.html; // <-- CORRECTION ICI
+    container.appendChild(div);
+  });
+}
 
 // ── LINES ──
 const linesSvg=document.getElementById('linesSvg');
-const DOT_PCTS=[[{x:.44,y:.08},{x:.27,y:.35},{x:.68,y:.27},{x:.21,y:.65},{x:.73,y:.67}],[{x:.50,y:.10},{x:.28,y:.38},{x:.65,y:.32},{x:.35,y:.65},{x:.62,y:.70}],[{x:.40,y:.12},{x:.22,y:.42},{x:.66,y:.28},{x:.55,y:.60},{x:.30,y:.70}],[{x:.48,y:.14},{x:.25,y:.40},{x:.68,y:.30},{x:.20,y:.65},{x:.65,y:.68}],[{x:.48,y:.08},{x:.30,y:.28},{x:.65,y:.32},{x:.22,y:.58},{x:.65,y:.62}]];
-const CARD_ANCH=[[{x:100,y:100},{x:65,y:260},{x:490,y:150},{x:80,y:410},{x:495,y:425}],[{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:410},{x:490,y:420}],[{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:400},{x:490,y:420}],[{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:405},{x:490,y:420}],[{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:405},{x:490,y:420}]];
+const DOT_PCTS=[
+  [{x:.44,y:.08},{x:.27,y:.35},{x:.68,y:.27},{x:.21,y:.65},{x:.73,y:.67}],
+  [{x:.50,y:.10},{x:.28,y:.38},{x:.65,y:.32},{x:.35,y:.65},{x:.62,y:.70}],
+  [{x:.40,y:.12},{x:.22,y:.42},{x:.66,y:.28},{x:.55,y:.60},{x:.30,y:.70}],
+  [{x:.48,y:.14},{x:.25,y:.40},{x:.68,y:.30},{x:.20,y:.65},{x:.65,y:.68}],
+  [{x:.48,y:.08},{x:.30,y:.28},{x:.65,y:.32},{x:.22,y:.58},{x:.65,y:.62}]
+];
+const CARD_ANCH=[
+  [{x:100,y:100},{x:65,y:260},{x:490,y:150},{x:80,y:410},{x:495,y:425}],
+  [{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:410},{x:490,y:420}],
+  [{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:400},{x:490,y:420}],
+  [{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:405},{x:490,y:420}],
+  [{x:100,y:100},{x:65,y:260},{x:490,y:145},{x:80,y:405},{x:490,y:420}]
+];
 const LW_IMG=460,LH_IMG=490,SX=(580-LW_IMG)/2,SY=(600-LH_IMG)/2;
-function buildLines(slotIdx){linesSvg.innerHTML='';DOT_PCTS[slotIdx].forEach((pct,i)=>{const d={x:SX+pct.x*LW_IMG,y:SY+pct.y*LH_IMG},c=CARD_ANCH[slotIdx][i],mx=(d.x+c.x)/2,my=(d.y+c.y)/2-16,path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',`M${d.x} ${d.y} Q${mx} ${my} ${c.x} ${c.y}`);path.classList.add('cline');path.id=`ln-${slotIdx}-${i}`;linesSvg.appendChild(path)})}
 
-function switchOrgan(idx,resetTimer=true){currentOrgan=idx;dotStates={};const organ=ORGANS[idx];document.getElementById('ambient').style.background=organ.ambient;document.getElementById('platform').style.background=`radial-gradient(ellipse,${organ.platformColor} 0%,rgba(0,0,0,0) 72%)`;document.getElementById('organLabel').textContent=organ.label;document.querySelectorAll('.onav-dot').forEach((d,i)=>{if(i===idx){d.classList.add('active');d.style.width='24px';d.style.borderRadius='999px';d.style.background='#EFFF3A';d.style.borderColor='transparent'}else{d.classList.remove('active');d.style.width='8px';d.style.borderRadius='50%';d.style.background='rgba(255,255,255,0.2)';d.style.borderColor='rgba(255,255,255,0.15)'}});document.querySelectorAll('.organ-slot').forEach(s=>s.classList.remove('active'));setTimeout(()=>document.getElementById(`slot-${idx}`).classList.add('active'),80);renderCards(organ);buildLines(idx);[0,2,3].forEach((ci,j)=>setTimeout(()=>toggleCard(idx,ci,true),600+j*280));if(resetTimer)resetTimerBar()}
-function toggleCard(slotIdx,cardIdx,forceOn){const key=`${slotIdx}-${cardIdx}`,on=forceOn!==undefined?forceOn:!dotStates[key];dotStates[key]=on;const organ=ORGANS[slotIdx],card=organ.cards[cardIdx];if(!card||card.always)return;const cardEl=document.getElementById(card.id),lineEl=document.getElementById(`ln-${slotIdx}-${cardIdx}`),dots=document.querySelectorAll(`#slot-${slotIdx} .dot`),dot=dots[cardIdx];if(cardEl){cardEl.classList.toggle('show',on);cardEl.style.pointerEvents=on?'all':'none'}if(lineEl)lineEl.classList.toggle('show',on);if(dot){if(on){dot.style.background='rgba(0,184,255,0.9)';dot.style.borderColor='#fff'}else{dot.style.background='#040810';dot.style.borderColor='rgba(255,255,255,0.88)'}}}
-function resetTimerBar(){const bar=document.getElementById('timerBar');bar.style.transition='none';bar.style.width='0%';void bar.offsetWidth;bar.style.transition=`width ${DURATION}ms linear`;bar.style.width='100%';clearTimeout(timerInterval);timerInterval=setTimeout(()=>switchOrgan((currentOrgan+1)%ORGANS.length),DURATION)}
+function buildLines(slotIdx){
+  linesSvg.innerHTML='';
+  DOT_PCTS[slotIdx].forEach((pct,i)=>{
+    const d={x:SX+pct.x*LW_IMG,y:SY+pct.y*LH_IMG},
+          c=CARD_ANCH[slotIdx][i],
+          mx=(d.x+c.x)/2,
+          my=(d.y+c.y)/2-16,
+          path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${d.x} ${d.y} Q${mx} ${my} ${c.x} ${c.y}`);
+    path.classList.add('cline');
+    path.id=`ln-${slotIdx}-${i}`;
+    linesSvg.appendChild(path);
+  });
+}
 
-document.getElementById('organScene').addEventListener('click',e=>{const dot=e.target.closest('.dot');if(!dot)return;const slotIdx=+dot.dataset.slot;if(slotIdx!==currentOrgan)return;toggleCard(slotIdx,+dot.dataset.i)});
+function switchOrgan(idx,resetTimer=true){
+  currentOrgan=idx;
+  dotStates={};
+  const organ=ORGANS[idx];
+  document.getElementById('ambient').style.background=organ.ambient;
+  document.getElementById('platform').style.background=`radial-gradient(ellipse,${organ.platformColor} 0%,rgba(0,0,0,0) 72%)`;
+  document.getElementById('organLabel').textContent=organ.label;
+  document.querySelectorAll('.onav-dot').forEach((d,i)=>{
+    if(i===idx){
+      d.classList.add('active');
+      d.style.width='24px';
+      d.style.borderRadius='999px';
+      d.style.background='#EFFF3A';
+      d.style.borderColor='transparent';
+    }else{
+      d.classList.remove('active');
+      d.style.width='8px';
+      d.style.borderRadius='50%';
+      d.style.background='rgba(255,255,255,0.2)';
+      d.style.borderColor='rgba(255,255,255,0.15)';
+    }
+  });
+  document.querySelectorAll('.organ-slot').forEach(s=>s.classList.remove('active'));
+  setTimeout(()=>document.getElementById(`slot-${idx}`).classList.add('active'),80);
+  renderCards(organ);
+  buildLines(idx);
+  [0,2,3].forEach((ci,j)=>setTimeout(()=>toggleCard(idx,ci,true),600+j*280));
+  if(resetTimer)resetTimerBar();
+}
+
+function toggleCard(slotIdx,cardIdx,forceOn){
+  const key=`${slotIdx}-${cardIdx}`,
+        on=forceOn!==undefined?forceOn:!dotStates[key];
+  dotStates[key]=on;
+  const organ=ORGANS[slotIdx],card=organ.cards[cardIdx];
+  if(!card||card.always)return;
+  const cardEl=document.getElementById(card.id),
+        lineEl=document.getElementById(`ln-${slotIdx}-${cardIdx}`),
+        dots=document.querySelectorAll(`#slot-${slotIdx} .dot`),
+        dot=dots[cardIdx];
+  if(cardEl){
+    cardEl.classList.toggle('show',on);
+    cardEl.style.pointerEvents=on?'all':'none';
+  }
+  if(lineEl)lineEl.classList.toggle('show',on);
+  if(dot){
+    if(on){
+      dot.style.background='rgba(0,184,255,0.9)';
+      dot.style.borderColor='#fff';
+    }else{
+      dot.style.background='#040810';
+      dot.style.borderColor='rgba(255,255,255,0.88)';
+    }
+  }
+}
+
+function resetTimerBar(){
+  const bar=document.getElementById('timerBar');
+  bar.style.transition='none';
+  bar.style.width='0%';
+  void bar.offsetWidth;
+  bar.style.transition=`width ${DURATION}ms linear`;
+  bar.style.width='100%';
+  clearTimeout(timerInterval);
+  timerInterval=setTimeout(()=>switchOrgan((currentOrgan+1)%ORGANS.length),DURATION);
+}
+
+document.getElementById('organScene').addEventListener('click',e=>{
+  const dot=e.target.closest('.dot');
+  if(!dot)return;
+  const slotIdx=+dot.dataset.slot;
+  if(slotIdx!==currentOrgan)return;
+  toggleCard(slotIdx,+dot.dataset.i);
+});
+
 document.querySelectorAll('.onav-dot').forEach(d=>d.addEventListener('click',()=>switchOrgan(+d.dataset.target)));
-document.querySelector('.left').addEventListener('mousemove',e=>{const r=e.currentTarget.getBoundingClientRect(),cx3=(e.clientX-r.left)/r.width-.5,cy3=(e.clientY-r.top)/r.height-.5,slot=document.querySelector('.organ-slot.active');if(slot)slot.style.transform=`rotateY(${cx3*7}deg) rotateX(${-cy3*5}deg)`});
-document.querySelector('.left').addEventListener('mouseleave',()=>{const slot=document.querySelector('.organ-slot.active');if(slot)slot.style.transform=''});
+document.querySelector('.left').addEventListener('mousemove',e=>{
+  const r=e.currentTarget.getBoundingClientRect(),
+        cx3=(e.clientX-r.left)/r.width-.5,
+        cy3=(e.clientY-r.top)/r.height-.5,
+        slot=document.querySelector('.organ-slot.active');
+  if(slot)slot.style.transform=`rotateY(${cx3*7}deg) rotateX(${-cy3*5}deg)`;
+});
+document.querySelector('.left').addEventListener('mouseleave',()=>{
+  const slot=document.querySelector('.organ-slot.active');
+  if(slot)slot.style.transform='';
+});
 
 // ── PASSWORD TOGGLE LOGIN ──
-document.getElementById('pwToggle').addEventListener('click',()=>{const pw=document.getElementById('pwInput');pw.type=pw.type==='password'?'text':'password'});
+document.getElementById('pwToggle').addEventListener('click',()=>{
+  const pw=document.getElementById('pwInput');
+  pw.type=pw.type==='password'?'text':'password';
+});
 
 // ── MODE SWITCH ──
 const pageEl=document.getElementById('page');
@@ -668,14 +842,50 @@ const suPassword=document.getElementById('suPassword'),suPasswordConfirm=documen
 document.getElementById('suPwToggle1').addEventListener('click',()=>suPassword.type=suPassword.type==='password'?'text':'password');
 document.getElementById('suPwToggle2').addEventListener('click',()=>suPasswordConfirm.type=suPasswordConfirm.type==='password'?'text':'password');
 const pwMatchRow=document.getElementById('pwMatchRow'),pwMatchText=document.getElementById('pwMatchText');
-function checkPasswordMatch(){const pw=suPassword.value,pwc=suPasswordConfirm.value;if(!pwc){pwMatchRow.style.height='0';pwMatchRow.style.opacity='0';suPasswordConfirm.style.borderColor='';return}pwMatchRow.style.height='20px';pwMatchRow.style.opacity='1';if(pw===pwc){pwMatchRow.style.color='#16a34a';pwMatchText.textContent='Les mots de passe correspondent';suPasswordConfirm.style.borderColor=''}else{pwMatchRow.style.color='#dc2626';pwMatchText.textContent='Les mots de passe ne correspondent pas';suPasswordConfirm.style.borderColor='#FF5A5A'}}
-suPassword.addEventListener('input',checkPasswordMatch);suPasswordConfirm.addEventListener('input',checkPasswordMatch);
+
+function checkPasswordMatch(){
+  const pw=suPassword.value,pwc=suPasswordConfirm.value;
+  if(!pwc){pwMatchRow.style.height='0';pwMatchRow.style.opacity='0';suPasswordConfirm.style.borderColor='';return}
+  pwMatchRow.style.height='20px';
+  pwMatchRow.style.opacity='1';
+  if(pw===pwc){
+    pwMatchRow.style.color='#16a34a';
+    pwMatchText.textContent='Les mots de passe correspondent';
+    suPasswordConfirm.style.borderColor='';
+  }else{
+    pwMatchRow.style.color='#dc2626';
+    pwMatchText.textContent='Les mots de passe ne correspondent pas';
+    suPasswordConfirm.style.borderColor='#FF5A5A';
+  }
+}
+suPassword.addEventListener('input',checkPasswordMatch);
+suPasswordConfirm.addEventListener('input',checkPasswordMatch);
 
 // ── AVATAR ──
 const avatarDrop=document.getElementById('avatarDrop'),avatarInput=document.getElementById('avatarInput'),avatarPreview=document.getElementById('avatarPreview'),avatarRemove=document.getElementById('avatarRemove');
 avatarDrop.addEventListener('click',()=>avatarInput.click());
-avatarInput.addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;if(file.size>2*1024*1024){showToast('La photo ne doit pas dépasser 2 Mo.',true);avatarInput.value='';return}if(!['image/jpeg','image/png'].includes(file.type)){showToast('Format accepté : JPG ou PNG uniquement.',true);avatarInput.value='';return}const reader=new FileReader();reader.onload=ev=>{avatarPreview.src=ev.target.result;avatarPreview.classList.remove('hidden');avatarDrop.querySelector('svg').style.display='none';avatarRemove.classList.remove('hidden')};reader.readAsDataURL(file)});
-avatarRemove.addEventListener('click',e=>{e.stopPropagation();avatarInput.value='';avatarPreview.src='';avatarPreview.classList.add('hidden');avatarDrop.querySelector('svg').style.display='';avatarRemove.classList.add('hidden')});
+avatarInput.addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  if(file.size>2*1024*1024){showToast('La photo ne doit pas dépasser 2 Mo.',true);avatarInput.value='';return}
+  if(!['image/jpeg','image/png'].includes(file.type)){showToast('Format accepté : JPG ou PNG uniquement.',true);avatarInput.value='';return}
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    avatarPreview.src=ev.target.result;
+    avatarPreview.classList.remove('hidden');
+    avatarDrop.querySelector('svg').style.display='none';
+    avatarRemove.classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+});
+avatarRemove.addEventListener('click',e=>{
+  e.stopPropagation();
+  avatarInput.value='';
+  avatarPreview.src='';
+  avatarPreview.classList.add('hidden');
+  avatarDrop.querySelector('svg').style.display='';
+  avatarRemove.classList.add('hidden');
+});
 
 // ── VALIDATION ──
 function setFieldError(el,errEl,on){if(el){el.style.borderColor=on?'#FF5A5A':'';el.style.background=on?'rgba(255,90,90,0.04)':''}if(errEl)errEl.style.display=on?'flex':'none'}
@@ -683,19 +893,32 @@ function clearAllErrors(){setFieldError(document.getElementById('suEstablishment
 
 // ── TOAST ──
 let toastTimer=null;
-function showToast(msg,isError=false){const t=document.getElementById('authToast'),tx=document.getElementById('authToastText');tx.textContent=msg;t.style.background=isError?'#dc2626':'#111111';t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';t.style.pointerEvents='all';clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(-12px)';t.style.pointerEvents='none'},3800)}
+function showToast(msg,isError=false){
+  const t=document.getElementById('authToast'),tx=document.getElementById('authToastText');
+  tx.textContent=msg;
+  t.style.background=isError?'#dc2626':'#111111';
+  t.style.opacity='1';
+  t.style.transform='translateX(-50%) translateY(0)';
+  t.style.pointerEvents='all';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{
+    t.style.opacity='0';
+    t.style.transform='translateX(-50%) translateY(-12px)';
+    t.style.pointerEvents='none';
+  },3800);
+}
 
 // ════════════════════════════════════════
-// WIZARD ENGINE — clean animation
-// The KEY fix: never toggle position:absolute/relative
-// during an animation. Instead use opacity+transform only.
-// The active step has position:relative (gives height).
-// All others have position:absolute (no layout effect).
-// Transitions are CSS-only for smoothness.
+// WIZARD ENGINE
 // ════════════════════════════════════════
 const TOTAL_STEPS=6;
 let currentStep=1;
-const wizardStage=document.getElementById('wizardStage'),wizardProgress=document.getElementById('wizardProgress'),wizardStepNum=document.getElementById('wizardStepNum'),wizardBackBtn=document.getElementById('wizardBackBtn'),wizardNextBtn=document.getElementById('wizardNextBtn'),wizardNextLabel=document.getElementById('wizardNextLabel');
+const wizardStage=document.getElementById('wizardStage'),
+      wizardProgress=document.getElementById('wizardProgress'),
+      wizardStepNum=document.getElementById('wizardStepNum'),
+      wizardBackBtn=document.getElementById('wizardBackBtn'),
+      wizardNextBtn=document.getElementById('wizardNextBtn'),
+      wizardNextLabel=document.getElementById('wizardNextLabel');
 
 function getStepEl(n){return wizardStage.querySelector(`.wizard-step[data-step="${n}"]`)}
 
@@ -704,7 +927,10 @@ function validateStep(n){
   if(n===1){const el=document.getElementById('suEstablishment');if(!el.value.trim()){setFieldError(el,document.getElementById('err-establishment'),true);return false}}
   if(n===2){const el=document.getElementById('suOwnerName');if(!el.value.trim()){setFieldError(el,document.getElementById('err-ownername'),true);return false}}
   if(n===3){const el=document.getElementById('suPhone');if(!el.value.trim()){setFieldError(el,document.getElementById('err-phone'),true);return false}}
-  if(n===5){if(!suPassword.value||suPassword.value.length<8){showToast('Le mot de passe doit contenir au moins 8 caractères.',true);return false}if(suPassword.value!==suPasswordConfirm.value){checkPasswordMatch();showToast('Les mots de passe ne correspondent pas.',true);return false}}
+  if(n===5){
+    if(!suPassword.value||suPassword.value.length<8){showToast('Le mot de passe doit contenir au moins 8 caractères.',true);return false}
+    if(suPassword.value!==suPasswordConfirm.value){checkPasswordMatch();showToast('Les mots de passe ne correspondent pas.',true);return false}
+  }
   if(n===6){if(!document.getElementById('suConsent').checked){showToast('Veuillez confirmer être le propriétaire ou le gérant.',true);return false}}
   return true;
 }
@@ -736,22 +962,15 @@ function goToStep(targetStep){
 
   if(targetStep===TOTAL_STEPS)populateReview();
 
-  // 1. Freeze the OLD step in place (keep it absolute, apply exit transform)
   oldEl.classList.remove('active');
   oldEl.classList.add(direction==='forward'?'exit-left':'exit-right');
 
-  // 2. Position the NEW step ready to enter (off-screen, same layer)
-  //    No position change yet — stays absolute
   newEl.classList.remove('exit-left','exit-right','active','enter-from-left');
   if(direction==='back') newEl.classList.add('enter-from-left');
-  // force browser to paint this off-screen position BEFORE adding active
   newEl.getBoundingClientRect();
 
-  // 3. NOW make it active (position:relative → gives layout height)
-  //    The CSS transition handles the transform→0 smoothly
   newEl.classList.add('active');
 
-  // 4. Clean up the old step after transition ends
   const cleanup=()=>{
     oldEl.classList.remove('exit-left','exit-right');
     oldEl.removeEventListener('transitionend',cleanup);
@@ -785,33 +1004,20 @@ document.getElementById('signupForm').addEventListener('keydown',e=>{if(e.key===
 
 /* ══════════════════════════════════════════════════════════
    ══  CÂBLAGE API  ══
-   Connexion + inscription réelles via AfyaAPI.
 ══════════════════════════════════════════════════════════ */
 
-/* ══════════════════════════════════════════════════════════
-   TÉLÉPHONE — le front NE normalise PAS.
-   Parser des numéros internationaux à la main est un piège
-   (le « 0 » se retire en RDC mais PAS en Côte d'Ivoire…).
-   On envoie le numéro brut + le code pays ISO ; le serveur
-   tranche avec libphonenumber, qui connaît chaque pays.
-══════════════════════════════════════════════════════════ */
-
-/** Est-ce un email ? */
 function isEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').trim())}
 
-/** Le numéro porte-t-il un indicatif ? (+243… ou 00243…) */
 function hasCountryCode(v){
   const s=(v||'').replace(/[\s\-().]/g,'');
   return s.startsWith('+')||s.startsWith('00');
 }
 
-/** Code ISO du pays sélectionné dans le wizard (ex. "CD") */
 function selectedIso(){
   const sel=document.getElementById('suCountryCode');
   return sel?.options[sel.selectedIndex]?.dataset.iso || null;
 }
 
-/* Aide en direct sous le champ de connexion */
 (function(){
   const input=document.getElementById('loginPhone');
   const hint =document.getElementById('loginHint');
@@ -829,27 +1035,47 @@ function selectedIso(){
   });
 })();
 
-/** Extrait le message d'erreur le plus parlant */
 function apiErrorMessage(e){
   if(e && typeof e.firstError==='function') return e.firstError();
   return e?.message || 'Une erreur est survenue.';
 }
 
-/** Spinner sur un bouton */
-function btnLoading(btn,on){
+/* btn.dataset est un DOMStringMap en LECTURE SEULE : on ne peut pas
+   lui affecter une chaîne. On mémorise donc le libellé d'origine dans
+   une propriété du dataset (btn.dataset.originalHtml).
+   failed=true : le bouton propose « Réessayer » quelques secondes. */
+function btnLoading(btn,on,failed){
   if(!btn)return;
+
   if(on){
-    btn.dataset=btn.innerHTML;
+    if(btn.dataset.originalHtml===undefined){
+      btn.dataset.originalHtml=btn.innerHTML;
+    }
+    if(btn._restoreTimer){clearTimeout(btn._restoreTimer);btn._restoreTimer=null;}
     btn.disabled=true;
     btn.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span><span style="margin-left:8px">Patientez…</span>';
-  }else{
-    btn.disabled=false;
-    if(btn.dataset)btn.innerHTML=btn.dataset;
+    return;
   }
+
+  btn.disabled=false;
+  const original=btn.dataset.originalHtml;
+
+  if(failed){
+    btn.innerHTML='<span style="display:inline-flex;align-items:center;gap:8px">'
+      +'<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M13.5 8a5.5 5.5 0 11-1.6-3.9M13.5 2v3h-3"/></svg>'
+      +'Réessayer</span>';
+    // Le libellé d'origine revient après quelques secondes
+    btn._restoreTimer=setTimeout(function(){
+      if(original!==undefined)btn.innerHTML=original;
+      btn._restoreTimer=null;
+    },4000);
+    return;
+  }
+
+  if(original!==undefined)btn.innerHTML=original;
 }
 (function(){const s=document.createElement('style');s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';document.head.appendChild(s)})();
 
-/** Mémorise les infos utiles au dashboard */
 function persistSession(user){
   if(user?.tenant?.modules){
     localStorage.setItem('afya_modules',JSON.stringify(user.tenant.modules));
@@ -863,7 +1089,7 @@ function persistSession(user){
   }));
 }
 
-/* ── CONNEXION (téléphone avec indicatif, OU email) ── */
+/* ── CONNEXION ── */
 async function doLogin(){
   const idEl=document.getElementById('loginPhone');
   const pwEl=document.getElementById('pwInput');
@@ -874,7 +1100,6 @@ async function doLogin(){
 
   if(!raw){showToast('Saisissez votre téléphone ou votre email.',true);idEl.focus();return}
 
-  // Indicatif obligatoire pour un numéro (on ne devine pas le pays)
   if(!isEmail(raw)&&!hasCountryCode(raw)){
     showToast("Indiquez votre indicatif pays — ex. +243 990 000 001",true);
     idEl.focus();
@@ -892,7 +1117,7 @@ async function doLogin(){
     showToast(`Bienvenue ${res.user.name} !`,false);
     setTimeout(()=>window.location.href='./index',900);
   }catch(e){
-    btnLoading(btn,false);
+    btnLoading(btn,false,true);
     showToast(apiErrorMessage(e),true);
     console.error('Login:',e);
   }
@@ -905,14 +1130,13 @@ document.getElementById('loginBtn').addEventListener('click',doLogin);
   });
 });
 
-/* ── INSCRIPTION (fin du wizard) ── */
+/* ── INSCRIPTION ── */
 async function submitSignup(){
   const btn=document.getElementById('wizardNextBtn');
 
   const payload={
     establishment_name:   document.getElementById('suEstablishment').value.trim(),
     owner_name:           document.getElementById('suOwnerName').value.trim(),
-    // Numéro brut + code ISO : le serveur normalise via libphonenumber
     phone:                document.getElementById('suCountryCode').value
                           + document.getElementById('suPhone').value.trim(),
     country_iso:          selectedIso(),
@@ -926,10 +1150,10 @@ async function submitSignup(){
   try{
     const res=await AfyaAPI.auth.register(payload);
     persistSession(res.user);
-    showToast('Compte créé ! Essai gratuit de 14 jours activé.',false);
+    showToast('Compte créé ! Essai gratuit de 10 jours activé.',false);
     setTimeout(()=>window.location.href='./index',1400);
   }catch(e){
-    btnLoading(btn,false);
+    btnLoading(btn,false,true);
     if(e?.validationErrors?.phone){
       showToast(e.validationErrors.phone[0],true);
       goToStep(3);
@@ -943,11 +1167,6 @@ async function submitSignup(){
     showToast(apiErrorMessage(e),true);
     console.error('Register:',e);
   }
-}
-
-/* ── Si déjà connecté ── */
-if(AfyaAPI.auth.isLoggedIn()){
-  // window.location.href='./index';
 }
 
 // ── INIT ──
