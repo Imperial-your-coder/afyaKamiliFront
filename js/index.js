@@ -106,7 +106,7 @@ const ALL_MODULES = [
     id: 'medical',
     name: 'Gestion médicale',
     desc: 'Dossiers, consultations, prescriptions, workspace anatomique.',
-    link: './modules/medical/index',
+    link: './modules/patients/index',
     free: false,
     plan: 'clinic',
     icon: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
