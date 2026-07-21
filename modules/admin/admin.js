@@ -130,12 +130,12 @@
 
     // Rôles
     el.roleSel.innerHTML = '<option value="">Sélectionner…</option>' +
-      ROLES.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+      ROLES.map(r => `<option value="${r.id}">${esc(r.label || r.name)}</option>`).join('');
 
     // Filtre de rôle du tableau
     if (el.roleF) {
       el.roleF.innerHTML = '<option value="">Tous les rôles</option>' +
-        ROLES.map(r => `<option value="${esc(r.name)}">${esc(r.name)}</option>`).join('');
+        ROLES.map(r => { const n = r.label || r.name; return `<option value="${esc(n)}">${esc(n)}</option>`; }).join('');
     }
 
     // Cases à cocher des modules
