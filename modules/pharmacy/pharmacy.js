@@ -3,7 +3,7 @@
 
    index.js n'est PAS modifié : on surcharge ses fonctions.
 
-   Ordre dans index :
+   Ordre dans index.html :
      <script src="../../js/afya_api.js" defer></script>
      <script src="./index.js"           defer></script>
      <script src="./pharmacy.js"        defer></script>
@@ -19,11 +19,11 @@
   /* ═══ 0. AUTHENTIFICATION ═══ */
   AfyaAPI.setAuthExpiredHandler(() => {
     toast('Session expirée, reconnectez-vous', 'error');
-    setTimeout(() => { window.location.href = '../../login'; }, 1500);
+    setTimeout(() => { window.location.href = '../../login.html'; }, 1500);
   });
 
   if (!AfyaAPI.auth.isLoggedIn()) {
-    window.location.href = '../../login';
+    window.location.href = '../../login.html';
     return;
   }
 
@@ -936,6 +936,7 @@
       form_id:         parseInt(document.getElementById('addForm').value) || null,
       strength:        document.getElementById('addStrength').value.trim() || null,
       manufacturer:    document.getElementById('addManufacturer').value.trim() || null,
+      location:        document.getElementById('addLocation')?.value.trim() || null,
       description:     document.getElementById('addNotes').value.trim() || null,
       image_path:      uploadedImagePath,
 
@@ -1394,11 +1395,15 @@
   window.saveSettingsForm = async function () {
     if (typeof _saveSettingsForm === 'function') _saveSettingsForm();
 
+    // Le symbole n'est jamais saisi : il découle de la devise
+    S.currency_symbol = symbolFor(S.currency);
+
     setLoading(true);
     try {
       await AfyaAPI.settings.update({
         establishment_name:  S.pharmacy_name,
         currency:            S.currency,
+        currency_symbol:     S.currency_symbol,
         invoice_format:      S.invoice_format,
         show_tva:            !!S.tva_enabled,
         tva_rate:            parseFloat(S.tva_rate) || 0,
@@ -1422,6 +1427,8 @@
         S.pharmacy_name = tenant.establishment_name || S.pharmacy_name;
         S.currency      = tenant.currency || S.currency;
       }
+      // Le symbole se déduit toujours de la devise
+      S.currency_symbol = symbolFor(S.currency);
       if (settings) {
         S.invoice_format      = settings.invoice_format || S.invoice_format;
         S.tva_rate            = parseFloat(settings.tva_rate) || S.tva_rate || 0;
@@ -1459,6 +1466,9 @@
   window.switchTab = function (name) {
     if (typeof _switchTab === 'function') _switchTab(name);
     syncBottomNav(name);
+
+    // Le symbole doit refléter la devise dès l'ouverture des paramètres
+    if (name === 'settings') setTimeout(syncCurrencySymbol, 30);
 
     if ((name === 'catalog' || name === 'stock')) {
       if (!isFresh('meds')) { loadMedications().then(() => markLoaded('meds')); }
@@ -1640,7 +1650,7 @@
         <div style="font-size:11.5px;color:#9A9A95;font-weight:600;margin-top:2px">
           ${user?.tenant?.establishment_name || ''}</div>
       </div>
-      <a href="../../index" style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+      <a href="../../index.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;
          border-radius:10px;font-size:13px;font-weight:600;color:#111;text-decoration:none">
         Tableau de bord</a>
       <div style="height:1px;background:rgba(0,0,0,.07);margin:6px 4px"></div>
@@ -1676,7 +1686,7 @@
       finally {
         localStorage.removeItem('afya_modules');
         localStorage.removeItem('afya_user');
-        window.location.href = '../../login';
+        window.location.href = '../../login.html';
       }
     });
   }
@@ -1822,7 +1832,35 @@
       i.classList.toggle('active', i.dataset.tab === name));
   }
 
-    /* ═══ 14. INIT ═══ */
+  
+  /* ═══ DEVISE : le symbole découle du choix, on ne le saisit plus ═══ */
+  const CURRENCY_SYMBOLS = {
+    USD: '$',   CDF: 'FC',  EUR: '€',   XOF: 'CFA', XAF: 'FCFA',
+    NGN: '₦',   KES: 'KSh', ZAR: 'R',   GHS: '₵',   TZS: 'TSh',
+    UGX: 'USh', RWF: 'FRw', ZMW: 'ZK',  AOA: 'Kz',  GBP: '£',
+  };
+
+  function symbolFor(code) {
+    return CURRENCY_SYMBOLS[String(code || '').toUpperCase()] || '$';
+  }
+
+  /** Aligne le champ symbole (et l'affichage) sur la devise choisie */
+  function syncCurrencySymbol() {
+    const sel = document.getElementById('setCurrency');
+    const box = document.getElementById('setCurrencySymbol');
+    if (!sel) return;
+    const symbol = symbolFor(sel.value);
+    S.currency_symbol = symbol;
+    if (box) {
+      box.value = symbol;
+      box.readOnly = true;
+      box.style.background = 'rgba(0,0,0,.04)';
+      box.style.cursor = 'not-allowed';
+      box.title = 'Défini automatiquement par la devise';
+    }
+  }
+
+  /* ═══ 14. INIT ═══ */
   async function init() {
     setLoading(true);
     try {
@@ -1833,13 +1871,17 @@
 
       if (user.tenant?.modules && !user.tenant.modules.includes('pharmacy')) {
         toast('Module Pharmacie non actif', 'error');
-        setTimeout(() => { window.location.href = '../../pricing'; }, 2000);
+        setTimeout(() => { window.location.href = '../../pricing.html'; }, 2000);
         return;
       }
 
       widenFileInput();
 
       await loadRefs();
+
+      // La devise pilote le symbole : on écoute son changement
+      const curSel = document.getElementById('setCurrency');
+      if (curSel) curSel.addEventListener('change', syncCurrencySymbol);
 
       // Le formulaire de conditionnement se reconstruit quand on change
       // la forme galénique (comprimé, gel, sirop, ampoule…)
