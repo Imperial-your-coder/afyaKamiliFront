@@ -1860,6 +1860,373 @@
     }
   }
 
+
+  /* ═══════════════════════════════════════════════════════════
+     PANIER DE VENTE — plusieurs médicaments, une seule facture
+
+     Le panier vit côté navigateur (sessionStorage) : tant que la
+     vente n'est pas validée, elle n'a rien à faire en base. Un
+     rafraîchissement accidentel ne fait pas perdre la saisie du
+     comptoir, mais rien ne traîne côté serveur.
+  ═══════════════════════════════════════════════════════════ */
+
+  let CART = [];
+  const CART_KEY = 'afya_cart';
+
+  function cartLoad() {
+    try {
+      const raw = sessionStorage.getItem(CART_KEY);
+      CART = raw ? JSON.parse(raw) : [];
+    } catch (e) { CART = []; }
+  }
+
+  function cartSave() {
+    try { sessionStorage.setItem(CART_KEY, JSON.stringify(CART)); }
+    catch (e) { /* stockage plein ou bloqué : le panier reste en mémoire */ }
+  }
+
+  /** Unité de vente proposée par défaut pour ce médicament */
+  function defaultUnit(m) {
+    const units = (m.sale_units && m.sale_units.length) ? m.sale_units : ['boite'];
+    return units.includes('boite') ? 'boite' : units[0];
+  }
+
+  /** Combien d'unités de base représente une quantité dans cette unité ? */
+  function toBaseUnits(m, unitCode, qty) {
+    const pack  = m.pack_size || 1;
+    const strip = m.units_per_strip || 1;
+    switch (unitCode) {
+      case 'carton':    return qty * pack * 12;
+      case 'boite':     return qty * pack;
+      case 'plaquette': return qty * strip;
+      default:          return qty;
+    }
+  }
+
+  window.addToCart = function (medId) {
+    const m = MEDICATIONS.find(x => x.id === medId);
+    if (!m) return;
+
+    if (m.stock <= 0) {
+      toast(`${m.name} est en rupture de stock`, 'error');
+      return;
+    }
+
+    const unit = defaultUnit(m);
+    const line = CART.find(l => l.id === medId && l.unit === unit);
+
+    if (line) {
+      line.qty += 1;
+      toast(`${m.name} — ${line.qty} ${UNIT_LABELS[unit] || unit}`, 'success');
+    } else {
+      CART.push({ id: medId, unit, qty: 1 });
+      toast(`${m.name} ajouté au panier`, 'success');
+    }
+
+    cartSave();
+    updateCartBadge();
+  };
+
+  window.removeCartLine = function (index) {
+    CART.splice(index, 1);
+    cartSave();
+    updateCartBadge();
+    renderCart();
+  };
+
+  window.setCartQty = function (index, qty) {
+    const n = parseInt(qty, 10);
+    if (!Number.isFinite(n) || n < 1) return;
+    CART[index].qty = n;
+    cartSave();
+    updateCartBadge();
+    renderCart();
+  };
+
+  window.bumpCartQty = function (index, delta) {
+    const next = (CART[index].qty || 1) + delta;
+    if (next < 1) { removeCartLine(index); return; }
+    CART[index].qty = next;
+    cartSave();
+    updateCartBadge();
+    renderCart();
+  };
+
+  window.setCartUnit = function (index, unitCode) {
+    CART[index].unit = unitCode;
+    cartSave();
+    renderCart();
+  };
+
+  window.clearCart = function () {
+    if (!CART.length) return;
+    if (!confirm('Vider le panier ?')) return;
+    CART = [];
+    cartSave();
+    updateCartBadge();
+    renderCart();
+  };
+
+  function updateCartBadge() {
+    const badge = document.getElementById('cartBadge');
+    if (!badge) return;
+    const n = CART.reduce((s, l) => s + (l.qty || 0), 0);
+    badge.textContent = n;
+    badge.style.display = n > 0 ? 'inline-flex' : 'none';
+  }
+
+  window.openCart = function () {
+    renderCart();
+    openModal('modalCart');
+  };
+
+  /** Totaux du panier : sous-total, remise, net */
+  function cartTotals() {
+    let sub = 0;
+    CART.forEach(l => {
+      const m = MEDICATIONS.find(x => x.id === l.id);
+      if (m) sub += unitPrice(m, l.unit) * l.qty;
+    });
+    const raw      = parseFloat(document.getElementById('cartDiscount')?.value) || 0;
+    const discount = Math.min(Math.max(raw, 0), sub);
+    return { sub, discount, total: sub - discount };
+  }
+
+  window.renderCart = function () {
+    const host   = document.getElementById('cartLines');
+    const empty  = document.getElementById('cartEmpty');
+    const form   = document.getElementById('cartForm');
+    const clear  = document.getElementById('cartClearBtn');
+    const submit = document.getElementById('cartConfirmBtn');
+    if (!host) return;
+
+    const c = sym();
+
+    if (!CART.length) {
+      host.innerHTML = '';
+      if (empty)  empty.style.display  = 'block';
+      if (form)   form.style.display   = 'none';
+      if (clear)  clear.style.display  = 'none';
+      if (submit) submit.style.display = 'none';
+      return;
+    }
+
+    if (empty)  empty.style.display  = 'none';
+    if (form)   form.style.display   = 'block';
+    if (clear)  clear.style.display  = '';
+    if (submit) submit.style.display = '';
+
+    host.innerHTML = CART.map((l, i) => {
+      const m = MEDICATIONS.find(x => x.id === l.id);
+      if (!m) return '';
+
+      const units   = (m.sale_units && m.sale_units.length) ? m.sale_units : ['boite'];
+      const up      = unitPrice(m, l.unit);
+      const lineSum = up * l.qty;
+      const needed  = toBaseUnits(m, l.unit, l.qty);
+      const short   = needed > m.stock;
+
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:13px 2px;
+                    border-bottom:1px solid var(--border)">
+
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px">${m.name}
+              ${m.strength ? `<span style="font-weight:500;color:var(--mid)">${m.strength}</span>` : ''}
+            </div>
+            <div style="font-size:11.5px;color:var(--mid);margin-top:2px">
+              ${c}${up.toFixed(2)} / ${UNIT_LABELS[l.unit] || l.unit}
+              ${short ? `<span style="color:var(--red,#e53e3e);font-weight:700"> · stock insuffisant (${m.stock} ${m.base_unit})</span>` : ''}
+            </div>
+          </div>
+
+          <select class="ph-select" style="flex:0 0 128px;padding:8px 10px;font-size:12.5px"
+                  onchange="setCartUnit(${i}, this.value)">
+            ${units.map(u => `<option value="${u}" ${u === l.unit ? 'selected' : ''}>${UNIT_LABELS[u] || u}</option>`).join('')}
+          </select>
+
+          <div style="display:flex;align-items:center;gap:4px;flex:0 0 auto">
+            <button class="qty-btn" style="width:30px;height:30px" onclick="bumpCartQty(${i},-1)">−</button>
+            <input class="qty-input" style="width:52px;height:30px;font-size:13px" type="number" min="1"
+                   value="${l.qty}" onchange="setCartQty(${i}, this.value)">
+            <button class="qty-btn" style="width:30px;height:30px" onclick="bumpCartQty(${i},1)">+</button>
+          </div>
+
+          <div style="flex:0 0 86px;text-align:right;font-weight:800;font-size:14px">
+            ${c}${lineSum.toFixed(2)}
+          </div>
+
+          <button onclick="removeCartLine(${i})" title="Retirer"
+                  style="flex:0 0 auto;width:28px;height:28px;border-radius:8px;
+                         border:1px solid var(--border);background:var(--card);cursor:pointer;
+                         display:flex;align-items:center;justify-content:center;color:var(--red,#e53e3e)">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg>
+          </button>
+        </div>`;
+    }).join('');
+
+    const { sub, discount, total } = cartTotals();
+    const totalEl = document.getElementById('cartTotal');
+    const brk     = document.getElementById('cartBreakdown');
+    if (totalEl) totalEl.textContent = `${c}${total.toFixed(2)}`;
+    if (brk) {
+      const nb = CART.reduce((s, l) => s + l.qty, 0);
+      brk.textContent = discount > 0
+        ? `${nb} article(s) — sous-total ${c}${sub.toFixed(2)}, remise ${c}${discount.toFixed(2)}`
+        : `${nb} article(s) dans le panier`;
+    }
+  };
+
+  window.confirmCartSale = async function () {
+    if (!CART.length) return;
+
+    // Contrôle du stock avant d'appeler le serveur
+    const problems = [];
+    CART.forEach(l => {
+      const m = MEDICATIONS.find(x => x.id === l.id);
+      if (!m) return;
+      if (toBaseUnits(m, l.unit, l.qty) > m.stock) problems.push(m.name);
+    });
+    if (problems.length) {
+      toast(`Stock insuffisant : ${problems.join(', ')}`, 'error');
+      return;
+    }
+
+    const { discount } = cartTotals();
+    const rx = document.getElementById('cartRxRef')?.value.trim();
+
+    const items = CART.map(l => {
+      const m = MEDICATIONS.find(x => x.id === l.id);
+      return {
+        medication_id:  l.id,
+        quantity:       l.qty,
+        sale_unit_code: l.unit,
+        unit_price:     unitPrice(m, l.unit),
+      };
+    });
+
+    setLoading(true);
+    try {
+      const res = await AfyaAPI.sales.create({
+        items,
+        payment_method:  document.getElementById('cartPayMethod').value,
+        customer_name:   document.getElementById('cartCustomer').value.trim() || null,
+        discount_amount: discount,
+        notes:           rx ? `Ordonnance : ${rx}` : null,
+      });
+
+      CART = [];
+      cartSave();
+      updateCartBadge();
+      closeModal('modalCart');
+      toast('Vente enregistrée', 'success');
+
+      invalidate('meds', 'journal', 'alerts', 'sales');
+      await loadMedications();
+
+      // Une seule facture pour toute la commande
+      if (typeof showCartInvoice === 'function') showCartInvoice(res.sale, items);
+    } catch (e) {
+      toast(errMsg(e), 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** Facture unique reprenant toutes les lignes du panier.
+     Utilise la même structure que showInvoice() d'index.js pour
+     que l'impression garde exactement la même mise en page. */
+  function showCartInvoice(sale, items) {
+    const body = document.getElementById('invoiceBody');
+    if (!body || !sale) return;
+
+    const c  = sym();
+    const now = new Date();
+
+    const rows = (items || []).map(it => {
+      const m    = MEDICATIONS.find(x => x.id === it.medication_id);
+      const name = m ? `${m.name} ${m.strength || ''}`.trim() : 'Article';
+      const qty  = it.quantity || 0;
+      const up   = parseFloat(it.unit_price || 0);
+      const unit = UNIT_LABELS[it.sale_unit_code] || it.sale_unit_code || '';
+      return `<div class="inv-row">
+                <span>${name} × ${qty} ${unit}${qty > 1 ? 's' : ''}</span>
+                <span>${c}${(qty * up).toFixed(2)}</span>
+              </div>`;
+    }).join('');
+
+    const disc  = parseFloat(sale.discount_amount || 0);
+    const tva   = parseFloat(sale.tax_amount || 0);
+    const total = parseFloat(sale.total_amount || 0);
+
+    body.innerHTML = `
+      <div class="inv-preview">
+        <div class="inv-hd">
+          <div class="inv-pharma">${S.pharmacy_name || 'Pharmacie'}</div>
+          <div class="inv-meta">Reçu de vente · Format ${S.invoice_format || 'A4'}</div>
+        </div>
+        <div class="inv-row"><span>N° Reçu</span><strong>${sale.sale_number || '—'}</strong></div>
+        <div class="inv-row"><span>Date</span><span>${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span></div>
+        ${sale.customer_name ? `<div class="inv-row"><span>Client</span><span>${sale.customer_name}</span></div>` : ''}
+        <div class="inv-row"><span>Paiement</span><span>${sale.payment_method || ''}</span></div>
+        <div style="font-weight:700;margin:10px 0 5px">Détail (${items.length} article${items.length > 1 ? 's' : ''})</div>
+        ${rows}
+        ${disc > 0 ? `<div class="inv-row"><span>Remise</span><span>− ${c}${disc.toFixed(2)}</span></div>` : ''}
+        ${tva  > 0 ? `<div class="inv-row"><span>TVA (${S.tva_rate}%)</span><span>${c}${tva.toFixed(2)}</span></div>` : ''}
+        <div class="inv-row total"><span>TOTAL</span><span>${c}${total.toFixed(2)}</span></div>
+        <div class="inv-ft">${S.footer_text || 'Merci de votre confiance.'}</div>
+      </div>`;
+
+    openModal('modalInvoice');
+  }
+
+  /** Bouton + sur chaque carte du catalogue */
+  function decorateCatalogCards() {
+    document.querySelectorAll('#medGrid .med-card, #stockGrid .med-card').forEach(card => {
+      if (card.dataset.cartBtn) return;
+      const oc = card.getAttribute('onclick') || '';
+      const hit = oc.match(/openMedModal\((\d+)\)/);
+      const id = hit ? parseInt(hit[1], 10) : NaN;
+      if (!Number.isFinite(id)) return;
+      card.dataset.cartBtn = '1';
+      card.style.position = 'relative';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.title = 'Ajouter au panier';
+      btn.style.cssText =
+        'position:absolute;bottom:10px;right:10px;z-index:4;width:32px;height:32px;' +
+        'border-radius:10px;border:none;background:var(--accent,#EFFF3A);cursor:pointer;' +
+        'display:flex;align-items:center;justify-content:center;' +
+        'box-shadow:0 4px 12px rgba(239,255,58,.5);transition:transform .18s';
+      btn.innerHTML =
+        '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#12120f" ' +
+        'stroke-width="2.4" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>';
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();          // ne pas ouvrir la fiche
+        addToCart(id);
+        btn.style.transform = 'scale(1.25)';
+        setTimeout(() => { btn.style.transform = ''; }, 180);
+      });
+
+      card.appendChild(btn);
+    });
+  }
+
+
+
+  /* Le + doit réapparaître après chaque rendu, car index.js
+     réécrit entièrement la grille. */
+  ['renderCatalog', 'renderStock'].forEach(function (fnName) {
+    const original = window[fnName];
+    if (typeof original !== 'function') return;
+    window[fnName] = function () {
+      original.apply(this, arguments);
+      setTimeout(decorateCatalogCards, 10);
+    };
+  });
+
   /* ═══ 14. INIT ═══ */
   async function init() {
     setLoading(true);
@@ -1894,6 +2261,9 @@
       // Le reste (settings, alertes) se charge en arrière-plan sans bloquer,
       // pour ne pas saturer le serveur de dev mono-processus.
       await loadMedications();  markLoaded('meds');
+      cartLoad();
+      updateCartBadge();
+      decorateCatalogCards();
       fillMobileProfile(window.__afyaUser);
 
       loadSettings();
