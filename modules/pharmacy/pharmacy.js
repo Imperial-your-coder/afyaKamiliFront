@@ -608,13 +608,23 @@
       saleUnits: ['boite', 'sachet'],
       example: 'Boîte de 20 sachets de poudre',
     },
+
+    consommable: {
+      forms: ['DISP', 'CONS', 'PARA', 'MAT'],
+      baseUnit: 'unite',
+      baseLabel: 'Pièce',
+      basePlural: 'pièces',
+      hasStrip: false,
+      saleUnits: ['boite', 'unite'],
+      example: 'Pansement, seringue, cathéter, gants, parapharmacie…',
+    },
     perfusion: {
       forms: ['PERF'],
       baseUnit: 'flacon',
       baseLabel: 'Flacon de perfusion',
       basePlural: 'flacons',
       hasStrip: false,
-      saleUnits: ['perfusion', 'carton'],
+      saleUnits: ['boite', 'perfusion'],
       example: 'Flacon de perfusion vendu à l\'unité',
     },
   };
@@ -890,9 +900,6 @@
     switch (unitCode) {
       case 'boite':
         return box;
-
-      case 'carton':
-        return box * 12;
 
       case 'plaquette':
         return (m.price_per_strip != null)
@@ -1993,7 +2000,6 @@
     const pack  = m.pack_size || 1;
     const strip = m.units_per_strip || 1;
     switch (unitCode) {
-      case 'carton':    return qty * pack * 12;
       case 'boite':     return qty * pack;
       case 'plaquette': return qty * strip;
       default:          return qty;
