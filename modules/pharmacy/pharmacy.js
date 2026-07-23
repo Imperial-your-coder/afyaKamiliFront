@@ -478,47 +478,71 @@
 
     injectCameraButton();
 
-    // ── Pré-remplissage CORRECT en mode édition ──
-    // index.js remplit les anciens champs ; on corrige ceux qui ont changé.
-    if (id != null && typeof editMedId !== 'undefined' && editMedId) {
-      const m = MEDICATIONS.find(x => x.id === editMedId);
-      if (m) {
-        const set = (elId, v) => { const e = document.getElementById(elId); if (e) e.value = (v ?? ''); };
+    const editing = (id != null && typeof editMedId !== 'undefined' && editMedId);
+    const m = editing ? MEDICATIONS.find(x => x.id === editMedId) : null;
 
-        // Catégorie / forme : par ID (les <select> ont des id en value)
-        set('addCategory', m.category_id);
-        set('addForm', m.form_id);
+    const set = (elId, v) => {
+      const e = document.getElementById(elId);
+      if (e) e.value = (v === null || v === undefined) ? '' : v;
+    };
 
-        // Conditionnement : nouveaux champs
+    // La forme galénique doit être posée AVANT la construction du bloc :
+    // c'est elle qui détermine les champs affichés.
+    if (m) {
+      set('addCategory', m.category_id);
+      set('addForm', m.form_id);
+    }
+
+    renderPackagingBlock();
+
+    // Le bloc existe maintenant : on peut le remplir sans risque d'écrasement.
+    if (m) {
+      const scheme = schemeForForm(document.getElementById('addForm')?.value);
+
+      if (scheme.hasStrip) {
         const perStrip = m.units_per_strip || '';
-        const strips = (m.pack_size && m.units_per_strip)
+        const strips   = (m.pack_size && m.units_per_strip)
           ? Math.round(m.pack_size / m.units_per_strip) : '';
         set('addUnitsPerStrip', perStrip);
         set('addStripsPerBox', strips);
+      } else {
+        // Flacon, tube, ampoule, sachet : une seule quantité par boîte
+        set('addUnitsPerBox', m.pack_size || 1);
+      }
 
-        // Prix : boîte + détail SAISIS
-        set('addPrice', m.price);
-        set('addPriceStrip', m.price_per_strip);
-        set('addPriceUnit', m.price_per_unit);
+      set('addPrice',         m.price);
+      set('addPriceStrip',    m.price_per_strip);
+      set('addPriceUnit',     m.price_per_unit);
+      set('addPurchasePrice', m.purchase_price);
 
-        // Emplacement
-        set('addLocation', m.location && m.location !== '—' ? m.location : '');
+      set('addStock',    m.stock);
+      set('addMinStock', m.min_stock);
+      set('addExpiry',   m.expiry && m.expiry !== '2099-12-31' ? m.expiry : '');
+      set('addLocation', m.location && m.location !== '—' ? m.location : '');
 
-        // ── Image existante : on la garde ──
-        if (m.photo) {
-          uploadedImagePath = m.photo_raw || null;
-          const wrap = document.getElementById('photoWrap');
-          const img  = document.getElementById('photoPreviewImg');
-          if (img && wrap) {
-            img.src = m.photo;               // URL absolue déjà construite
-            img.style.display = 'block';
-            wrap.classList.add('has-photo');
-          }
+      // Le stock est stocké en unités de base
+      const su = document.getElementById('addStockUnit');
+      if (su) su.value = 'unite';
+
+      // Unités de vente autorisées
+      const allowed = m.sale_units || [];
+      document.querySelectorAll('.sale-unit-cb').forEach(cb => {
+        cb.checked = allowed.includes(cb.value);
+      });
+
+      // Photo existante : on la conserve
+      if (m.photo) {
+        uploadedImagePath = m.photo_raw || null;
+        const wrap = document.getElementById('photoWrap');
+        const img  = document.getElementById('photoPreviewImg');
+        if (img && wrap) {
+          img.src = m.photo;
+          img.style.display = 'block';
+          wrap.classList.add('has-photo');
         }
       }
     }
 
-    renderPackagingBlock();   // (re)construit le formulaire selon la forme galénique
     onPackagingInput();
   };
 
@@ -756,10 +780,20 @@
   }
 
   /** Combien de comprimés dans une boîte ? (comprimés/plaquette × plaquettes/boîte) */
+  /** Combien d'unités de base dans une boîte ?
+     Deux conditionnements possibles :
+      · avec plaquettes  (comprimés, gélules) : plaquettes × unités
+      · sans plaquette   (flacons, tubes, ampoules, sachets) : saisie directe */
   function packSize() {
-    const perStrip = parseInt(document.getElementById('addUnitsPerStrip')?.value) || 0;
-    const strips   = parseInt(document.getElementById('addStripsPerBox')?.value) || 0;
-    return (perStrip > 0 && strips > 0) ? perStrip * strips : 0;
+    const scheme = schemeForForm(document.getElementById('addForm')?.value);
+
+    if (scheme.hasStrip) {
+      const perStrip = parseInt(document.getElementById('addUnitsPerStrip')?.value) || 0;
+      const strips   = parseInt(document.getElementById('addStripsPerBox')?.value) || 0;
+      return (perStrip > 0 && strips > 0) ? perStrip * strips : 0;
+    }
+
+    return parseInt(document.getElementById('addUnitsPerBox')?.value) || 0;
   }
 
   /** Suggestions de prix + aperçu du stock converti */

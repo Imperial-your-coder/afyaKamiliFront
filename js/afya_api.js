@@ -176,6 +176,7 @@ const Adapt = {
       price:           parseFloat(m.unit_price ?? 0),            // prix BOÎTE
       price_per_unit:  m.price_per_unit  !== null ? parseFloat(m.price_per_unit)  : null,
       price_per_strip: m.price_per_strip !== null ? parseFloat(m.price_per_strip) : null,
+      purchase_price:  m.purchase_price  !== null ? parseFloat(m.purchase_price)  : null,
 
       // Conditionnement
       base_unit:       m.base_unit || 'comprimé',
