@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vérification des paiements — Afya Kamili</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F0EEE6;--card:#F8F8F3;--ink:#12120f;--mid:#8B8D86;
+  --line:rgba(0,0,0,.09);--orange:#FF7900;--green:#16a34a;--red:#dc2626}
+body{font-family:Manrope,system-ui,sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;line-height:1.6;padding:26px 20px 60px}
+.wrap{max-width:1080px;margin:0 auto}
+
+.top{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;letter-spacing:-.4px}
+.dot{width:30px;height:30px;border-radius:50%;background:#EFFF3A;
+  display:flex;align-items:center;justify-content:center}
+.brand i{font-style:normal;color:var(--mid)}
+h1{font-size:26px;font-weight:800;letter-spacing:-.9px;margin-bottom:5px}
+.lead{font-size:14px;color:#55554f;margin-bottom:22px}
+
+.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:10px 18px;border-radius:999px;border:1.5px solid var(--line);background:#fff;
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tab .n{opacity:.6;margin-left:5px}
+
+.row{background:var(--card);border:1px solid var(--line);border-radius:20px;
+  padding:20px;margin-bottom:12px}
+.row-top{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.who{flex:1;min-width:220px}
+.estab{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.by{font-size:12.5px;color:var(--mid);margin-top:2px}
+.amount{font-size:22px;font-weight:800;letter-spacing:-.6px;text-align:right}
+.plan{font-size:12px;color:var(--mid);text-align:right}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;margin:16px 0;padding:14px;background:#fff;border-radius:14px}
+.fact-l{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--mid)}
+.fact-v{font-size:13.5px;font-weight:700;margin-top:2px;word-break:break-all}
+.ref{font-family:ui-monospace,SFMono-Regular,monospace;background:rgba(255,121,0,.1);
+  padding:2px 8px;border-radius:6px;display:inline-block}
+
+.shot{max-width:190px;border-radius:12px;border:1px solid var(--line);cursor:zoom-in;display:block}
+.acts{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.btn{padding:12px 22px;border-radius:999px;border:none;font-family:inherit;
+  font-size:13.5px;font-weight:700;cursor:pointer}
+.ok{background:var(--green);color:#fff}
+.no{background:#fff;color:var(--red);border:1.5px solid rgba(220,38,38,.3)}
+
+.pill{display:inline-block;font-size:10.5px;font-weight:800;padding:4px 11px;
+  border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
+.p-pending{background:rgba(255,121,0,.14);color:#b45309}
+.p-approved{background:rgba(22,163,74,.14);color:#15803d}
+.p-rejected{background:rgba(220,38,38,.12);color:#b91c1c}
+
+.empty{text-align:center;padding:60px 20px;color:var(--mid);font-size:14px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.86);display:none;
+  align-items:center;justify-content:center;z-index:9999;padding:30px;cursor:zoom-out}
+.lightbox img{max-width:100%;max-height:100%;border-radius:12px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <span class="brand">
+      <span class="dot"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#12120f" stroke-width="2.4" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg></span>
+      Afya <i>Kamili</i>
+    </span>
+  </div>
+
+  <h1>Vérification des paiements</h1>
+  <p class="lead">
+    Contrôlez chaque référence sur votre relevé mobile money avant de valider.
+    Une référence déjà utilisée est automatiquement refusée par le système.
+  </p>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-status="pending">En attente <span class="n" id="nPending"></span></button>
+    <button class="tab" data-status="approved">Validés <span class="n" id="nApproved"></span></button>
+    <button class="tab" data-status="rejected">Refusés <span class="n" id="nRejected"></span></button>
+  </div>
+
+  <div id="list"><div class="empty">Chargement…</div></div>
+</div>
+
+<div class="lightbox" id="lightbox"><img id="lightboxImg" alt="Preuve de paiement"></div>
+
+<script src="../../js/afya_api.js" defer></script>
+<script>
+(function () {
+  'use strict';
+  let status = 'pending';
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function toast(msg, err) {
+    let t = $('t');
+    if (!t) {
+      t = document.createElement('div'); t.id = 't';
+      t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);' +
+        'padding:13px 22px;border-radius:999px;color:#fff;font-size:13.5px;font-weight:700;' +
+        'z-index:10000;opacity:0;transition:opacity .3s;box-shadow:0 10px 30px rgba(0,0,0,.2)';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.background = err ? '#dc2626' : '#12120f';
+    t.style.opacity = '1';
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.style.opacity = '0', 3600);
+  }
+
+  function money(n) { return '$' + Number(n || 0).toFixed(2); }
+
+  function when(d) {
+    if (!d) return '—';
+    const x = new Date(d.replace(' ', 'T'));
+    return x.toLocaleDateString('fr-FR') + ' à ' +
+           x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function load() {
+    try {
+      const res = await AfyaAPI.platform.payments(status);
+      const c = res.counts || {};
+      $('nPending').textContent  = c.pending  ? `(${c.pending})`  : '';
+      $('nApproved').textContent = c.approved ? `(${c.approved})` : '';
+      $('nRejected').textContent = c.rejected ? `(${c.rejected})` : '';
+      render(res.payments || []);
+    } catch (e) {
+      $('list').innerHTML = `<div class="empty">${esc(e.message || 'Accès refusé.')}</div>`;
+    }
+  }
+
+  function render(rows) {
+    if (!rows.length) {
+      $('list').innerHTML = '<div class="empty">Aucune déclaration dans cette catégorie.</div>';
+      return;
+    }
+
+    const origin = (AfyaAPI.API_ORIGIN || '').replace(/\/$/, '');
+
+    $('list').innerHTML = rows.map(p => `
+      <div class="row">
+        <div class="row-top">
+          <div class="who">
+            <div class="estab">${esc(p.establishment_name)}</div>
+            <div class="by">Déclaré par ${esc(p.declared_by)} · ${esc(p.declared_phone || '')}</div>
+            <div style="margin-top:8px"><span class="pill p-${p.status}">${
+              p.status === 'pending' ? 'En attente' :
+              p.status === 'approved' ? 'Validé' : 'Refusé'}</span></div>
+          </div>
+          <div>
+            <div class="amount">${money(p.amount)}</div>
+            <div class="plan">${esc(p.plan_code)} · ${p.billing_cycle === 'yearly' ? 'annuel' : 'mensuel'}</div>
+          </div>
+        </div>
+
+        <div class="facts">
+          <div>
+            <div class="fact-l">Référence</div>
+            <div class="fact-v"><span class="ref">${esc(p.reference)}</span></div>
+          </div>
+          <div>
+            <div class="fact-l">Opérateur</div>
+            <div class="fact-v">${esc(p.operator)}</div>
+          </div>
+          <div>
+            <div class="fact-l">Numéro émetteur</div>
+            <div class="fact-v">${esc(p.sender_phone || '—')}</div>
+          </div>
+          <div>
+            <div class="fact-l">Déclaré le</div>
+            <div class="fact-v">${when(p.created_at)}</div>
+          </div>
+        </div>
+
+        ${p.screenshot_path ? `
+          <img class="shot" src="${origin}/storage/${esc(p.screenshot_path)}"
+               alt="Preuve de paiement" onclick="PlatformPay.zoom(this.src)">` : ''}
+
+        ${p.review_note ? `
+          <div style="margin-top:12px;font-size:12.5px;color:#55554f">
+            <strong>Note :</strong> ${esc(p.review_note)}</div>` : ''}
+
+        ${p.status === 'pending' ? `
+          <div class="acts">
+            <button class="btn ok" onclick="PlatformPay.approve(${p.id})">Valider et activer</button>
+            <button class="btn no" onclick="PlatformPay.reject(${p.id})">Refuser</button>
+          </div>` : ''}
+      </div>`).join('');
+  }
+
+  window.PlatformPay = {
+    zoom(src) {
+      $('lightboxImg').src = src;
+      $('lightbox').style.display = 'flex';
+    },
+
+    async approve(id) {
+      if (!confirm("Avez-vous vérifié cette référence sur votre relevé mobile money ?")) return;
+      try {
+        const res = await AfyaAPI.platform.approve(id, null);
+        toast(res.message || 'Paiement validé.');
+        load();
+      } catch (e) { toast(e.message || 'Erreur', true); }
+    },
+
+    async reject(id) {
+      const note = prompt("Pourquoi refusez-vous cette déclaration ?\n(le client verra ce message)");
+      if (note === null) return;
+      if (note.trim().length < 5) { toast('Motif trop court.', true); return; }
+      try {
+        const res = await AfyaAPI.platform.reject(id, note.trim());
+        toast(res.message || 'Déclaration refusée.');
+        load();
+      } catch (e) { toast(e.message || 'Erreur', true); }
+    }
+  };
+
+  $('lightbox').addEventListener('click', () => $('lightbox').style.display = 'none');
+
+  document.querySelectorAll('.tab').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      status = b.dataset.status;
+      load();
+    });
+  });
+
+  function init() {
+    if (!window.AfyaAPI) { setTimeout(init, 80); return; }
+    if (!AfyaAPI.Token.exists()) { window.location.href = '../../login'; return; }
+    load();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>

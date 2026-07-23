@@ -554,6 +554,40 @@ const AfyaAPI = {
     async update(payload) { return await request('PUT', '/pharmacy/settings', payload); },
   },
 
+  /* ═══ FACTURATION — paiements mobile money ═══ */
+  billing: {
+    /** Instructions de paiement, formules et état du dossier */
+    async info()      { return await request('GET', '/billing/info'); },
+    async history()   { return await request('GET', '/billing/history'); },
+
+    /** Déclaration d'un dépôt (FormData : peut contenir une capture) */
+    async declare(formData) {
+      const headers = { 'Accept': 'application/json' };
+      const token = Token.get();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE}/billing/declare`, {
+        method: 'POST', headers, body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new ApiError(res.status, data.message || 'Envoi impossible.', data);
+      }
+      return data;
+    },
+  },
+
+  /* ═══ PLATEFORME — vérification des paiements ═══ */
+  platform: {
+    async payments(status) {
+      const q = status ? `?status=${encodeURIComponent(status)}` : '';
+      return await request('GET', '/platform/payments' + q);
+    },
+    async approve(id, note) { return await request('POST', `/platform/payments/${id}/approve`, { note }); },
+    async reject(id, note)  { return await request('POST', `/platform/payments/${id}/reject`,  { note }); },
+  },
+
   /* ═══ ADMINISTRATION — personnel ═══ */
   admin: {
     /** Rôles et modules attribuables + mode du formulaire */

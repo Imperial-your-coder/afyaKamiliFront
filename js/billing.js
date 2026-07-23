@@ -1,0 +1,479 @@
+/* ═══════════════════════════════════════════════════════════
+   AFYA KAMILI — PAIEMENT MOBILE MONEY
+
+   Le client dépose sur le numéro indiqué, relève la référence
+   du SMS de confirmation, et la déclare ici. Un administrateur
+   vérifie puis active l'abonnement.
+
+   À charger sur le tableau de bord :
+     <script src="./js/afya_api.js" defer></script>
+     <script src="./js/billing.js" defer></script>
+═══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  const OM = {
+    orange: '#FF7900',
+    dark:   '#0B0B0B',
+    beige:  '#F0EEE6',
+    card:   '#F8F8F3',
+    mid:    '#8B8D86',
+    line:   'rgba(0,0,0,.09)',
+    green:  '#16a34a',
+    red:    '#dc2626',
+  };
+
+  let INFO   = null;
+  let PLANS  = [];
+  let picked = { plan: 'starter', cycle: 'monthly' };
+  let file   = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function money(n) {
+    return '$' + Number(n || 0).toFixed(2).replace(/\.00$/, '');
+  }
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+  }
+
+  function toast(msg, isError) {
+    let t = $('billingToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'billingToast';
+      t.style.cssText =
+        'position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);' +
+        'padding:13px 22px;border-radius:999px;font-size:13.5px;font-weight:700;color:#fff;' +
+        'z-index:100000;opacity:0;transition:all .3s cubic-bezier(.22,1,.36,1);' +
+        'box-shadow:0 12px 34px rgba(0,0,0,.22);max-width:88vw;text-align:center';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.background = isError ? OM.red : OM.dark;
+    requestAnimationFrame(() => {
+      t.style.opacity = '1';
+      t.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    clearTimeout(t._h);
+    t._h = setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 4000);
+  }
+
+  function errMsg(e) {
+    if (e && e.validationErrors) {
+      const first = Object.values(e.validationErrors)[0];
+      if (Array.isArray(first) && first[0]) return first[0];
+    }
+    return (e && e.message) || 'Une erreur est survenue.';
+  }
+
+  /* ═══ STRUCTURE ═══ */
+
+  function build() {
+    if ($('billingModal')) return;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'billingModal';
+    wrap.style.cssText =
+      'position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;' +
+      'background:rgba(11,11,11,.55);backdrop-filter:blur(10px);padding:20px';
+
+    wrap.innerHTML = `
+      <div id="billingSheet" style="background:${OM.card};border-radius:28px;max-width:520px;width:100%;
+           max-height:92vh;overflow-y:auto;box-shadow:0 34px 80px rgba(0,0,0,.36);
+           font-family:Manrope,system-ui,sans-serif;color:${OM.dark}">
+
+        <!-- Bandeau opérateur -->
+        <div style="background:${OM.orange};padding:22px 26px;border-radius:28px 28px 0 0;position:relative">
+          <button id="billingClose" style="position:absolute;top:18px;right:18px;width:30px;height:30px;
+                  border:none;border-radius:50%;background:rgba(0,0,0,.18);color:#fff;cursor:pointer;
+                  font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center">&times;</button>
+          <div style="font-size:10.5px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;
+                      color:rgba(255,255,255,.85)">Paiement mobile money</div>
+          <div id="billingTitle" style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-.5px;
+                      margin-top:5px">Activer mon abonnement</div>
+          <div id="billingSub" style="font-size:13px;color:rgba(255,255,255,.9);margin-top:3px"></div>
+        </div>
+
+        <div style="padding:24px 26px 26px">
+          <div id="billingBody"></div>
+        </div>
+      </div>`;
+
+    document.body.appendChild(wrap);
+
+    $('billingClose').addEventListener('click', close);
+    wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && wrap.style.display === 'flex') close();
+    });
+  }
+
+  function open()  { build(); $('billingModal').style.display = 'flex'; }
+  function close() { const m = $('billingModal'); if (m) m.style.display = 'none'; }
+
+  /* ═══ ÉCRANS ═══ */
+
+  /** Dossier en cours de vérification */
+  function viewPending(p) {
+    $('billingTitle').textContent = 'Vérification en cours';
+    $('billingSub').textContent   = 'Nous contrôlons votre dépôt';
+
+    $('billingBody').innerHTML = `
+      <div style="text-align:center;padding:8px 0 20px">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,121,0,.12);
+                    display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="${OM.orange}"
+               stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        </div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:6px">Votre déclaration est enregistrée</div>
+        <div style="font-size:13.5px;color:#55554f;line-height:1.6;max-width:380px;margin:0 auto">
+          Nous vérifions le dépôt et activons votre formule dès confirmation.
+          <strong>Votre accès reste ouvert</strong> pendant ce temps.
+        </div>
+      </div>
+
+      <div style="background:${OM.beige};border-radius:16px;padding:16px;font-size:13px">
+        <div style="display:flex;justify-content:space-between;padding:5px 0">
+          <span style="color:${OM.mid}">Référence</span>
+          <strong style="font-family:ui-monospace,monospace">${esc(p.reference)}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0">
+          <span style="color:${OM.mid}">Formule</span>
+          <strong>${esc(planLabel(p.plan_code))} · ${p.billing_cycle === 'yearly' ? 'annuel' : 'mensuel'}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0">
+          <span style="color:${OM.mid}">Montant</span>
+          <strong>${money(p.amount)}</strong>
+        </div>
+      </div>
+
+      ${INFO.payment.whatsapp ? `
+      <a href="https://wa.me/${String(INFO.payment.whatsapp).replace(/[^0-9]/g,'')}"
+         target="_blank" rel="noopener"
+         style="display:flex;align-items:center;justify-content:center;gap:9px;margin-top:16px;
+                padding:14px;border-radius:999px;background:#25D366;color:#fff;font-weight:700;
+                font-size:14px;text-decoration:none">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1112 20z"/></svg>
+        Envoyer la capture par WhatsApp
+      </a>` : ''}
+
+      <button onclick="AfyaBilling.close()" style="width:100%;margin-top:12px;padding:14px;
+              border-radius:999px;border:1.5px solid ${OM.line};background:#fff;
+              font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">
+        Continuer à utiliser Afya Kamili
+      </button>`;
+  }
+
+  /** Formulaire de déclaration */
+  function viewForm() {
+    const t = INFO.tenant;
+    const expired = t.days_left <= 0;
+
+    $('billingTitle').textContent = expired ? 'Votre essai est terminé' : 'Activer mon abonnement';
+    $('billingSub').textContent   = expired
+      ? 'Activez votre formule pour continuer'
+      : `${t.days_left} jour${t.days_left > 1 ? 's' : ''} d'essai restant${t.days_left > 1 ? 's' : ''}`;
+
+    const rejected = INFO.last_rejected;
+
+    $('billingBody').innerHTML = `
+      ${rejected ? `
+        <div style="background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.22);
+                    border-radius:14px;padding:13px 15px;margin-bottom:18px">
+          <div style="font-size:12.5px;font-weight:800;color:${OM.red};margin-bottom:4px">
+            Déclaration précédente refusée</div>
+          <div style="font-size:12.5px;color:#7f1d1d">${esc(rejected.review_note || '')}</div>
+        </div>` : ''}
+
+      <!-- 1. Choix de la formule -->
+      <div style="font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+                  color:${OM.mid};margin-bottom:10px">1 · Choisissez votre formule</div>
+
+      <div id="planList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+
+      <div style="display:flex;gap:8px;margin-bottom:22px">
+        <button class="cyc" data-cycle="monthly" style="flex:1;padding:11px;border-radius:12px;
+                border:1.5px solid ${OM.line};background:#fff;font-family:inherit;font-size:13px;
+                font-weight:700;cursor:pointer">Mensuel</button>
+        <button class="cyc" data-cycle="yearly" style="flex:1;padding:11px;border-radius:12px;
+                border:1.5px solid ${OM.line};background:#fff;font-family:inherit;font-size:13px;
+                font-weight:700;cursor:pointer">Annuel <span style="color:${OM.green}">−15 %</span></button>
+      </div>
+
+      <!-- 2. Instructions de dépôt -->
+      <div style="font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+                  color:${OM.mid};margin-bottom:10px">2 · Effectuez le dépôt</div>
+
+      <div style="background:${OM.dark};border-radius:18px;padding:20px;margin-bottom:22px">
+        <div style="font-size:11.5px;color:rgba(255,255,255,.55);margin-bottom:5px">
+          Déposez <strong id="dueAmount" style="color:${OM.orange}">—</strong> sur ce numéro
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
+          <div style="flex:1;font-size:23px;font-weight:800;color:#fff;letter-spacing:.5px;
+                      font-family:ui-monospace,monospace" id="payNumber">—</div>
+          <button id="copyNumber" style="padding:9px 15px;border-radius:10px;border:none;
+                  background:${OM.orange};color:#fff;font-family:inherit;font-size:12.5px;
+                  font-weight:700;cursor:pointer;flex-shrink:0">Copier</button>
+        </div>
+        <div id="payHolder" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:8px"></div>
+      </div>
+
+      <!-- 3. Déclaration -->
+      <div style="font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+                  color:${OM.mid};margin-bottom:6px">3 · Déclarez votre paiement</div>
+      <div style="font-size:12.5px;color:#55554f;margin-bottom:14px;line-height:1.55">
+        Après le dépôt, vous recevez un SMS contenant une référence
+        (<span style="font-family:ui-monospace,monospace;background:rgba(0,0,0,.05);
+         padding:1px 6px;border-radius:5px">Ref: CI260711.0746.B11205</span>). Recopiez-la ici.
+      </div>
+
+      <label style="display:block;margin-bottom:12px">
+        <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.6px;
+                     text-transform:uppercase;color:${OM.mid};margin-bottom:6px">Référence du SMS *</span>
+        <input id="bRef" placeholder="CI260711.0746.B11205"
+               style="width:100%;padding:13px 15px;border:1.5px solid ${OM.line};border-radius:13px;
+                      font-family:ui-monospace,monospace;font-size:14px;outline:none;background:#fff;
+                      text-transform:uppercase">
+      </label>
+
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <label style="flex:1">
+          <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.6px;
+                       text-transform:uppercase;color:${OM.mid};margin-bottom:6px">Opérateur</span>
+          <select id="bOperator" style="width:100%;padding:13px 12px;border:1.5px solid ${OM.line};
+                  border-radius:13px;font-family:inherit;font-size:13.5px;outline:none;background:#fff">
+            <option value="orange" selected>Orange Money</option>
+            <option value="airtel">Airtel Money</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="africell">Africell Money</option>
+            <option value="autre">Autre</option>
+          </select>
+        </label>
+        <label style="flex:1">
+          <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.6px;
+                       text-transform:uppercase;color:${OM.mid};margin-bottom:6px">Votre numéro</span>
+          <input id="bPhone" placeholder="0990 000 000"
+                 style="width:100%;padding:13px 15px;border:1.5px solid ${OM.line};border-radius:13px;
+                        font-family:inherit;font-size:13.5px;outline:none;background:#fff">
+        </label>
+      </div>
+
+      <div id="dropZone" style="border:1.5px dashed ${OM.line};border-radius:14px;padding:18px;
+           text-align:center;cursor:pointer;margin-bottom:18px;background:#fff;transition:all .2s">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${OM.mid}" stroke-width="1.7"
+             style="margin-bottom:6px"><rect x="3" y="3" width="18" height="18" rx="3"/>
+             <circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <div id="dropLabel" style="font-size:12.5px;color:${OM.mid};font-weight:600">
+          Joindre la capture du SMS <span style="font-weight:500">(recommandé)</span></div>
+      </div>
+      <input type="file" id="bShot" accept="image/jpeg,image/png,image/webp" style="display:none">
+
+      <button id="bSubmit" style="width:100%;padding:16px;border-radius:999px;border:none;
+              background:${OM.orange};color:#fff;font-family:inherit;font-size:15px;
+              font-weight:800;cursor:pointer;transition:transform .18s">
+        J'ai payé — déclarer mon dépôt
+      </button>
+
+      <div style="font-size:11.5px;color:${OM.mid};text-align:center;margin-top:12px;line-height:1.5">
+        Votre accès reste ouvert pendant la vérification.
+      </div>`;
+
+    renderPlans();
+    bindForm();
+  }
+
+  function planLabel(code) {
+    const p = PLANS.find(x => x.code === code);
+    return p ? p.label : code;
+  }
+
+  function renderPlans() {
+    const host = $('planList');
+    if (!host) return;
+
+    host.innerHTML = PLANS.map(p => {
+      const on    = p.code === picked.plan;
+      const price = picked.cycle === 'yearly' ? p.yearly_price : p.monthly_price;
+      const per   = picked.cycle === 'yearly' ? '/an' : '/mois';
+      return `
+        <button class="plan-opt" data-plan="${p.code}"
+          style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;
+                 border:1.5px solid ${on ? OM.orange : OM.line};
+                 background:${on ? 'rgba(255,121,0,.06)' : '#fff'};
+                 cursor:pointer;font-family:inherit;text-align:left;width:100%;transition:all .18s">
+          <span style="width:18px;height:18px;border-radius:50%;flex-shrink:0;
+                border:2px solid ${on ? OM.orange : 'rgba(0,0,0,.18)'};
+                background:${on ? OM.orange : 'transparent'};
+                box-shadow:${on ? 'inset 0 0 0 3px #fff' : 'none'}"></span>
+          <span style="flex:1">
+            <span style="display:block;font-size:14.5px;font-weight:800">${esc(p.label)}</span>
+            <span style="display:block;font-size:11.5px;color:${OM.mid}">
+              ${p.modules.length} module${p.modules.length > 1 ? 's' : ''}</span>
+          </span>
+          <span style="font-size:17px;font-weight:800">${money(price)}<span
+                style="font-size:11px;font-weight:600;color:${OM.mid}">${per}</span></span>
+        </button>`;
+    }).join('');
+
+    host.querySelectorAll('.plan-opt').forEach(b => {
+      b.addEventListener('click', () => {
+        picked.plan = b.dataset.plan;
+        renderPlans();
+        refreshDue();
+      });
+    });
+
+    document.querySelectorAll('.cyc').forEach(b => {
+      const on = b.dataset.cycle === picked.cycle;
+      b.style.borderColor = on ? OM.orange : OM.line;
+      b.style.background  = on ? 'rgba(255,121,0,.06)' : '#fff';
+      b.onclick = () => { picked.cycle = b.dataset.cycle; renderPlans(); refreshDue(); };
+    });
+
+    refreshDue();
+  }
+
+  function refreshDue() {
+    const p = PLANS.find(x => x.code === picked.plan);
+    if (!p) return;
+    const due = picked.cycle === 'yearly' ? p.yearly_price : p.monthly_price;
+    const el = $('dueAmount');
+    if (el) el.textContent = money(due);
+
+    const num = $('payNumber');
+    if (num) num.textContent = INFO.payment.number || '—';
+
+    const holder = $('payHolder');
+    if (holder && INFO.payment.holder) {
+      holder.textContent = 'Compte : ' + INFO.payment.holder;
+    }
+  }
+
+  function bindForm() {
+    const copy = $('copyNumber');
+    if (copy) {
+      copy.addEventListener('click', () => {
+        const n = (INFO.payment.number || '').replace(/\s/g, '');
+        navigator.clipboard?.writeText(n)
+          .then(() => { copy.textContent = 'Copié'; setTimeout(() => copy.textContent = 'Copier', 1600); })
+          .catch(() => toast('Copie impossible — notez le numéro', true));
+      });
+    }
+
+    const zone = $('dropZone');
+    const input = $('bShot');
+    if (zone && input) {
+      zone.addEventListener('click', () => input.click());
+      input.addEventListener('change', () => {
+        file = input.files?.[0] || null;
+        const label = $('dropLabel');
+        if (file && label) {
+          label.innerHTML = `<span style="color:${OM.green};font-weight:700">✓ ${esc(file.name)}</span>`;
+          zone.style.borderColor = OM.green;
+          zone.style.borderStyle = 'solid';
+        }
+      });
+    }
+
+    const btn = $('bSubmit');
+    if (btn) btn.addEventListener('click', submit);
+  }
+
+  async function submit() {
+    const ref = ($('bRef').value || '').trim().toUpperCase();
+
+    if (ref.length < 6) {
+      toast('Recopiez la référence complète du SMS', true);
+      $('bRef').focus();
+      return;
+    }
+
+    const btn = $('bSubmit');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours…';
+    btn.style.opacity = '.7';
+
+    const fd = new FormData();
+    fd.append('reference',     ref);
+    fd.append('plan_code',     picked.plan);
+    fd.append('billing_cycle', picked.cycle);
+    fd.append('operator',      $('bOperator').value);
+    const phone = ($('bPhone').value || '').trim();
+    if (phone) fd.append('sender_phone', phone);
+    if (file)  fd.append('screenshot', file);
+
+    try {
+      const res = await AfyaAPI.billing.declare(fd);
+      toast(res.message || 'Déclaration enregistrée');
+      INFO.pending_payment = res.payment;
+      viewPending(res.payment);
+    } catch (e) {
+      toast(errMsg(e), true);
+      btn.disabled = false;
+      btn.textContent = "J'ai payé — déclarer mon dépôt";
+      btn.style.opacity = '1';
+    }
+  }
+
+  /* ═══ DÉMARRAGE ═══ */
+
+  async function load() {
+    INFO  = await AfyaAPI.billing.info();
+    PLANS = INFO.plans || [];
+    if (PLANS.length && !PLANS.find(p => p.code === picked.plan)) {
+      picked.plan = PLANS[0].code;
+    }
+    return INFO;
+  }
+
+  async function show() {
+    try {
+      if (!INFO) await load();
+      build();
+      if (INFO.pending_payment) viewPending(INFO.pending_payment);
+      else                      viewForm();
+      open();
+    } catch (e) {
+      toast(errMsg(e), true);
+    }
+  }
+
+  /** Ouvre d'office quand l'essai touche à sa fin */
+  async function autoCheck() {
+    try {
+      await load();
+      const t = INFO.tenant;
+      if (t.status === 'active') return;
+      if (INFO.pending_payment)  return;   // déjà déclaré, on ne harcèle pas
+
+      // Rappel à 3 jours de la fin, puis à l'expiration
+      if (t.days_left <= 0 || t.days_left === 3 || t.days_left === 1) {
+        const seen = sessionStorage.getItem('afya_billing_seen');
+        if (seen === String(t.days_left)) return;
+        sessionStorage.setItem('afya_billing_seen', String(t.days_left));
+        show();
+      }
+    } catch (e) { /* silencieux : ne jamais bloquer le tableau de bord */ }
+  }
+
+  window.AfyaBilling = { show, close, load };
+
+  function init() {
+    if (!window.AfyaAPI) { setTimeout(init, 80); return; }
+    if (!AfyaAPI.Token.exists()) return;
+    setTimeout(autoCheck, 1200);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
