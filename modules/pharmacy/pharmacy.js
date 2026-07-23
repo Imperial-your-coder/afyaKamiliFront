@@ -1870,6 +1870,69 @@
      comptoir, mais rien ne traîne côté serveur.
   ═══════════════════════════════════════════════════════════ */
 
+
+  /* Retour visuel quand un article rejoint le panier :
+     le + devient une coche verte un instant, une pastille
+     s'envole vers l'icône du panier, et le compteur tressaute. */
+  function flyToCart(btn) {
+    const target = document.getElementById('cartBtn');
+    if (!btn || !target) return;
+
+    const from = btn.getBoundingClientRect();
+    const to   = target.getBoundingClientRect();
+
+    const dot = document.createElement('div');
+    dot.style.cssText =
+      'position:fixed;z-index:9999;width:14px;height:14px;border-radius:50%;' +
+      'background:var(--accent,#EFFF3A);box-shadow:0 3px 12px rgba(239,255,58,.7);' +
+      'pointer-events:none;left:' + (from.left + from.width / 2 - 7) + 'px;' +
+      'top:' + (from.top + from.height / 2 - 7) + 'px;' +
+      'transition:transform .58s cubic-bezier(.55,-0.2,.35,1), opacity .58s ease';
+    document.body.appendChild(dot);
+
+    requestAnimationFrame(() => {
+      const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+      const dy = (to.top  + to.height / 2) - (from.top  + from.height / 2);
+      dot.style.transform = `translate(${dx}px, ${dy}px) scale(.35)`;
+      dot.style.opacity   = '0.2';
+    });
+
+    setTimeout(() => dot.remove(), 620);
+  }
+
+  /** Le bouton confirme l'ajout, puis redevient un + */
+  function confirmOnButton(btn) {
+    if (!btn || btn.dataset.busy) return;
+    btn.dataset.busy = '1';
+
+    const original = btn.innerHTML;
+    btn.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#12120f" ' +
+      'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M3 8.4l3.2 3.2L13 4.6"/></svg>';
+    btn.style.background = '#22c55e';
+    btn.style.transform  = 'scale(1.28)';
+
+    setTimeout(() => {
+      btn.style.transform = 'scale(1)';
+    }, 190);
+
+    setTimeout(() => {
+      btn.innerHTML       = original;
+      btn.style.background = '';
+      delete btn.dataset.busy;
+    }, 900);
+  }
+
+  /** Petit sursaut de la pastille du panier */
+  function pulseCartBadge() {
+    const b = document.getElementById('cartBadge');
+    if (!b) return;
+    b.style.transition = 'transform .18s cubic-bezier(.34,1.56,.64,1)';
+    b.style.transform  = 'scale(1.5)';
+    setTimeout(() => { b.style.transform = 'scale(1)'; }, 190);
+  }
+
   let CART = [];
   const CART_KEY = 'afya_cart';
 
@@ -1917,10 +1980,8 @@
 
     if (line) {
       line.qty += 1;
-      toast(`${m.name} — ${line.qty} ${UNIT_LABELS[unit] || unit}`, 'success');
     } else {
       CART.push({ id: medId, unit, qty: 1 });
-      toast(`${m.name} ajouté au panier`, 'success');
     }
 
     cartSave();
@@ -2205,9 +2266,14 @@
 
       btn.addEventListener('click', (e) => {
         e.stopPropagation();          // ne pas ouvrir la fiche
+        const before = CART.reduce((n, l) => n + l.qty, 0);
         addToCart(id);
-        btn.style.transform = 'scale(1.25)';
-        setTimeout(() => { btn.style.transform = ''; }, 180);
+        const after = CART.reduce((n, l) => n + l.qty, 0);
+        if (after > before) {
+          confirmOnButton(btn);
+          flyToCart(btn);
+          pulseCartBadge();
+        }
       });
 
       card.appendChild(btn);
