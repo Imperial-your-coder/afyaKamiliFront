@@ -581,12 +581,34 @@ const AfyaAPI = {
 
   /* ═══ PLATEFORME — vérification des paiements ═══ */
   platform: {
+    /* ── Paiements ── */
     async payments(status) {
       const q = status ? `?status=${encodeURIComponent(status)}` : '';
       return await request('GET', '/platform/payments' + q);
     },
     async approve(id, note) { return await request('POST', `/platform/payments/${id}/approve`, { note }); },
     async reject(id, note)  { return await request('POST', `/platform/payments/${id}/reject`,  { note }); },
+
+    /* ── Vue d'ensemble ── */
+    async overview() { return await request('GET', '/platform/overview'); },
+    async revenue()  { return await request('GET', '/platform/revenue'); },
+
+    /* ── Établissements ── */
+    async tenants(params = {}) {
+      const q = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== '' && v != null)
+      ).toString();
+      return await request('GET', '/platform/tenants' + (q ? '?' + q : ''));
+    },
+    async tenant(id)          { return await request('GET', `/platform/tenants/${id}`); },
+    async grant(id, payload)  { return await request('POST', `/platform/tenants/${id}/grant`, payload); },
+    async revoke(id, codes)   { return await request('POST', `/platform/tenants/${id}/revoke`, { module_codes: codes }); },
+    async setStatus(id, status, reason) {
+      return await request('PATCH', `/platform/tenants/${id}/status`, { status, reason });
+    },
+    async extendTrial(id, days) {
+      return await request('POST', `/platform/tenants/${id}/extend-trial`, { days });
+    },
   },
 
   /* ═══ ADMINISTRATION — personnel ═══ */

@@ -3,243 +3,600 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vérification des paiements — Afya Kamili</title>
+<title>Console — Afya Kamili</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#F0EEE6;--card:#F8F8F3;--ink:#12120f;--mid:#8B8D86;
-  --line:rgba(0,0,0,.09);--orange:#FF7900;--green:#16a34a;--red:#dc2626}
+  --line:rgba(0,0,0,.09);--neon:#EFFF3A;--green:#16a34a;--red:#dc2626;--orange:#FF7900}
 body{font-family:Manrope,system-ui,sans-serif;background:var(--bg);color:var(--ink);
-  -webkit-font-smoothing:antialiased;line-height:1.6;padding:26px 20px 60px}
-.wrap{max-width:1080px;margin:0 auto}
+  -webkit-font-smoothing:antialiased;line-height:1.6;padding:24px 20px 70px}
+.wrap{max-width:1180px;margin:0 auto}
+button{font-family:inherit}
 
-.top{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.head{display:flex;align-items:center;gap:14px;margin-bottom:22px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;letter-spacing:-.4px}
-.dot{width:30px;height:30px;border-radius:50%;background:#EFFF3A;
+.dot{width:30px;height:30px;border-radius:50%;background:var(--neon);
   display:flex;align-items:center;justify-content:center}
 .brand i{font-style:normal;color:var(--mid)}
-h1{font-size:26px;font-weight:800;letter-spacing:-.9px;margin-bottom:5px}
+.badge{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+  background:var(--ink);color:var(--neon);padding:4px 11px;border-radius:999px}
+
+h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
 .lead{font-size:14px;color:#55554f;margin-bottom:22px}
 
-.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-.tab{padding:10px 18px;border-radius:999px;border:1.5px solid var(--line);background:#fff;
-  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
-.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.tab .n{opacity:.6;margin-left:5px}
+.nav{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.nav button{padding:10px 20px;border-radius:999px;border:1.5px solid var(--line);
+  background:#fff;font-size:13.5px;font-weight:700;cursor:pointer}
+.nav button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.nav .n{opacity:.55;margin-left:5px}
 
-.row{background:var(--card);border:1px solid var(--line);border-radius:20px;
-  padding:20px;margin-bottom:12px}
-.row-top{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
-.who{flex:1;min-width:220px}
-.estab{font-size:16px;font-weight:800;letter-spacing:-.3px}
-.by{font-size:12.5px;color:var(--mid);margin-top:2px}
-.amount{font-size:22px;font-weight:800;letter-spacing:-.6px;text-align:right}
-.plan{font-size:12px;color:var(--mid);text-align:right}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:24px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+.kpi.hi{background:var(--ink);color:#fff;border-color:var(--ink)}
+.kpi-l{font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--mid);margin-bottom:5px}
+.kpi.hi .kpi-l{color:rgba(255,255,255,.6)}
+.kpi-v{font-size:25px;font-weight:800;letter-spacing:-.8px;line-height:1.1}
+.kpi.hi .kpi-v{color:var(--neon)}
+.kpi-s{font-size:11.5px;color:var(--mid);margin-top:3px}
+.kpi.hi .kpi-s{color:rgba(255,255,255,.5)}
 
-.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:10px;margin:16px 0;padding:14px;background:#fff;border-radius:14px}
-.fact-l{font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--mid)}
-.fact-v{font-size:13.5px;font-weight:700;margin-top:2px;word-break:break-all}
-.ref{font-family:ui-monospace,SFMono-Regular,monospace;background:rgba(255,121,0,.1);
-  padding:2px 8px;border-radius:6px;display:inline-block}
+.bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.bar input,.bar select{padding:11px 15px;border:1.5px solid var(--line);border-radius:13px;
+  font-family:inherit;font-size:13.5px;background:#fff;outline:none}
+.bar input{flex:1;min-width:190px}
 
-.shot{max-width:190px;border-radius:12px;border:1px solid var(--line);cursor:zoom-in;display:block}
-.acts{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
-.btn{padding:12px 22px;border-radius:999px;border:none;font-family:inherit;
-  font-size:13.5px;font-weight:700;cursor:pointer}
-.ok{background:var(--green);color:#fff}
-.no{background:#fff;color:var(--red);border:1.5px solid rgba(220,38,38,.3)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;
+  padding:18px 20px;margin-bottom:12px}
+.card-top{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.t-name{font-size:16.5px;font-weight:800;letter-spacing:-.3px}
+.t-sub{font-size:12.5px;color:var(--mid);margin-top:2px}
+.t-right{margin-left:auto;text-align:right}
 
-.pill{display:inline-block;font-size:10.5px;font-weight:800;padding:4px 11px;
+.pill{display:inline-block;font-size:10px;font-weight:800;padding:4px 10px;
   border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
-.p-pending{background:rgba(255,121,0,.14);color:#b45309}
-.p-approved{background:rgba(22,163,74,.14);color:#15803d}
-.p-rejected{background:rgba(220,38,38,.12);color:#b91c1c}
+.s-trial{background:rgba(255,121,0,.14);color:#b45309}
+.s-active{background:rgba(22,163,74,.14);color:#15803d}
+.s-suspended{background:rgba(220,38,38,.12);color:#b91c1c}
+.s-cancelled{background:rgba(0,0,0,.07);color:#6b7280}
+.s-life{background:var(--neon);color:var(--ink)}
 
-.empty{text-align:center;padding:60px 20px;color:var(--mid);font-size:14px}
-.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.86);display:none;
-  align-items:center;justify-content:center;z-index:9999;padding:30px;cursor:zoom-out}
-.lightbox img{max-width:100%;max-height:100%;border-radius:12px}
+.mods{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.mod{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;
+  background:rgba(0,0,0,.05);color:#444}
+
+.mini{display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;
+  padding-top:12px;border-top:1px solid var(--line)}
+.mini div{font-size:12px;color:var(--mid)}
+.mini b{display:block;font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{padding:10px 18px;border-radius:999px;border:1.5px solid var(--line);
+  background:#fff;font-size:12.5px;font-weight:700;cursor:pointer}
+.btn.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.life{background:var(--neon);border-color:var(--neon)}
+.btn.warn{color:var(--red);border-color:rgba(220,38,38,.3)}
+
+.empty{text-align:center;padding:56px 20px;color:var(--mid);font-size:14px}
+
+.chart{display:flex;align-items:flex-end;gap:6px;height:170px;padding:16px;
+  background:var(--card);border:1px solid var(--line);border-radius:20px;margin-bottom:20px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
+.chart .fill{width:100%;background:var(--ink);border-radius:6px 6px 0 0;min-height:2px;
+  margin-top:auto;transition:height .4s}
+.chart .lbl{font-size:9px;color:var(--mid);font-weight:700;white-space:nowrap}
+
+/* Fenêtre modale */
+.ov{position:fixed;inset:0;background:rgba(15,20,30,.5);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;z-index:9000;padding:20px}
+.ov.show{display:flex}
+.sheet{background:var(--card);border-radius:26px;max-width:560px;width:100%;
+  max-height:90vh;overflow-y:auto;padding:26px}
+.sheet h2{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:5px}
+.sheet .sub{font-size:13px;color:var(--mid);margin-bottom:20px}
+.fl{display:block;font-size:11px;font-weight:800;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--mid);margin-bottom:7px}
+.fi{width:100%;padding:12px 15px;border:1.5px solid var(--line);border-radius:13px;
+  font-family:inherit;font-size:14px;background:#fff;outline:none;margin-bottom:14px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.opt{display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;
+  border:1.5px solid var(--line);background:#fff;font-size:13px;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  <div class="top">
+  <div class="head">
     <span class="brand">
       <span class="dot"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#12120f" stroke-width="2.4" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg></span>
       Afya <i>Kamili</i>
     </span>
+    <span class="badge">Console</span>
   </div>
 
-  <h1>Vérification des paiements</h1>
-  <p class="lead">
-    Contrôlez chaque référence sur votre relevé mobile money avant de valider.
-    Une référence déjà utilisée est automatiquement refusée par le système.
-  </p>
+  <h1>Administration de la plateforme</h1>
+  <p class="lead">Établissements, abonnements, paiements et revenus.</p>
 
-  <div class="tabs" id="tabs">
-    <button class="tab on" data-status="pending">En attente <span class="n" id="nPending"></span></button>
-    <button class="tab" data-status="approved">Validés <span class="n" id="nApproved"></span></button>
-    <button class="tab" data-status="rejected">Refusés <span class="n" id="nRejected"></span></button>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="nav" id="nav">
+    <button class="on" data-v="tenants">Établissements</button>
+    <button data-v="payments">Paiements <span class="n" id="nPay"></span></button>
+    <button data-v="revenue">Revenus</button>
   </div>
 
-  <div id="list"><div class="empty">Chargement…</div></div>
+  <div id="view"><div class="empty">Chargement…</div></div>
 </div>
 
-<div class="lightbox" id="lightbox"><img id="lightboxImg" alt="Preuve de paiement"></div>
+<div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
 
 <script src="../../js/afya_api.js" defer></script>
 <script>
 (function () {
   'use strict';
-  let status = 'pending';
+
+  let VIEW = 'tenants';
+  let TENANTS = [], MODULES = [], PLANS = [], DETAIL = null;
 
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g,
     c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money = (n) => '$' + Number(n || 0).toFixed(2).replace(/\.00$/, '');
 
-  function toast(msg, err) {
-    let t = $('t');
+  function toast(m, err) {
+    let t = $('tst');
     if (!t) {
-      t = document.createElement('div'); t.id = 't';
+      t = document.createElement('div'); t.id = 'tst';
       t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);' +
         'padding:13px 22px;border-radius:999px;color:#fff;font-size:13.5px;font-weight:700;' +
         'z-index:10000;opacity:0;transition:opacity .3s;box-shadow:0 10px 30px rgba(0,0,0,.2)';
       document.body.appendChild(t);
     }
-    t.textContent = msg;
+    t.textContent = m;
     t.style.background = err ? '#dc2626' : '#12120f';
     t.style.opacity = '1';
     clearTimeout(t._h);
     t._h = setTimeout(() => t.style.opacity = '0', 3600);
   }
 
-  function money(n) { return '$' + Number(n || 0).toFixed(2); }
-
-  function when(d) {
+  function day(d) {
     if (!d) return '—';
-    const x = new Date(d.replace(' ', 'T'));
-    return x.toLocaleDateString('fr-FR') + ' à ' +
-           x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    return new Date(String(d).replace(' ', 'T')).toLocaleDateString('fr-FR');
   }
 
-  async function load() {
+  /* ═══ VUE D'ENSEMBLE ═══ */
+  async function loadKpis() {
     try {
-      const res = await AfyaAPI.platform.payments(status);
-      const c = res.counts || {};
-      $('nPending').textContent  = c.pending  ? `(${c.pending})`  : '';
-      $('nApproved').textContent = c.approved ? `(${c.approved})` : '';
-      $('nRejected').textContent = c.rejected ? `(${c.rejected})` : '';
-      render(res.payments || []);
+      const o = await AfyaAPI.platform.overview();
+      $('nPay').textContent = o.pending_payments ? `(${o.pending_payments})` : '';
+      $('kpis').innerHTML = `
+        <div class="kpi"><div class="kpi-l">Établissements</div>
+          <div class="kpi-v">${o.tenants.total}</div>
+          <div class="kpi-s">${o.users_total} utilisateur(s)</div></div>
+        <div class="kpi"><div class="kpi-l">En essai</div>
+          <div class="kpi-v">${o.tenants.trial}</div>
+          <div class="kpi-s">${o.tenants.expiring} expire(nt) sous 7 j</div></div>
+        <div class="kpi"><div class="kpi-l">Abonnés</div>
+          <div class="kpi-v">${o.tenants.active}</div>
+          <div class="kpi-s">${o.tenants.suspended} suspendu(s)</div></div>
+        <div class="kpi"><div class="kpi-l">Ce mois</div>
+          <div class="kpi-v">${money(o.revenue.this_month)}</div>
+          <div class="kpi-s">encaissé</div></div>
+        <div class="kpi hi"><div class="kpi-l">Total encaissé</div>
+          <div class="kpi-v">${money(o.revenue.total)}</div>
+          <div class="kpi-s">depuis le lancement</div></div>`;
     } catch (e) {
-      $('list').innerHTML = `<div class="empty">${esc(e.message || 'Accès refusé.')}</div>`;
+      $('kpis').innerHTML = `<div class="empty">${esc(e.message || 'Accès refusé.')}</div>`;
     }
   }
 
-  function render(rows) {
-    if (!rows.length) {
-      $('list').innerHTML = '<div class="empty">Aucune déclaration dans cette catégorie.</div>';
+  /* ═══ ÉTABLISSEMENTS ═══ */
+  async function viewTenants() {
+    $('view').innerHTML = `
+      <div class="bar">
+        <input id="q" placeholder="Nom, propriétaire, téléphone, ville…">
+        <select id="st">
+          <option value="">Tous les statuts</option>
+          <option value="trial">En essai</option>
+          <option value="active">Abonnés</option>
+          <option value="suspended">Suspendus</option>
+        </select>
+      </div>
+      <div id="tlist"><div class="empty">Chargement…</div></div>`;
+
+    let timer = null;
+    $('q').addEventListener('input', () => {
+      clearTimeout(timer); timer = setTimeout(loadTenants, 320);
+    });
+    $('st').addEventListener('change', loadTenants);
+    loadTenants();
+  }
+
+  async function loadTenants() {
+    try {
+      const res = await AfyaAPI.platform.tenants({
+        search: $('q') ? $('q').value.trim() : '',
+        status: $('st') ? $('st').value : '',
+      });
+      TENANTS = res.tenants || [];
+      renderTenants();
+    } catch (e) {
+      $('tlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    }
+  }
+
+  function renderTenants() {
+    if (!TENANTS.length) {
+      $('tlist').innerHTML = '<div class="empty">Aucun établissement.</div>';
       return;
     }
 
-    const origin = (AfyaAPI.API_ORIGIN || '').replace(/\/$/, '');
-
-    $('list').innerHTML = rows.map(p => `
-      <div class="row">
-        <div class="row-top">
-          <div class="who">
-            <div class="estab">${esc(p.establishment_name)}</div>
-            <div class="by">Déclaré par ${esc(p.declared_by)} · ${esc(p.declared_phone || '')}</div>
-            <div style="margin-top:8px"><span class="pill p-${p.status}">${
-              p.status === 'pending' ? 'En attente' :
-              p.status === 'approved' ? 'Validé' : 'Refusé'}</span></div>
-          </div>
+    $('tlist').innerHTML = TENANTS.map(t => `
+      <div class="card">
+        <div class="card-top">
           <div>
-            <div class="amount">${money(p.amount)}</div>
-            <div class="plan">${esc(p.plan_code)} · ${p.billing_cycle === 'yearly' ? 'annuel' : 'mensuel'}</div>
+            <div class="t-name">${esc(t.establishment_name)}</div>
+            <div class="t-sub">${esc(t.owner_name || '—')} · ${esc(t.owner_phone || '')}
+              ${t.city ? ' · ' + esc(t.city) : ''}</div>
+            <div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">
+              <span class="pill s-${esc(t.status)}">${
+                t.status === 'trial' ? 'Essai' :
+                t.status === 'active' ? 'Abonné' :
+                t.status === 'suspended' ? 'Suspendu' : 'Résilié'}</span>
+              ${t.is_lifetime ? '<span class="pill s-life">À vie</span>' : ''}
+              ${t.status === 'trial' && t.trial_ends_at
+                ? `<span style="font-size:11.5px;color:var(--mid);align-self:center">
+                     jusqu'au ${day(t.trial_ends_at)}</span>` : ''}
+            </div>
+            ${t.modules && t.modules.length ? `<div class="mods">${
+              t.modules.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</div>` : ''}
+          </div>
+          <div class="t-right">
+            <div style="font-size:19px;font-weight:800;letter-spacing:-.5px">${money(t.total_paid)}</div>
+            <div style="font-size:11.5px;color:var(--mid)">encaissé</div>
           </div>
         </div>
 
-        <div class="facts">
-          <div>
-            <div class="fact-l">Référence</div>
-            <div class="fact-v"><span class="ref">${esc(p.reference)}</span></div>
-          </div>
-          <div>
-            <div class="fact-l">Opérateur</div>
-            <div class="fact-v">${esc(p.operator)}</div>
-          </div>
-          <div>
-            <div class="fact-l">Numéro émetteur</div>
-            <div class="fact-v">${esc(p.sender_phone || '—')}</div>
-          </div>
-          <div>
-            <div class="fact-l">Déclaré le</div>
-            <div class="fact-v">${when(p.created_at)}</div>
-          </div>
+        <div class="mini">
+          <div><b>${t.users_count}</b>utilisateurs</div>
+          <div><b>${t.medications_count}</b>articles</div>
+          <div><b>${day(t.created_at)}</b>inscrit le</div>
         </div>
 
-        ${p.screenshot_path ? `
-          <img class="shot" src="${origin}/storage/${esc(p.screenshot_path)}"
-               alt="Preuve de paiement" onclick="PlatformPay.zoom(this.src)">` : ''}
-
-        ${p.review_note ? `
-          <div style="margin-top:12px;font-size:12.5px;color:#55554f">
-            <strong>Note :</strong> ${esc(p.review_note)}</div>` : ''}
-
-        ${p.status === 'pending' ? `
-          <div class="acts">
-            <button class="btn ok" onclick="PlatformPay.approve(${p.id})">Valider et activer</button>
-            <button class="btn no" onclick="PlatformPay.reject(${p.id})">Refuser</button>
-          </div>` : ''}
+        <div class="acts">
+          <button class="btn dark" onclick="Console.detail(${t.id})">Voir la fiche</button>
+          <button class="btn life" onclick="Console.grant(${t.id})">Accorder l'accès</button>
+          ${t.status === 'trial'
+            ? `<button class="btn" onclick="Console.extend(${t.id})">Prolonger l'essai</button>` : ''}
+          ${t.status !== 'suspended'
+            ? `<button class="btn warn" onclick="Console.suspend(${t.id})">Suspendre</button>`
+            : `<button class="btn" onclick="Console.reactivate(${t.id})">Réactiver</button>`}
+        </div>
       </div>`).join('');
   }
 
-  window.PlatformPay = {
-    zoom(src) {
-      $('lightboxImg').src = src;
-      $('lightbox').style.display = 'flex';
+  /* ═══ PAIEMENTS ═══ */
+  async function viewPayments() {
+    $('view').innerHTML = `
+      <div class="bar">
+        <select id="ps">
+          <option value="pending">En attente</option>
+          <option value="approved">Validés</option>
+          <option value="rejected">Refusés</option>
+        </select>
+      </div>
+      <div id="plist"><div class="empty">Chargement…</div></div>`;
+    $('ps').addEventListener('change', loadPayments);
+    loadPayments();
+  }
+
+  async function loadPayments() {
+    try {
+      const res = await AfyaAPI.platform.payments($('ps').value);
+      const rows = res.payments || [];
+      if (!rows.length) {
+        $('plist').innerHTML = '<div class="empty">Aucune déclaration.</div>';
+        return;
+      }
+      const origin = (AfyaAPI.API_ORIGIN || '').replace(/\/$/, '');
+      $('plist').innerHTML = rows.map(p => `
+        <div class="card">
+          <div class="card-top">
+            <div>
+              <div class="t-name">${esc(p.establishment_name)}</div>
+              <div class="t-sub">Déclaré par ${esc(p.declared_by)} · ${esc(p.declared_phone || '')}</div>
+              <div style="margin-top:9px">
+                <span style="font-family:ui-monospace,monospace;background:rgba(255,121,0,.1);
+                      padding:3px 9px;border-radius:7px;font-size:12.5px;font-weight:700">
+                  ${esc(p.reference)}</span>
+                <span style="font-size:12px;color:var(--mid);margin-left:8px">${esc(p.operator)}</span>
+              </div>
+            </div>
+            <div class="t-right">
+              <div style="font-size:20px;font-weight:800;letter-spacing:-.5px">${money(p.amount)}</div>
+              <div style="font-size:11.5px;color:var(--mid)">${esc(p.plan_code)} ·
+                ${p.billing_cycle === 'yearly' ? 'annuel' : 'mensuel'}</div>
+            </div>
+          </div>
+          ${p.screenshot_path ? `<img src="${origin}/storage/${esc(p.screenshot_path)}"
+            style="max-width:180px;border-radius:12px;margin-top:12px;cursor:zoom-in;display:block"
+            onclick="window.open(this.src)">` : ''}
+          ${p.review_note ? `<div style="margin-top:10px;font-size:12.5px;color:#55554f">
+            <strong>Note :</strong> ${esc(p.review_note)}</div>` : ''}
+          ${p.status === 'pending' ? `
+            <div class="acts">
+              <button class="btn dark" onclick="Console.approve(${p.id})">Valider et activer</button>
+              <button class="btn warn" onclick="Console.rejectPay(${p.id})">Refuser</button>
+            </div>` : ''}
+        </div>`).join('');
+    } catch (e) {
+      $('plist').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    }
+  }
+
+  /* ═══ REVENUS ═══ */
+  async function viewRevenue() {
+    $('view').innerHTML = '<div class="empty">Chargement…</div>';
+    try {
+      const r = await AfyaAPI.platform.revenue();
+      const max = Math.max(...r.months.map(m => m.amount), 1);
+
+      $('view').innerHTML = `
+        <div class="chart">
+          ${r.months.map(m => `
+            <div class="col" title="${esc(m.label)} : ${money(m.amount)}">
+              <div class="fill" style="height:${Math.max(2, (m.amount / max) * 100)}%"></div>
+              <div class="lbl">${esc(m.label.split(' ')[0])}</div>
+            </div>`).join('')}
+        </div>
+
+        <div class="kpis">
+          ${r.by_plan.map(p => `
+            <div class="kpi"><div class="kpi-l">${esc(p.plan_code)}</div>
+              <div class="kpi-v">${money(p.total)}</div>
+              <div class="kpi-s">${p.n} paiement(s)</div></div>`).join('')}
+        </div>
+
+        <div style="font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+             color:var(--mid);margin:22px 0 12px">Derniers encaissements</div>
+
+        ${r.recent.map(p => `
+          <div class="card" style="padding:14px 18px">
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+              <div style="flex:1;min-width:180px">
+                <div style="font-weight:700;font-size:14px">${esc(p.establishment_name)}</div>
+                <div style="font-size:11.5px;color:var(--mid)">${esc(p.reference)} · ${day(p.reviewed_at)}</div>
+              </div>
+              <div style="font-size:16px;font-weight:800">${money(p.amount)}</div>
+            </div>
+          </div>`).join('') || '<div class="empty">Aucun encaissement.</div>'}`;
+    } catch (e) {
+      $('view').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    }
+  }
+
+  /* ═══ FENÊTRES ═══ */
+  function sheet(html) { $('sheet').innerHTML = html; $('ov').classList.add('show'); }
+  function closeSheet() { $('ov').classList.remove('show'); }
+
+  window.Console = {
+    closeSheet,
+
+    async detail(id) {
+      try {
+        DETAIL = await AfyaAPI.platform.tenant(id);
+        MODULES = DETAIL.modules || [];
+        PLANS   = DETAIL.plans   || [];
+        const t = DETAIL.tenant, s = DETAIL.stats;
+
+        sheet(`
+          <h2>${esc(t.establishment_name)}</h2>
+          <div class="sub">${esc(t.owner_name || '')} · ${esc(t.owner_phone || '')}
+            ${t.city ? ' · ' + esc(t.city) : ''}</div>
+
+          <div class="kpis" style="margin-bottom:20px">
+            <div class="kpi"><div class="kpi-l">Articles</div><div class="kpi-v">${s.medications}</div></div>
+            <div class="kpi"><div class="kpi-l">Ventes</div><div class="kpi-v">${s.sales}</div></div>
+            <div class="kpi"><div class="kpi-l">Chiffre d'affaires</div>
+              <div class="kpi-v" style="font-size:19px">${money(s.revenue)}</div></div>
+          </div>
+
+          <div class="fl">Utilisateurs (${DETAIL.users.length})</div>
+          <div style="margin-bottom:18px">
+            ${DETAIL.users.map(u => `
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 0;
+                   border-bottom:1px solid var(--line)">
+                <div style="flex:1">
+                  <div style="font-size:13.5px;font-weight:700">${esc(u.name)}
+                    ${u.is_owner ? '<span class="pill s-life" style="margin-left:6px">Propriétaire</span>' : ''}</div>
+                  <div style="font-size:11.5px;color:var(--mid)">${esc(u.phone)} · ${esc(u.role || '—')}</div>
+                </div>
+                <span class="pill s-${u.status === 'active' ? 'active' : 'suspended'}">${esc(u.status)}</span>
+              </div>`).join('')}
+          </div>
+
+          <div class="fl">Abonnements</div>
+          <div style="margin-bottom:20px">
+            ${DETAIL.subscriptions.length ? DETAIL.subscriptions.map(sb => `
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;
+                   border-bottom:1px solid var(--line);font-size:13px">
+                <div style="flex:1;font-weight:600">${esc(sb.name)}</div>
+                <div style="color:var(--mid);font-size:12px">
+                  ${String(sb.current_period_end).slice(0,4) >= '2099'
+                    ? '<span class="pill s-life">À vie</span>'
+                    : "jusqu\u2019au " + day(sb.current_period_end)}</div>
+              </div>`).join('')
+              : '<div style="font-size:13px;color:var(--mid)">Aucun abonnement actif.</div>'}
+          </div>
+
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <button class="btn life" onclick="Console.grant(${t.id})">Accorder l'accès</button>
+            <button class="btn" onclick="Console.closeSheet()">Fermer</button>
+          </div>`);
+      } catch (e) { toast(e.message, true); }
+    },
+
+    async grant(id) {
+      if (!MODULES.length) {
+        try {
+          const d = await AfyaAPI.platform.tenant(id);
+          MODULES = d.modules || []; PLANS = d.plans || [];
+        } catch (e) { toast(e.message, true); return; }
+      }
+
+      sheet(`
+        <h2>Accorder l'accès</h2>
+        <div class="sub">Licence à vie, durée déterminée, ou règlement en présentiel.</div>
+
+        <div class="fl">Formule complète</div>
+        <div class="opts">
+          ${PLANS.map(p => `
+            <label class="opt"><input type="radio" name="pl" value="${esc(p.code)}"
+              style="accent-color:#12120f">${esc(p.label)}</label>`).join('')}
+        </div>
+
+        <div class="fl">…ou modules précis</div>
+        <div class="opts">
+          ${MODULES.map(m => `
+            <label class="opt"><input type="checkbox" class="mc" value="${esc(m.code)}"
+              style="accent-color:#12120f">${esc(m.name)}</label>`).join('')}
+        </div>
+
+        <div class="fl">Durée</div>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="dur" value="lifetime" checked
+            style="accent-color:#12120f"><strong>À vie</strong></label>
+          <label class="opt"><input type="radio" name="dur" value="months"
+            style="accent-color:#12120f">Nombre de mois</label>
+        </div>
+
+        <input class="fi" id="gMonths" type="number" min="1" max="120" value="12"
+               placeholder="Mois" style="display:none">
+
+        <div class="fl">Montant encaissé <span style="font-weight:500;text-transform:none">— facultatif, pour votre comptabilité</span></div>
+        <input class="fi" id="gAmount" type="number" step="0.01" min="0" placeholder="0.00">
+
+        <div class="fl">Note</div>
+        <input class="fi" id="gNote" placeholder="Ex : règlement en espèces au bureau">
+
+        <div style="display:flex;gap:9px">
+          <button class="btn dark" style="flex:1" onclick="Console.doGrant(${id})">Accorder</button>
+          <button class="btn" onclick="Console.closeSheet()">Annuler</button>
+        </div>`);
+
+      document.querySelectorAll('input[name=dur]').forEach(r => {
+        r.addEventListener('change', () => {
+          $('gMonths').style.display = r.value === 'months' && r.checked ? 'block' : 'none';
+        });
+      });
+    },
+
+    async doGrant(id) {
+      const plan  = document.querySelector('input[name=pl]:checked');
+      const codes = [...document.querySelectorAll('.mc:checked')].map(c => c.value);
+      const dur   = document.querySelector('input[name=dur]:checked').value;
+
+      if (!plan && !codes.length) { toast('Choisissez une formule ou des modules.', true); return; }
+
+      const payload = {
+        mode:        plan && !codes.length ? 'plan' : dur,
+        note:        $('gNote').value.trim() || null,
+        amount_paid: parseFloat($('gAmount').value) || null,
+      };
+
+      if (plan && !codes.length) {
+        payload.plan_code = plan.value;
+        // Une formule seule s'applique pour la durée choisie
+        if (dur === 'lifetime') { payload.mode = 'lifetime'; payload.module_codes = null; }
+      }
+      if (codes.length) {
+        payload.module_codes = codes;
+        payload.mode = dur;
+      }
+      if (payload.mode === 'months') payload.months = parseInt($('gMonths').value, 10) || 12;
+
+      // Le back attend module_codes pour lifetime/months
+      if ((payload.mode === 'lifetime' || payload.mode === 'months') && !payload.module_codes) {
+        const p = PLANS.find(x => x.code === (plan && plan.value));
+        payload.module_codes = p ? p.modules : [];
+      }
+
+      try {
+        const res = await AfyaAPI.platform.grant(id, payload);
+        toast(res.message);
+        closeSheet();
+        loadTenants(); loadKpis();
+      } catch (e) { toast(e.message, true); }
+    },
+
+    async extend(id) {
+      const d = prompt('Prolonger l\'essai de combien de jours ?', '10');
+      if (d === null) return;
+      const days = parseInt(d, 10);
+      if (!days || days < 1) { toast('Nombre invalide.', true); return; }
+      try {
+        const res = await AfyaAPI.platform.extendTrial(id, days);
+        toast(res.message); loadTenants(); loadKpis();
+      } catch (e) { toast(e.message, true); }
+    },
+
+    async suspend(id) {
+      const r = prompt('Motif de la suspension ?\n(les sessions ouvertes seront fermées)');
+      if (r === null) return;
+      try {
+        const res = await AfyaAPI.platform.setStatus(id, 'suspended', r);
+        toast(res.message); loadTenants(); loadKpis();
+      } catch (e) { toast(e.message, true); }
+    },
+
+    async reactivate(id) {
+      try {
+        const res = await AfyaAPI.platform.setStatus(id, 'active', null);
+        toast(res.message); loadTenants(); loadKpis();
+      } catch (e) { toast(e.message, true); }
     },
 
     async approve(id) {
-      if (!confirm("Avez-vous vérifié cette référence sur votre relevé mobile money ?")) return;
+      if (!confirm('Avez-vous vérifié cette référence sur votre relevé ?')) return;
       try {
         const res = await AfyaAPI.platform.approve(id, null);
-        toast(res.message || 'Paiement validé.');
-        load();
-      } catch (e) { toast(e.message || 'Erreur', true); }
+        toast(res.message); loadPayments(); loadKpis();
+      } catch (e) { toast(e.message, true); }
     },
 
-    async reject(id) {
-      const note = prompt("Pourquoi refusez-vous cette déclaration ?\n(le client verra ce message)");
-      if (note === null) return;
-      if (note.trim().length < 5) { toast('Motif trop court.', true); return; }
+    async rejectPay(id) {
+      const n = prompt('Pourquoi refusez-vous ?\n(le client verra ce message)');
+      if (n === null) return;
+      if (n.trim().length < 5) { toast('Motif trop court.', true); return; }
       try {
-        const res = await AfyaAPI.platform.reject(id, note.trim());
-        toast(res.message || 'Déclaration refusée.');
-        load();
-      } catch (e) { toast(e.message || 'Erreur', true); }
-    }
+        const res = await AfyaAPI.platform.reject(id, n.trim());
+        toast(res.message); loadPayments(); loadKpis();
+      } catch (e) { toast(e.message, true); }
+    },
   };
 
-  $('lightbox').addEventListener('click', () => $('lightbox').style.display = 'none');
+  $('ov').addEventListener('click', (e) => { if (e.target === $('ov')) closeSheet(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
 
-  document.querySelectorAll('.tab').forEach(b => {
+  document.querySelectorAll('#nav button').forEach(b => {
     b.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+      document.querySelectorAll('#nav button').forEach(x => x.classList.remove('on'));
       b.classList.add('on');
-      status = b.dataset.status;
-      load();
+      VIEW = b.dataset.v;
+      if (VIEW === 'tenants')  viewTenants();
+      if (VIEW === 'payments') viewPayments();
+      if (VIEW === 'revenue')  viewRevenue();
     });
   });
 
   function init() {
     if (!window.AfyaAPI) { setTimeout(init, 80); return; }
     if (!AfyaAPI.Token.exists()) { window.location.href = '../../login'; return; }
-    load();
+    loadKpis();
+    viewTenants();
   }
 
   if (document.readyState === 'loading') {
