@@ -592,9 +592,34 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
     });
   });
 
-  function init() {
+  /**
+   * Garde d'accès.
+   *
+   * ⚠ Ceci est un confort d'interface, PAS une sécurité : tout le JS de
+   * cette page est lisible et modifiable par n'importe qui. Le vrai
+   * contrôle est côté serveur (PlatformAdmin::is), rejoué à chaque appel
+   * de /api/platform/*. Ce que ce code évite, c'est qu'un utilisateur
+   * ordinaire tombe sur une console vide remplie de 403 sans comprendre.
+   */
+  async function init() {
     if (!window.AfyaAPI) { setTimeout(init, 80); return; }
-    if (!AfyaAPI.Token.exists()) { window.location.href = '../../login'; return; }
+    if (!AfyaAPI.Token.exists()) { window.location.replace('../../login'); return; }
+
+    let user;
+    try {
+      const res = await AfyaAPI.auth.me();
+      user = res.user;
+    } catch (e) {
+      AfyaAPI.Token.clear();
+      window.location.replace('../../login');
+      return;
+    }
+
+    if (!user.is_platform_admin) {
+      window.location.replace('../../index');
+      return;
+    }
+
     loadKpis();
     viewTenants();
   }

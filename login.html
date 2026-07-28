@@ -1090,6 +1090,12 @@ const MODULE_PATHS={
 };
 
 function landingPage(user){
+  // Le ghost admin ne gère pas un établissement : il gère la plateforme.
+  // Il part donc droit sur la console, avant toute logique de modules.
+  if(user&&user.is_platform_admin){
+    return './modules/platform/index';
+  }
+
   const mods=(user&&user.modules)||[];
   // On ignore l'administration : elle accompagne un métier, elle n'en est pas un
   const business=mods.filter(function(m){return m!=='administration'});
@@ -1109,6 +1115,7 @@ function persistSession(user){
   localStorage.setItem('afya_user',JSON.stringify({
     name:user.name,
     is_owner:user.is_owner,
+    is_platform_admin:!!user.is_platform_admin,
     establishment:user.tenant?.establishment_name,
     status:user.tenant?.status,
     trial_ends_at:user.tenant?.trial_ends_at

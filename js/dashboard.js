@@ -84,6 +84,29 @@
   }
 
   /* ═══ 2. BANDEAU DE PLAN (réel) ═══ */
+
+  /**
+   * Transforme le lien « S'abonner » en déclencheur du modal Orange Money.
+   *
+   * Le modal existe déjà (js/billing.js expose window.AfyaBilling), mais
+   * rien ne l'ouvrait : le bouton restait un simple lien vers la page des
+   * tarifs. Le client voyait donc les prix sans jamais voir COMMENT payer.
+   *
+   * Le lien vers ./pricing reste le comportement de repli si billing.js
+   * n'a pas pu se charger — mieux vaut une page de tarifs qu'un clic mort.
+   */
+  function openBillingOnClick(el) {
+    if (el.dataset.billingBound) return;   // évite d'empiler les écouteurs
+    el.dataset.billingBound = '1';
+
+    el.addEventListener('click', (e) => {
+      if (window.AfyaBilling && typeof AfyaBilling.show === 'function') {
+        e.preventDefault();
+        AfyaBilling.show();
+      }
+    });
+  }
+
   function fillPlanBanner(tenant) {
     const pill    = document.getElementById('planPill');
     const text    = document.getElementById('planText');
@@ -101,6 +124,7 @@
       if (upgrade) {
         upgrade.textContent = "S'abonner →";
         upgrade.classList.remove('hide');
+        openBillingOnClick(upgrade);
       }
       return;
     }
@@ -129,8 +153,9 @@
     text.innerHTML   = DESC[plan] + (price ? ` — <strong>${price}</strong>` : '');
 
     if (upgrade) {
-      upgrade.textContent = 'Voir les formules →';
+      upgrade.textContent = plan === 'none' ? "S'abonner →" : 'Changer de formule →';
       upgrade.classList.toggle('hide', plan === 'enterprise');
+      openBillingOnClick(upgrade);
     }
   }
 
