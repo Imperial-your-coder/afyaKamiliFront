@@ -367,11 +367,28 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
                   : ''}
             </div>
             <div style="text-align:right;font-size:12.5px;color:var(--mid)">
-              <div>${u.last_seen ? 'Vu ' + when(u.last_seen) : 'Jamais connecté'}</div>
+              <div style="font-weight:800;color:var(--ink)">
+                ${u.last_seen ? exact(u.last_seen) : '—'}</div>
+              <div>${u.last_seen ? when(u.last_seen) : 'Jamais connecté'}</div>
               <div style="margin-top:3px">${u.status !== 'active' || !u.is_active ? '⚠ compte désactivé' : ''}</div>
             </div>
           </div>
         </div>`).join('');
+  }
+
+  /**
+   * Date et heure exactes : « 21/07/2026 à 04:15 ».
+   *
+   * L'affichage relatif seul ne suffit pas ici — pour rappeler un client
+   * au bon moment, il faut savoir s'il travaillait à 4 h du matin ou à
+   * 14 h. Les deux sont donc affichés : l'exact au-dessus, le relatif
+   * en dessous pour la lecture rapide.
+   */
+  function exact(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+         + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   }
 
   /** « il y a 3 h », « le 12/07 » — plus lisible qu'un horodatage brut */

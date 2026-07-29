@@ -108,6 +108,9 @@
 
     document.body.appendChild(wrap);
 
+    // Les trois voies de fermeture passent toutes par close(), qui
+    // refuse d'agir quand le modal est verrouillé. Une seule règle à
+    // maintenir, impossible d'en oublier une.
     $('billingClose').addEventListener('click', close);
     wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); });
     document.addEventListener('keydown', (e) => {
@@ -115,8 +118,22 @@
     });
   }
 
+  /* Modal impossible à fermer : accès expiré. */
+  let LOCKED = false;
+
+  function setLocked(on) {
+    LOCKED = !!on;
+    const x = $('billingClose');
+    if (x) x.style.display = on ? 'none' : 'flex';
+  }
+
   function open()  { build(); $('billingModal').style.display = 'flex'; }
-  function close() { const m = $('billingModal'); if (m) m.style.display = 'none'; }
+
+  function close() {
+    if (LOCKED) return;                 // expiré : aucune sortie
+    const m = $('billingModal');
+    if (m) m.style.display = 'none';
+  }
 
   /* ═══ ÉCRANS ═══ */
 
@@ -283,6 +300,17 @@
 
       <div style="font-size:11.5px;color:${OM.mid};text-align:center;margin-top:12px;line-height:1.5">
         Votre accès reste ouvert pendant la vérification.
+      </div>
+
+      <!-- Sortie pour les structures qui ne sont pas des pharmacies :
+           hôpitaux, cliniques, laboratoires. Leurs besoins et leurs
+           tarifs diffèrent, la page des formules les oriente mieux
+           qu'un formulaire de dépôt. -->
+      <div style="border-top:1px solid ${OM.line};margin-top:20px;padding-top:16px;text-align:center">
+        <a href="/pricing" id="bNotPharmacy"
+           style="font-size:12.5px;font-weight:700;color:${OM.mid};text-decoration:none">
+          Je ne suis pas une pharmacie →
+        </a>
       </div>`;
 
     renderPlans();
@@ -424,6 +452,87 @@
 
   /* ═══ DÉMARRAGE ═══ */
 
+  /* ═══ RAPPEL AMICAL (fermable) ═══ */
+
+  function viewReminder(t) {
+    setLocked(false);
+
+    const d = t.days_left;
+    const jours = d > 1 ? `${d} jours` : (d === 1 ? 'demain' : "aujourd'hui");
+
+    $('billingTitle').textContent = "Votre essai touche à sa fin";
+    $('billingSub').textContent   = d > 0 ? `Il vous reste ${jours}` : 'Dernier jour';
+
+    $('billingBody').innerHTML = `
+      <div style="font-size:14.5px;line-height:1.65;margin-bottom:6px">
+        Votre période d'essai prend fin <strong>${esc(jours)}</strong>.
+        Pensez à régler votre abonnement pour ne pas interrompre
+        l'activité de votre pharmacie.
+      </div>
+      <div style="font-size:13px;color:${OM.mid};line-height:1.6;margin-bottom:22px">
+        Le paiement se fait par ${esc(INFO.payment.operator || 'Orange Money')},
+        en quelques secondes depuis votre téléphone.
+      </div>
+
+      <button id="bPayNow" style="width:100%;padding:16px;border-radius:999px;border:none;
+              background:${OM.orange};color:#fff;font-family:inherit;font-size:15px;
+              font-weight:800;cursor:pointer">Payer tout de suite</button>
+
+      <button id="bLater" style="width:100%;padding:14px;border-radius:999px;margin-top:10px;
+              border:1.5px solid ${OM.line};background:transparent;color:${OM.mid};
+              font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">
+        Je le ferai plus tard</button>`;
+
+    $('bPayNow').onclick = () => viewForm();
+    $('bLater').onclick  = close;
+  }
+
+  /* ═══ ACCÈS COUPÉ (non fermable) ═══ */
+
+  function viewExpired(t) {
+    setLocked(true);
+
+    const wasTrial = t.status === 'trial';
+
+    $('billingTitle').textContent = wasTrial
+      ? "Votre période d'essai est terminée"
+      : 'Votre abonnement a expiré';
+    $('billingSub').textContent = 'Réglez votre abonnement pour continuer';
+
+    $('billingBody').innerHTML = `
+      <div style="font-size:14.5px;line-height:1.65;margin-bottom:8px">
+        ${wasTrial ? "Votre essai gratuit est arrivé à son terme."
+                   : 'Votre abonnement est arrivé à échéance.'}
+        L'accès à l'application est suspendu jusqu'au règlement.
+      </div>
+      <div style="font-size:13px;color:${OM.mid};line-height:1.6;margin-bottom:22px">
+        Vos données sont conservées intactes. Dès votre déclaration de
+        paiement, l'accès rouvre immédiatement, sans attendre notre
+        vérification.
+      </div>
+
+      <button id="bPayNow" style="width:100%;padding:16px;border-radius:999px;border:none;
+              background:${OM.orange};color:#fff;font-family:inherit;font-size:15px;
+              font-weight:800;cursor:pointer">Payer mon abonnement</button>
+
+      <div style="border-top:1px solid ${OM.line};margin-top:20px;padding-top:16px;text-align:center">
+        <a href="/login" id="bLogout"
+           style="font-size:12.5px;font-weight:700;color:${OM.mid};text-decoration:none">
+          Se déconnecter
+        </a>
+      </div>`;
+
+    $('bPayNow').onclick = () => viewForm();
+
+    // Le verrou ne doit jamais devenir un piège : on peut toujours
+    // quitter son compte, même sans payer.
+    $('bLogout').onclick = async (e) => {
+      e.preventDefault();
+      try { await AfyaAPI.auth.logout(); } catch (err) { AfyaAPI.Token.clear(); }
+      window.location.replace('/login');
+    };
+  }
+
   async function load() {
     INFO  = await AfyaAPI.billing.info();
     PLANS = INFO.plans || [];
@@ -433,33 +542,83 @@
     return INFO;
   }
 
-  async function show() {
+  /**
+   * Ouvre le modal.
+   *   show()                   → formulaire (clic sur « S'abonner »)
+   *   show({ mode:'reminder' }) → rappel amical, fermable
+   *   show({ mode:'expired' })  → accès coupé, non fermable
+   */
+  async function show(opts = {}) {
     try {
       if (!INFO) await load();
       build();
-      if (INFO.pending_payment) viewPending(INFO.pending_payment);
-      else                      viewForm();
+
+      const t = INFO.tenant || {};
+
+      if (opts.mode === 'expired') {
+        viewExpired(t);
+      } else if (INFO.pending_payment) {
+        // Un dossier en attente prime sur tout le reste : inutile de
+        // réclamer un paiement à quelqu'un qui vient de le déclarer.
+        setLocked(false);
+        viewPending(INFO.pending_payment);
+      } else if (opts.mode === 'reminder') {
+        viewReminder(t);
+      } else {
+        setLocked(false);
+        viewForm();
+      }
+
       open();
     } catch (e) {
       toast(errMsg(e), true);
     }
   }
 
-  /** Ouvre d'office quand l'essai touche à sa fin */
+  /** Clé de rappel : une seule apparition par jour calendaire */
+  function todayKey() {
+    return 'afya_billing_reminded_' + new Date().toISOString().slice(0, 10);
+  }
+
+  /**
+   * Décide seul s'il faut ouvrir le modal au chargement d'une page.
+   *
+   * Trois cas, dans cet ordre :
+   *
+   *   1. Accès coupé   → modal verrouillé, à chaque page, sans exception.
+   *   2. Jour 2 et +   → un rappel fermable, une fois par jour.
+   *   3. Sinon         → rien.
+   *
+   * Le jour de l'inscription est délibérément épargné : quelqu'un qui
+   * découvre l'outil ne doit pas être accueilli par une demande d'argent.
+   * D'où le test sur days_since_signup, et non sur days_left seul.
+   */
   async function autoCheck() {
     try {
       await load();
-      const t = INFO.tenant;
-      if (t.status === 'active') return;
-      if (INFO.pending_payment)  return;   // déjà déclaré, on ne harcèle pas
+      const t = INFO.tenant || {};
 
-      // Rappel à 3 jours de la fin, puis à l'expiration
-      if (t.days_left <= 0 || t.days_left === 3 || t.days_left === 1) {
-        const seen = sessionStorage.getItem('afya_billing_seen');
-        if (seen === String(t.days_left)) return;
-        sessionStorage.setItem('afya_billing_seen', String(t.days_left));
-        show();
+      // ── 1. Accès coupé ──
+      if (t.is_expired && !INFO.pending_payment) {
+        show({ mode: 'expired' });
+        return;
       }
+
+      // Au-delà, on ne dérange pas :
+      if (t.status === 'active') return;   // abonné à jour
+      if (INFO.pending_payment)  return;   // déclaration en cours
+      if (t.in_grace)            return;   // vient de payer
+
+      // ── 2. Rappel quotidien, à partir du deuxième jour ──
+      if ((t.days_since_signup || 0) < 1) return;
+
+      // localStorage et non sessionStorage : le rappel doit tenir sur la
+      // journée entière, pas se rouvrir à chaque nouvel onglet.
+      const key = todayKey();
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+
+      show({ mode: 'reminder' });
     } catch (e) { /* silencieux : ne jamais bloquer le tableau de bord */ }
   }
 
