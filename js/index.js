@@ -206,7 +206,7 @@ const ALL_MODULES = [
 
 /* Plan labels pour l'affichage */
 const PLAN_LABEL = {
-  starter:    'Starter',
+  starter:    'Pharmacie',   // code inchangé, libellé plus clair
   clinic:     'Clinic',
   diagno:     'Diagno',
   enterprise: 'Enterprise'

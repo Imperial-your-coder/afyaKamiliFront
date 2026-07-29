@@ -260,19 +260,13 @@
                       text-transform:uppercase">
       </label>
 
+      <!-- Le sélecteur d'opérateur a été retiré : un seul canal est
+           ouvert aujourd'hui, et proposer quatre choix inutilisables
+           promettait des moyens de paiement qui n'existent pas. La
+           valeur 'orange' est envoyée en dur ; le jour où d'autres
+           opérateurs s'ajouteront, le select reviendra ici et
+           l'enum de la base l'accepte déjà. -->
       <div style="display:flex;gap:10px;margin-bottom:12px">
-        <label style="flex:1">
-          <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.6px;
-                       text-transform:uppercase;color:${OM.mid};margin-bottom:6px">Opérateur</span>
-          <select id="bOperator" style="width:100%;padding:13px 12px;border:1.5px solid ${OM.line};
-                  border-radius:13px;font-family:inherit;font-size:13.5px;outline:none;background:#fff">
-            <option value="orange" selected>Orange Money</option>
-            <option value="airtel">Airtel Money</option>
-            <option value="mpesa">M-Pesa</option>
-            <option value="africell">Africell Money</option>
-            <option value="autre">Autre</option>
-          </select>
-        </label>
         <label style="flex:1">
           <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.6px;
                        text-transform:uppercase;color:${OM.mid};margin-bottom:6px">Votre numéro</span>
@@ -432,7 +426,7 @@
     fd.append('reference',     ref);
     fd.append('plan_code',     picked.plan);
     fd.append('billing_cycle', picked.cycle);
-    fd.append('operator',      $('bOperator').value);
+    fd.append('operator',      'orange');   // seul canal ouvert à ce jour
     const phone = ($('bPhone').value || '').trim();
     if (phone) fd.append('sender_phone', phone);
     if (file)  fd.append('screenshot', file);

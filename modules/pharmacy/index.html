@@ -14,6 +14,20 @@
 <script src="../../js/billing.js" defer></script>
 <script src="./index.js" defer></script>
 <script src="pharmacy.js" defer></script>
+<script>
+  /* Le bouton « Abonnement » de la barre supérieure.
+     On attend que billing.js ait publié window.AfyaBilling ; s'il n'a
+     pas pu se charger, on retombe sur la page des formules plutôt que
+     de laisser un bouton mort. */
+  document.addEventListener('DOMContentLoaded', function () {
+    var b = document.getElementById('tbBilling');
+    if (!b) return;
+    b.addEventListener('click', function () {
+      if (window.AfyaBilling) AfyaBilling.show();
+      else window.location.href = '/pricing';
+    });
+  });
+</script>
 <style>.acct-kpi-scroll::-webkit-scrollbar{display:none}</style>
 </head>
 <body>
@@ -61,6 +75,19 @@
     <button class="tb-btn primary" onclick="openAddMed()">
       <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
       <span>Ajouter</span>
+    </button>
+    <!-- Abonnement : ouvre le modal Orange Money. Aux couleurs de
+         l'opérateur pour être reconnaissable d'un coup d'œil, et
+         volontairement discret — un pharmacien passe sa journée sur
+         cette barre, ce bouton ne doit pas lui crier dessus. -->
+    <button class="tb-btn" id="tbBilling" title="Mon abonnement"
+            style="border-color:rgba(255,121,0,.35);color:#FF7900">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1.5" y="3.5" width="13" height="9" rx="2"/>
+        <path d="M1.5 6.8h13"/><path d="M4 10h2.5"/>
+      </svg>
+      <span class="hide-mobile">Abonnement</span>
     </button>
     <div class="tb-avatar">PH</div>
   </div>
