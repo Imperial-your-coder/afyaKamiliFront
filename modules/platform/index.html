@@ -115,6 +115,9 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
       Afya <i>Kamili</i>
     </span>
     <span class="badge">Console</span>
+    <span style="flex:1"></span>
+    <span id="whoami" style="font-size:12.5px;font-weight:700;color:var(--mid)"></span>
+    <button class="btn" id="logoutBtn" type="button">Se déconnecter</button>
   </div>
 
   <h1>Administration de la plateforme</h1>
@@ -124,6 +127,7 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
 
   <div class="nav" id="nav">
     <button class="on" data-v="tenants">Établissements</button>
+    <button data-v="users">Comptes <span class="n" id="nUsers"></span></button>
     <button data-v="payments">Paiements <span class="n" id="nPay"></span></button>
     <button data-v="revenue">Revenus</button>
   </div>
@@ -279,6 +283,108 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
   }
 
   /* ═══ PAIEMENTS ═══ */
+  /* ═══════════════════════════════════════════════
+     COMPTES UTILISATEURS
+  ═══════════════════════════════════════════════ */
+
+  let USERS = [];
+
+  async function viewUsers() {
+    $('view').innerHTML = `
+      <div class="bar">
+        <input id="uq" placeholder="Nom, téléphone, email, établissement…">
+        <select id="uf">
+          <option value="">Tous les comptes</option>
+          <option value="online">Connectés maintenant</option>
+          <option value="owners">Propriétaires</option>
+          <option value="orphan">Sans établissement</option>
+        </select>
+      </div>
+      <div id="ulist"><div class="empty">Chargement…</div></div>`;
+
+    let timer = null;
+    $('uq').addEventListener('input', () => {
+      clearTimeout(timer); timer = setTimeout(loadUsers, 320);
+    });
+    $('uf').addEventListener('change', renderUsers);
+    loadUsers();
+  }
+
+  async function loadUsers() {
+    try {
+      const res = await AfyaAPI.platform.users({
+        search: $('uq') ? $('uq').value.trim() : '',
+      });
+      USERS = res.users || [];
+      const n = $('nUsers');
+      if (n && res.counts) n.textContent = res.counts.online || '';
+      renderUsers();
+    } catch (e) {
+      $('ulist').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+    }
+  }
+
+  function renderUsers() {
+    const f = $('uf') ? $('uf').value : '';
+
+    const list = USERS.filter(u => {
+      if (f === 'online') return u.is_online;
+      if (f === 'owners') return !!u.is_owner;
+      if (f === 'orphan') return u.is_orphan;
+      return true;
+    });
+
+    if (!list.length) {
+      $('ulist').innerHTML = '<div class="empty">Aucun compte.</div>';
+      return;
+    }
+
+    const online = USERS.filter(u => u.is_online).length;
+
+    $('ulist').innerHTML =
+      `<p class="lead" style="margin:0 0 14px">${USERS.length} compte${USERS.length > 1 ? 's' : ''}
+        · <strong>${online} connecté${online > 1 ? 's' : ''}</strong></p>` +
+      list.map(u => `
+        <div class="card">
+          <div class="card-top">
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:15.5px;font-weight:800">
+                ${esc(u.name)}
+                ${u.is_online ? '<span class="badge" style="background:rgba(22,163,74,.14);color:#16a34a">En ligne</span>' : ''}
+                ${u.is_owner ? '<span class="badge">Propriétaire</span>' : ''}
+                ${u.is_orphan ? '<span class="badge" style="background:rgba(220,38,38,.12);color:#dc2626">Sans établissement</span>' : ''}
+              </div>
+              <div style="font-size:13px;color:var(--mid);margin-top:3px">
+                ${esc(u.phone)}${u.email ? ' · ' + esc(u.email) : ''}
+              </div>
+              <div style="font-size:13px;margin-top:5px">
+                ${u.establishment_name
+                    ? esc(u.establishment_name) + (u.city ? ' — ' + esc(u.city) : '')
+                    : '<em style="color:#dc2626">établissement introuvable (tenant ' + u.tenant_id + ')</em>'}
+              </div>
+              ${(u.roles && u.roles.length)
+                  ? `<div style="font-size:12.5px;color:var(--mid);margin-top:4px">${u.roles.map(esc).join(' · ')}</div>`
+                  : ''}
+            </div>
+            <div style="text-align:right;font-size:12.5px;color:var(--mid)">
+              <div>${u.last_seen ? 'Vu ' + when(u.last_seen) : 'Jamais connecté'}</div>
+              <div style="margin-top:3px">${u.status !== 'active' || !u.is_active ? '⚠ compte désactivé' : ''}</div>
+            </div>
+          </div>
+        </div>`).join('');
+  }
+
+  /** « il y a 3 h », « le 12/07 » — plus lisible qu'un horodatage brut */
+  function when(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    const mins = Math.round((Date.now() - d.getTime()) / 60000);
+    if (mins < 2)    return "à l'instant";
+    if (mins < 60)   return `il y a ${mins} min`;
+    if (mins < 1440) return `il y a ${Math.round(mins / 60)} h`;
+    return 'le ' + d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+  }
+
   async function viewPayments() {
     $('view').innerHTML = `
       <div class="bar">
@@ -587,6 +693,7 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
       b.classList.add('on');
       VIEW = b.dataset.v;
       if (VIEW === 'tenants')  viewTenants();
+      if (VIEW === 'users')    viewUsers();
       if (VIEW === 'payments') viewPayments();
       if (VIEW === 'revenue')  viewRevenue();
     });
@@ -620,6 +727,23 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
     if (!user.is_platform_admin) {
       window.location.replace('../../index');
       return;
+    }
+
+    const who = $('whoami');
+    if (who) who.textContent = user.name;
+
+    // Déconnexion : le jeton est révoqué côté serveur, puis effacé ici.
+    // Le `finally` d'AfyaAPI.auth.logout() garantit le nettoyage local
+    // même si l'appel réseau échoue — on ne laisse jamais quelqu'un
+    // coincé dans une session qu'il croit fermée.
+    const out = $('logoutBtn');
+    if (out) {
+      out.addEventListener('click', async () => {
+        out.disabled = true;
+        out.textContent = 'Déconnexion…';
+        try { await AfyaAPI.auth.logout(); } catch (e) { AfyaAPI.Token.clear(); }
+        window.location.replace('../../login');
+      });
     }
 
     loadKpis();

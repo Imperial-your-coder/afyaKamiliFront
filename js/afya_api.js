@@ -601,6 +601,14 @@ const AfyaAPI = {
       return await request('GET', '/platform/tenants' + (q ? '?' + q : ''));
     },
     async tenant(id)          { return await request('GET', `/platform/tenants/${id}`); },
+
+    /* ── Comptes utilisateurs (tous établissements confondus) ── */
+    async users(params = {}) {
+      const q = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== '' && v != null)
+      ).toString();
+      return await request('GET', '/platform/users' + (q ? '?' + q : ''));
+    },
     async grant(id, payload)  { return await request('POST', `/platform/tenants/${id}/grant`, payload); },
     async revoke(id, codes)   { return await request('POST', `/platform/tenants/${id}/revoke`, { module_codes: codes }); },
     async setStatus(id, status, reason) {
