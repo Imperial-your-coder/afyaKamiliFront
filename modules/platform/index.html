@@ -605,10 +605,12 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
     if (!window.AfyaAPI) { setTimeout(init, 80); return; }
     if (!AfyaAPI.Token.exists()) { window.location.replace('../../login'); return; }
 
+    // ⚠ AfyaAPI.auth.me() renvoie DÉJÀ l'objet utilisateur (il fait
+    // `return data.user` en interne). Écrire `res.user` donnait donc
+    // undefined, d'où le TypeError sur is_platform_admin.
     let user;
     try {
-      const res = await AfyaAPI.auth.me();
-      user = res.user;
+      user = await AfyaAPI.auth.me();
     } catch (e) {
       AfyaAPI.Token.clear();
       window.location.replace('../../login');
