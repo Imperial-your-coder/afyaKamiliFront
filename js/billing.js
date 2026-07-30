@@ -253,7 +253,7 @@
 
       <label style="display:block;margin-bottom:12px">
         <span style="display:block;font-size:11px;font-weight:800;letter-spacing:.6px;
-                     text-transform:uppercase;color:${OM.mid};margin-bottom:6px">Référence du SMS *</span>
+                     text-transform:uppercase;color:${OM.mid};margin-bottom:6px">Référence du SMS</span>
         <input id="bRef" placeholder="CI260711.0746.B11205"
                style="width:100%;padding:13px 15px;border:1.5px solid ${OM.line};border-radius:13px;
                       font-family:ui-monospace,monospace;font-size:14px;outline:none;background:#fff;
@@ -276,14 +276,43 @@
         </label>
       </div>
 
-      <div id="dropZone" style="border:1.5px dashed ${OM.line};border-radius:14px;padding:18px;
-           text-align:center;cursor:pointer;margin-bottom:18px;background:#fff;transition:all .2s">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${OM.mid}" stroke-width="1.7"
-             style="margin-bottom:6px"><rect x="3" y="3" width="18" height="18" rx="3"/>
-             <circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        <div id="dropLabel" style="font-size:12.5px;color:${OM.mid};font-weight:600">
-          Joindre la capture du SMS <span style="font-weight:500">(recommandé)</span></div>
+      <!-- Deux façons de prouver le dépôt : la référence recopiée
+           ci-dessus, OU une image du SMS. L'une suffit — la référence
+           est de toute façon lisible sur la photo. On n'impose donc
+           ni l'une ni l'autre, mais on refuse un envoi sans aucune. -->
+      <div style="display:flex;gap:9px;margin-bottom:10px">
+        <button type="button" id="bCam" style="flex:1;padding:13px 10px;border-radius:13px;
+                border:1.5px solid ${OM.line};background:#fff;cursor:pointer;
+                font-family:inherit;font-size:12.5px;font-weight:700;color:${OM.dark};
+                display:flex;align-items:center;justify-content:center;gap:7px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+            <circle cx="12" cy="13" r="4"/></svg>
+          Prendre en photo
+        </button>
+        <button type="button" id="bPick" style="flex:1;padding:13px 10px;border-radius:13px;
+                border:1.5px solid ${OM.line};background:#fff;cursor:pointer;
+                font-family:inherit;font-size:12.5px;font-weight:700;color:${OM.dark};
+                display:flex;align-items:center;justify-content:center;gap:7px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          Importer
+        </button>
       </div>
+
+      <div id="dropZone" style="border:1.5px dashed ${OM.line};border-radius:14px;padding:14px;
+           text-align:center;margin-bottom:18px;background:#fff;transition:all .2s">
+        <div id="dropLabel" style="font-size:12.5px;color:${OM.mid};font-weight:600">
+          Aucune image jointe</div>
+      </div>
+
+      <!-- capture="environment" ouvre l'appareil photo arrière
+           directement sur téléphone ; sans cet attribut, le second
+           champ laisse choisir dans la galerie. -->
+      <input type="file" id="bShotCam" accept="image/*" capture="environment" style="display:none">
       <input type="file" id="bShot" accept="image/jpeg,image/png,image/webp" style="display:none">
 
       <button id="bSubmit" style="width:100%;padding:16px;border-radius:999px;border:none;
@@ -389,20 +418,46 @@
       });
     }
 
+    /* Les deux champs alimentent la même variable `file`. */
     const zone = $('dropZone');
-    const input = $('bShot');
-    if (zone && input) {
-      zone.addEventListener('click', () => input.click());
-      input.addEventListener('change', () => {
-        file = input.files?.[0] || null;
-        const label = $('dropLabel');
-        if (file && label) {
-          label.innerHTML = `<span style="color:${OM.green};font-weight:700">✓ ${esc(file.name)}</span>`;
-          zone.style.borderColor = OM.green;
-          zone.style.borderStyle = 'solid';
-        }
-      });
+
+    function accept(f) {
+      if (!f) return;
+      if (f.size > 4 * 1024 * 1024) {
+        toast('Image trop lourde (4 Mo maximum)', true);
+        return;
+      }
+      file = f;
+      const label = $('dropLabel');
+      if (label) {
+        label.innerHTML =
+          `<span style="color:${OM.green};font-weight:700">✓ image jointe</span>` +
+          ` <button type="button" id="bDrop" style="margin-left:8px;border:none;background:none;` +
+          `color:${OM.mid};font-family:inherit;font-size:12px;font-weight:700;` +
+          `text-decoration:underline;cursor:pointer">retirer</button>`;
+        const rm = $('bDrop');
+        if (rm) rm.addEventListener('click', clearFile);
+      }
+      if (zone) { zone.style.borderColor = OM.green; zone.style.borderStyle = 'solid'; }
     }
+
+    function clearFile() {
+      file = null;
+      ['bShot', 'bShotCam'].forEach(id => { const i = $(id); if (i) i.value = ''; });
+      const label = $('dropLabel');
+      if (label) label.textContent = 'Aucune image jointe';
+      if (zone) { zone.style.borderColor = OM.line; zone.style.borderStyle = 'dashed'; }
+    }
+
+    ['bShot', 'bShotCam'].forEach(id => {
+      const i = $(id);
+      if (i) i.addEventListener('change', () => accept(i.files?.[0] || null));
+    });
+
+    const cam  = $('bCam');
+    const pick = $('bPick');
+    if (cam)  cam.addEventListener('click',  () => $('bShotCam').click());
+    if (pick) pick.addEventListener('click', () => $('bShot').click());
 
     const btn = $('bSubmit');
     if (btn) btn.addEventListener('click', submit);
@@ -411,8 +466,17 @@
   async function submit() {
     const ref = ($('bRef').value || '').trim().toUpperCase();
 
-    if (ref.length < 6) {
-      toast('Recopiez la référence complète du SMS', true);
+    // Une preuve suffit. Ni référence ni image : rien à vérifier.
+    if (!ref && !file) {
+      toast("Recopiez la référence du SMS ou joignez-en une image", true);
+      $('bRef').focus();
+      return;
+    }
+
+    // Une référence commencée mais tronquée est pire que pas de
+    // référence du tout : elle donne l'illusion d'une preuve.
+    if (ref && ref.length < 6 && !file) {
+      toast('Cette référence semble incomplète', true);
       $('bRef').focus();
       return;
     }
@@ -423,7 +487,7 @@
     btn.style.opacity = '.7';
 
     const fd = new FormData();
-    fd.append('reference',     ref);
+    if (ref) fd.append('reference', ref);
     fd.append('plan_code',     picked.plan);
     fd.append('billing_cycle', picked.cycle);
     fd.append('operator',      'orange');   // seul canal ouvert à ce jour
@@ -446,6 +510,52 @@
 
   /* ═══ DÉMARRAGE ═══ */
 
+  /**
+   * Bandeau « Afya Kamili × Orange Money ».
+   *
+   * Sans lui, un encart plein écran aux couleurs d'un opérateur
+   * télécom ressemble à une publicité, et l'utilisateur le referme
+   * par réflexe. Voir sa propre application à côté du moyen de
+   * paiement dit en une seconde : c'est bien nous, et voici comment.
+   *
+   * Le carré Orange est un simple aplat aux couleurs de l'opérateur
+   * avec son nom — pas une copie de son logo officiel. Si tu obtiens
+   * un accord de marque avec Orange RDC, remplace-le par leur fichier.
+   */
+  function brandRow() {
+    return `
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;
+                  margin-bottom:18px">
+
+        <!-- Afya Kamili -->
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="width:34px;height:34px;border-radius:50%;background:#EFFF3A;
+                      display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="#111"
+                 stroke-width="2.4" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+          </div>
+          <div style="font-size:13.5px;font-weight:800;color:${OM.dark};line-height:1.1">
+            Afya<br><span style="color:${OM.mid};font-weight:700">Kamili</span>
+          </div>
+        </div>
+
+        <div style="font-size:19px">&#129309;</div>
+
+        <!-- Opérateur -->
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="width:34px;height:34px;border-radius:9px;background:${OM.orange};
+                      display:flex;align-items:center;justify-content:center">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="3"/><path d="M10 18.5h4"/></svg>
+          </div>
+          <div style="font-size:13.5px;font-weight:800;color:${OM.dark};line-height:1.1">
+            Orange<br><span style="color:${OM.mid};font-weight:700">Money</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
   /* ═══ RAPPEL AMICAL (fermable) ═══ */
 
   function viewReminder(t) {
@@ -458,6 +568,7 @@
     $('billingSub').textContent   = d > 0 ? `Il vous reste ${jours}` : 'Dernier jour';
 
     $('billingBody').innerHTML = `
+      ${brandRow()}
       <div style="font-size:14.5px;line-height:1.65;margin-bottom:6px">
         Votre période d'essai prend fin <strong>${esc(jours)}</strong>.
         Pensez à régler votre abonnement pour ne pas interrompre
@@ -494,6 +605,7 @@
     $('billingSub').textContent = 'Réglez votre abonnement pour continuer';
 
     $('billingBody').innerHTML = `
+      ${brandRow()}
       <div style="font-size:14.5px;line-height:1.65;margin-bottom:8px">
         ${wasTrial ? "Votre essai gratuit est arrivé à son terme."
                    : 'Votre abonnement est arrivé à échéance.'}
