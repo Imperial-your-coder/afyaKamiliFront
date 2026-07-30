@@ -217,7 +217,15 @@ body{
 .kpi-card.accent .kpi-val{color:#fff;}
 .kpi-card.accent .kpi-delta{color:var(--accent);}
 .kpi-lbl{font-size:9.5px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:0.5px;}
-.kpi-val{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;line-height:1;}
+.kpi-val{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;line-height:1;
+  /* Un montant ne doit jamais sortir de sa carte. La taille suit la
+     largeur de l'écran et le texte se tronque proprement plutôt que
+     de déborder — « FC 1 248 200,00 » reste lisible sur un téléphone. */
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+@media(max-width:640px){
+  .kpi-val{font-size:clamp(15px,4.6vw,21px);letter-spacing:-0.7px;}
+  .acct-kpi-scroll .kpi-card{flex:0 0 auto !important;min-width:118px !important;}
+}
 .kpi-delta{font-size:10.5px;font-weight:600;color:var(--green);}
 .kpi-delta.neg{color:var(--red);}
 

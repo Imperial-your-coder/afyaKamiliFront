@@ -660,8 +660,18 @@ function updateKpis() {
   const exp  = MEDICATIONS.filter(m => { const d=daysUntil(m); return d>=0&&d<60; }).length;
   ['kpiOk','kpiWarn','kpiCrit'].forEach((id,i) => { const e=document.getElementById(id); if(e) e.textContent=[ok,warn,crit][i]; });
   ['kpiOkC','kpiWarnC','kpiCritC','kpiExpC'].forEach((id,i) => { const e=document.getElementById(id); if(e) e.textContent=[ok,warn,crit,exp][i]; });
-  const badge = document.getElementById('alertBadge');
-  if (badge) badge.textContent = warn + crit;
+  /*
+   * Le badge d'alertes n'est PLUS écrit ici.
+   *
+   * Deux fonctions se le disputaient : celle-ci, qui comptait sur le
+   * tableau local MEDICATIONS (données de démonstration, jamais
+   * rafraîchies), et loadAlerts() dans pharmacy.js, qui interroge
+   * l'API. La dernière à s'exécuter gagnait — d'où un badge à « 1 »
+   * au-dessus d'un écran affichant « Tout est en ordre ».
+   *
+   * loadAlerts() est désormais seule responsable : elle connaît le
+   * vrai décompte et sait masquer le badge quand il tombe à zéro.
+   */
   const total = document.getElementById('kpiTotal');
   if (total) total.textContent = MEDICATIONS.length;
 }

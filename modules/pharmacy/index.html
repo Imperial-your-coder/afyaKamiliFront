@@ -19,6 +19,44 @@
      On attend que billing.js ait publié window.AfyaBilling ; s'il n'a
      pas pu se charger, on retombe sur la page des formules plutôt que
      de laisser un bouton mort. */
+  /* ── Menu du compte : identité, abonnement, déconnexion ── */
+  document.addEventListener('DOMContentLoaded', function () {
+    var av = document.getElementById('phAvatar');
+    var mn = document.getElementById('phMenu');
+    if (av && mn) {
+      av.addEventListener('click', function (e) {
+        e.stopPropagation();
+        mn.classList.toggle('open');
+      });
+      document.addEventListener('click', function () { mn.classList.remove('open'); });
+      mn.addEventListener('click', function (e) { e.stopPropagation(); });
+    }
+
+    var bl = document.getElementById('phmBilling');
+    if (bl) bl.addEventListener('click', function () {
+      if (window.AfyaBilling) AfyaBilling.show(); else window.location.href = '/pricing';
+    });
+
+    var lo = document.getElementById('phmLogout');
+    if (lo) lo.addEventListener('click', async function () {
+      try { await AfyaAPI.auth.logout(); } catch (e) { AfyaAPI.Token.clear(); }
+      window.location.replace('/login');
+    });
+
+    (async function () {
+      try {
+        var u = await AfyaAPI.auth.me();
+        var ini = (u.name || '?').trim().split(/\s+/).slice(0, 2)
+                    .map(function (w) { return w[0]; }).join('').toUpperCase();
+        if (av) av.textContent = ini || 'PH';
+        var n = document.getElementById('phmName');
+        var sb = document.getElementById('phmSub');
+        if (n)  n.textContent  = u.name || '';
+        if (sb) sb.textContent = (u.tenant && u.tenant.establishment_name) || '';
+      } catch (e) { /* la barre reste utilisable sans identité */ }
+    })();
+  });
+
   document.addEventListener('DOMContentLoaded', function () {
     var b = document.getElementById('tbBilling');
     if (!b) return;
@@ -28,7 +66,24 @@
     });
   });
 </script>
-<style>.acct-kpi-scroll::-webkit-scrollbar{display:none}</style>
+<style>.acct-kpi-scroll::-webkit-scrollbar{display:none}
+/* ── Menu du compte (barre supérieure) ── */
+.tb-actions{position:relative}
+.tb-avatar{cursor:pointer}
+.ph-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:216px;background:#fff;
+  border:1px solid rgba(0,0,0,.09);border-radius:16px;box-shadow:0 20px 48px rgba(0,0,0,.16);
+  padding:7px;z-index:400;display:none}
+.ph-menu.open{display:block}
+.phm-head{padding:11px 13px 9px;border-bottom:1px solid rgba(0,0,0,.07);margin-bottom:5px}
+.phm-name{font-size:13.5px;font-weight:800;color:#12120f}
+.phm-sub{font-size:11.5px;color:#8B8D86;margin-top:2px}
+.phm-item{display:block;width:100%;text-align:left;padding:10px 13px;border:none;background:none;
+  border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#12120f;
+  cursor:pointer;text-decoration:none}
+.phm-item:hover{background:rgba(0,0,0,.05)}
+.phm-item.danger{color:#dc2626}
+.phm-sep{height:1px;background:rgba(0,0,0,.07);margin:5px 0}
+</style>
 </head>
 <body>
 
@@ -72,10 +127,9 @@
             background:var(--red,#e53e3e);color:#fff;font-size:10px;font-weight:800;
             align-items:center;justify-content:center;line-height:1">0</span>
     </button>
-    <button class="tb-btn primary" onclick="openAddMed()">
-      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
-      <span>Ajouter</span>
-    </button>
+    <!-- Le bouton « Ajouter » a été retiré d'ici : il existe déjà dans
+         l'en-tête du catalogue, juste en dessous. Sur mobile il poussait
+         l'avatar hors de l'écran, rendant la déconnexion inaccessible. -->
     <!-- Abonnement : ouvre le modal Orange Money. Aux couleurs de
          l'opérateur pour être reconnaissable d'un coup d'œil, et
          volontairement discret — un pharmacien passe sa journée sur
@@ -89,7 +143,19 @@
       </svg>
       <span class="hide-mobile">Abonnement</span>
     </button>
-    <div class="tb-avatar">PH</div>
+    <div class="tb-avatar" id="phAvatar" title="Mon compte">PH</div>
+
+    <!-- Menu du compte, ouvert au clic sur l'avatar -->
+    <div class="ph-menu" id="phMenu">
+      <div class="phm-head">
+        <div class="phm-name" id="phmName">—</div>
+        <div class="phm-sub"  id="phmSub">—</div>
+      </div>
+      <a class="phm-item" href="../admin/index">Mon compte</a>
+      <button class="phm-item" id="phmBilling" type="button">Mon abonnement</button>
+      <div class="phm-sep"></div>
+      <button class="phm-item danger" id="phmLogout" type="button">Se déconnecter</button>
+    </div>
   </div>
 </header>
 

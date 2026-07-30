@@ -31,6 +31,22 @@ a{text-decoration:none;color:inherit}button,input,select{font-family:var(--font)
 .dot{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:500}
 .brand span span{color:var(--mid)}
 .nav{margin-left:auto;display:flex;align-items:center;gap:6px}
+.acct-wrap{position:relative;margin-left:10px;flex-shrink:0}
+.acct-avatar{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#EFFF3A;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;cursor:pointer}
+.acct-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:214px;background:#fff;
+  border:1px solid rgba(0,0,0,.09);border-radius:16px;box-shadow:0 20px 48px rgba(0,0,0,.16);
+  padding:7px;z-index:500;display:none}
+.acct-menu.open{display:block}
+.acctm-head{padding:11px 13px 9px;border-bottom:1px solid rgba(0,0,0,.07);margin-bottom:5px}
+.acctm-name{font-size:13.5px;font-weight:800;color:var(--ink)}
+.acctm-sub{font-size:11.5px;color:var(--mid);margin-top:2px}
+.acctm-item{display:block;width:100%;text-align:left;padding:10px 13px;border:none;background:none;
+  border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);
+  cursor:pointer;text-decoration:none}
+.acctm-item:hover{background:rgba(0,0,0,.05)}
+.acctm-item.danger{color:#dc2626}
+.acctm-sep{height:1px;background:rgba(0,0,0,.07);margin:5px 0}
 .nav a{padding:8px 16px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--mid)}
 .nav a:hover{background:var(--white);color:var(--ink)}
 .nav a.active{background:var(--ink);color:#fff}
@@ -105,6 +121,22 @@ label span{display:block;font-size:10.5px;font-weight:800;text-transform:upperca
     <a href="../patients/index">Patients</a>
     <a href="#" class="active">Administration</a>
   </nav>
+
+  <!-- Compte : sur mobile la navigation masque tout sauf l'onglet
+       actif, ce qui rendait la déconnexion inaccessible d'ici. -->
+  <div class="acct-wrap">
+    <div class="acct-avatar" id="adAvatar" title="Mon compte">—</div>
+    <div class="acct-menu" id="adMenu">
+      <div class="acctm-head">
+        <div class="acctm-name" id="adName">—</div>
+        <div class="acctm-sub"  id="adSub">—</div>
+      </div>
+      <a class="acctm-item" href="../pharmacy/index">Pharmacie</a>
+      <a class="acctm-item" href="../../index">Tableau de bord</a>
+      <div class="acctm-sep"></div>
+      <button class="acctm-item danger" id="adLogout" type="button">Se déconnecter</button>
+    </div>
+  </div>
 </header>
 
 <main class="main">
@@ -375,5 +407,36 @@ label span{display:block;font-size:10.5px;font-weight:800;text-transform:upperca
 
 <script src="../../js/afya_api.js" defer></script>
 <script src="./admin.js" defer></script>
+<script>
+/* Menu du compte de la barre Administration */
+document.addEventListener('DOMContentLoaded', function () {
+  var av = document.getElementById('adAvatar');
+  var mn = document.getElementById('adMenu');
+  if (av && mn) {
+    av.addEventListener('click', function (e) { e.stopPropagation(); mn.classList.toggle('open'); });
+    document.addEventListener('click', function () { mn.classList.remove('open'); });
+    mn.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+
+  var lo = document.getElementById('adLogout');
+  if (lo) lo.addEventListener('click', async function () {
+    try { await AfyaAPI.auth.logout(); } catch (e) { AfyaAPI.Token.clear(); }
+    window.location.replace('/login');
+  });
+
+  (async function () {
+    try {
+      var u = await AfyaAPI.auth.me();
+      var ini = (u.name || '?').trim().split(/\s+/).slice(0, 2)
+                  .map(function (w) { return w[0]; }).join('').toUpperCase();
+      if (av) av.textContent = ini || '—';
+      var n  = document.getElementById('adName');
+      var sb = document.getElementById('adSub');
+      if (n)  n.textContent  = u.name || '';
+      if (sb) sb.textContent = (u.tenant && u.tenant.establishment_name) || '';
+    } catch (e) { /* sans identité, le menu reste utilisable */ }
+  })();
+});
+</script>
 </body>
 </html>

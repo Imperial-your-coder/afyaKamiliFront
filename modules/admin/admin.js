@@ -215,7 +215,7 @@
     }
 
     el.table.innerHTML = rows.map(u => `
-      <div style="display:grid;grid-template-columns:2fr 1.4fr 1.2fr 1.4fr 1fr auto;
+      <div class="u-row" style="display:grid;grid-template-columns:2fr 1.4fr 1.2fr 1.4fr 1fr auto;
                   gap:14px;align-items:center;padding:15px 20px;
                   border-bottom:1px solid rgba(0,0,0,.06)">
 
@@ -232,12 +232,12 @@
           </div>
         </div>
 
-        <div style="font-size:13px">${esc(u.phone || '—')}</div>
-        <div style="font-size:13px;font-weight:600">${esc(u.role)}</div>
-        <div>${moduleChips(u.modules)}</div>
-        <div>${statusPill(u.status)}</div>
+        <div class="u-cell" data-label="Téléphone" style="font-size:13px">${esc(u.phone || '—')}</div>
+        <div class="u-cell" data-label="Rôle" style="font-size:13px;font-weight:600">${esc(u.role)}</div>
+        <div class="u-cell" data-label="Modules">${moduleChips(u.modules)}</div>
+        <div class="u-cell" data-label="Statut">${statusPill(u.status)}</div>
 
-        <div style="display:flex;gap:6px;justify-content:flex-end">
+        <div class="u-acts" style="display:flex;gap:6px;justify-content:flex-end">
           ${u.is_owner ? '' : `
           <button data-act="edit" data-id="${u.id}" title="Modifier"
             style="width:32px;height:32px;border-radius:9px;border:1px solid rgba(0,0,0,.1);
