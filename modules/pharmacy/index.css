@@ -404,7 +404,10 @@ body{
 }
 .modal-close:hover{background:var(--ink);color:#fff;border-color:transparent;}
 .modal-close svg{width:12px;height:12px;}
-.modal-body{padding:16px 18px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
+.modal-body{padding:16px 18px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;
+  /* Ceinture et bretelles : aucun enfant ne doit pouvoir élargir le
+     modal au-delà de l'écran. */
+  overflow-x:hidden;min-width:0;}
 .modal-ft{
   padding:12px 18px;border-top:1px solid var(--border);
   display:flex;gap:8px;flex-shrink:0;
@@ -461,7 +464,10 @@ body{
 .unit-btn.active{background:var(--ink);color:#fff;border-color:transparent;}
 
 /* Qty row */
-.qty-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.qty-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;
+  /* Même raison que .qty-input : sans min-width:0, un enfant de flex
+     refuse de rétrécir et fait déborder tout le conteneur. */
+  min-width:0;}
 .qty-btn{
   width:42px;height:42px;border-radius:50%;border:2px solid var(--border);
   background:var(--card);display:flex;align-items:center;justify-content:center;
@@ -475,18 +481,42 @@ body{
   padding:8px;background:#fff;color:var(--ink);
   outline:none;transition:border-color 0.15s;font-family:var(--font);
   -webkit-appearance:none;
+
+  /* ⚠ LA LIGNE QUI CORRIGE LE DÉBORDEMENT HORIZONTAL
+     Un <input type="number"> a une largeur intrinsèque d'environ 20
+     caractères. En flexbox, `min-width` vaut `auto` par défaut, ce qui
+     INTERDIT à l'élément de rétrécir sous cette largeur intrinsèque —
+     même avec flex:1. L'input poussait donc le modal à ~380px de large
+     sur un écran de 360px, d'où le défilement latéral.
+     min-width:0 lève cet interdit. */
+  min-width:0;
+  width:100%;
 }
+/* Masque les petites flèches haut/bas : les boutons − et + font déjà
+   le travail, et elles volaient de la place au chiffre. */
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.qty-input[type=number]{-moz-appearance:textfield;}
 .qty-input:focus{border-color:var(--ink);}
 
 /* Total display */
 .total-box{
   background:var(--ink);border-radius:var(--r-sm);
   padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:12px;
+  margin-bottom:12px;gap:10px;min-width:0;
 }
+.total-box > div:first-child{min-width:0;flex:1;}
 .total-lbl{font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.5);}
 .total-breakdown{font-size:10.5px;color:rgba(255,255,255,0.3);margin-top:2px;}
-.total-val{font-size:24px;font-weight:800;color:var(--accent);letter-spacing:-0.4px;}
+.total-val{font-size:24px;font-weight:800;color:var(--accent);letter-spacing:-0.4px;
+  /* « FC8500.00 » tenait ; « FC1248200.00 » débordait. La taille suit
+     désormais la largeur disponible. */
+  white-space:nowrap;flex-shrink:0;}
+@media(max-width:520px){
+  .total-val{font-size:clamp(15px,5vw,22px);}
+  .qty-input{font-size:22px;}
+  .qty-btn{width:38px;height:38px;font-size:18px;}
+}
 
 /* Invoice preview */
 .inv-preview{background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);padding:16px;font-size:12px;line-height:1.6;}

@@ -63,6 +63,57 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
 .s-suspended{background:rgba(220,38,38,.12);color:#b91c1c}
 .s-cancelled{background:rgba(0,0,0,.07);color:#6b7280}
 .s-life{background:var(--neon);color:var(--ink)}
+.s-price{background:rgba(255,121,0,.14);color:#c25c00}
+
+/* ══════════════════════════════════════════════════════
+   CARTES COMPACTES — grille d'établissements
+   ══════════════════════════════════════════════════════
+   auto-fill + minmax : le nombre de colonnes suit la largeur
+   disponible sans qu'on ait à écrire une media query par palier.
+   Une seule colonne sur téléphone, jusqu'à quatre sur grand écran. */
+.tgrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:12px;
+}
+.tcard{
+  background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:15px 15px 13px;cursor:pointer;
+  transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.tcard:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(0,0,0,.10);
+  border-color:rgba(0,0,0,.16);
+}
+.tcard-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.tcard-ini{
+  width:36px;height:36px;border-radius:11px;background:var(--ink);color:var(--neon);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;
+}
+.tcard-name{
+  font-size:14.5px;font-weight:800;color:var(--ink);line-height:1.25;
+  /* Deux lignes au maximum : sans cette limite, un nom à rallonge
+     déforme sa carte et casse l'alignement de toute la rangée. */
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.tcard-sub{
+  font-size:11.5px;color:var(--mid);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tcard-stats{
+  display:flex;gap:12px;margin-top:12px;padding-top:11px;
+  border-top:1px solid var(--line);
+}
+.tcard-stats div{display:flex;flex-direction:column;min-width:0}
+.tcard-stats b{
+  font-size:13px;font-weight:800;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tcard-stats span{font-size:10px;color:var(--mid);font-weight:600;margin-top:1px}
+.tcard-ft{display:flex;gap:5px;flex-wrap:wrap;margin-top:11px;min-height:20px}
 
 .mods{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
 .mod{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;
@@ -97,6 +148,11 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
   max-height:90vh;overflow-y:auto;padding:26px}
 .sheet h2{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:5px}
 .sheet .sub{font-size:13px;color:var(--mid);margin-bottom:20px}
+/* Champs de saisie dans les fiches latérales */
+.inp{padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;
+  font-family:inherit;font-size:13.5px;color:var(--ink);background:#fff;
+  outline:none;box-sizing:border-box}
+.inp:focus{border-color:var(--ink)}
 .fl{display:block;font-size:11px;font-weight:800;letter-spacing:.6px;
   text-transform:uppercase;color:var(--mid);margin-bottom:7px}
 .fi{width:100%;padding:12px 15px;border:1.5px solid var(--line);border-radius:13px;
@@ -232,54 +288,66 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
     }
   }
 
+  /** « KBG Ducare » → « KD » — repère visuel sur la carte compacte */
+  function initials(name) {
+    return String(name || '?').trim().split(/\s+/).slice(0, 2)
+      .map(w => w[0]).join('').toUpperCase();
+  }
+
   function renderTenants() {
     if (!TENANTS.length) {
       $('tlist').innerHTML = '<div class="empty">Aucun établissement.</div>';
       return;
     }
 
-    $('tlist').innerHTML = TENANTS.map(t => `
-      <div class="card">
-        <div class="card-top">
-          <div>
-            <div class="t-name">${esc(t.establishment_name)}</div>
-            <div class="t-sub">${esc(t.owner_name || '—')} · ${esc(t.owner_phone || '')}
-              ${t.city ? ' · ' + esc(t.city) : ''}</div>
-            <div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap">
-              <span class="pill s-${esc(t.status)}">${
-                t.status === 'trial' ? 'Essai' :
-                t.status === 'active' ? 'Abonné' :
-                t.status === 'suspended' ? 'Suspendu' : 'Résilié'}</span>
-              ${t.is_lifetime ? '<span class="pill s-life">À vie</span>' : ''}
-              ${t.status === 'trial' && t.trial_ends_at
-                ? `<span style="font-size:11.5px;color:var(--mid);align-self:center">
-                     jusqu'au ${day(t.trial_ends_at)}</span>` : ''}
-            </div>
-            ${t.modules && t.modules.length ? `<div class="mods">${
-              t.modules.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</div>` : ''}
-          </div>
-          <div class="t-right">
-            <div style="font-size:19px;font-weight:800;letter-spacing:-.5px">${money(t.total_paid)}</div>
-            <div style="font-size:11.5px;color:var(--mid)">encaissé</div>
-          </div>
+    /*
+     * Cartes compactes en grille.
+     *
+     * Les cartes pleine largeur montraient tout d'un coup : chiffres,
+     * modules, cinq boutons. Avec vingt établissements, la page
+     * devenait interminable et il fallait faire défiler pour comparer
+     * deux officines.
+     *
+     * La carte ne garde donc que ce qui sert à REPÉRER — nom,
+     * propriétaire, statut, encaissé. Les actions vivent dans la fiche,
+     * ouverte au clic. C'est le principe de la maquette que tu m'as
+     * envoyée : beaucoup de cartes visibles, peu d'information sur
+     * chacune.
+     */
+    $('tlist').innerHTML = '<div class="tgrid">' + TENANTS.map(t => {
+      const price = (t.custom_prices || [])[0];
+
+      return `
+      <div class="tcard" onclick="Console.detail(${t.id})">
+        <div class="tcard-hd">
+          <div class="tcard-ini">${esc(initials(t.establishment_name))}</div>
+          <span class="pill s-${esc(t.status)}">${
+            t.status === 'trial' ? 'Essai' :
+            t.status === 'active' ? 'Abonné' :
+            t.status === 'suspended' ? 'Suspendu' : 'Résilié'}</span>
         </div>
 
-        <div class="mini">
-          <div><b>${t.users_count}</b>utilisateurs</div>
-          <div><b>${t.medications_count}</b>articles</div>
-          <div><b>${day(t.created_at)}</b>inscrit le</div>
+        <div class="tcard-name">${esc(t.establishment_name)}</div>
+        <div class="tcard-sub">${esc(t.owner_name || '—')}${
+          t.city ? ' · ' + esc(t.city) : ''}</div>
+
+        <div class="tcard-stats">
+          <div><b>${t.users_count}</b><span>compte${t.users_count > 1 ? 's' : ''}</span></div>
+          <div><b>${t.medications_count}</b><span>articles</span></div>
+          <div><b>${money(t.total_paid)}</b><span>encaissé</span></div>
         </div>
 
-        <div class="acts">
-          <button class="btn dark" onclick="Console.detail(${t.id})">Voir la fiche</button>
-          <button class="btn life" onclick="Console.grant(${t.id})">Accorder l'accès</button>
-          ${t.status === 'trial'
-            ? `<button class="btn" onclick="Console.extend(${t.id})">Prolonger l'essai</button>` : ''}
-          ${t.status !== 'suspended'
-            ? `<button class="btn warn" onclick="Console.suspend(${t.id})">Suspendre</button>`
-            : `<button class="btn" onclick="Console.reactivate(${t.id})">Réactiver</button>`}
+        <div class="tcard-ft">
+          ${t.is_lifetime ? '<span class="pill s-life">À vie</span>' : ''}
+          ${price
+            ? `<span class="pill s-price">${money(price.monthly_price)}/mois</span>`
+            : ''}
+          ${(t.modules || []).slice(0, 2).map(m => `<span class="mod">${esc(m)}</span>`).join('')}
+          ${(t.modules || []).length > 2
+            ? `<span class="mod">+${t.modules.length - 2}</span>` : ''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('') + '</div>';
   }
 
   /* ═══ PAIEMENTS ═══ */
@@ -557,9 +625,109 @@ h1{font-size:27px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
 
           <div style="display:flex;gap:9px;flex-wrap:wrap">
             <button class="btn life" onclick="Console.grant(${t.id})">Accorder l'accès</button>
+            <button class="btn" onclick="Console.price(${t.id})">Fixer le tarif</button>
+            ${t.status === 'trial'
+              ? `<button class="btn" onclick="Console.extend(${t.id})">Prolonger l'essai</button>` : ''}
+            ${t.status !== 'suspended'
+              ? `<button class="btn warn" onclick="Console.suspend(${t.id})">Suspendre</button>`
+              : `<button class="btn" onclick="Console.reactivate(${t.id})">Réactiver</button>`}
             <button class="btn" onclick="Console.closeSheet()">Fermer</button>
           </div>`);
       } catch (e) { toast(e.message, true); }
+    },
+
+    /**
+     * Tarif négocié pour cet établissement.
+     *
+     * 15 $/mois est hors de portée de beaucoup de petites officines.
+     * Plutôt que de baisser le tarif public — ce qui sacrifierait les
+     * clients capables de payer plein tarif — on négocie au cas par cas.
+     *
+     * Le prix saisi ne concerne QUE cet établissement. Il apparaît dans
+     * son modal de paiement et sur sa page des formules ; les autres
+     * continuent de voir le tarif public.
+     */
+    async price(id) {
+      if (!PLANS.length) {
+        try {
+          const d = await AfyaAPI.platform.tenant(id);
+          MODULES = d.modules || []; PLANS = d.plans || [];
+        } catch (e) { toast(e.message, true); return; }
+      }
+
+      const current = (TENANTS.find(t => t.id === id) || {}).custom_prices || [];
+      const byPlan = {};
+      current.forEach(p => { byPlan[p.plan_code] = p; });
+
+      sheet(`
+        <h2>Fixer le tarif</h2>
+        <div class="sub">Prix mensuel négocié, visible par cet établissement uniquement.</div>
+
+        <div class="fl">Formule</div>
+        <select id="pPlan" class="inp" style="width:100%;margin-bottom:14px">
+          ${PLANS.map(p => `
+            <option value="${esc(p.code)}">${esc(p.label)} — tarif public ${money(p.monthly_price)}/mois</option>
+          `).join('')}
+        </select>
+
+        <div class="fl">Prix mensuel négocié (USD)</div>
+        <input id="pPrice" class="inp" type="number" min="0" step="0.5"
+               placeholder="ex. 8" style="width:100%;margin-bottom:6px">
+        <div style="font-size:11.5px;color:var(--mid);margin-bottom:14px;line-height:1.5">
+          Laisser vide pour rétablir le tarif public.
+          Saisir 0 rend la formule gratuite pour cet établissement.
+        </div>
+
+        <div class="fl">Motif (facultatif)</div>
+        <input id="pNote" class="inp" maxlength="300"
+               placeholder="ex. petite officine, partenaire de lancement…"
+               style="width:100%;margin-bottom:18px">
+
+        ${current.length ? `
+          <div style="background:rgba(255,121,0,.08);border-radius:12px;padding:12px;
+                      margin-bottom:18px;font-size:12.5px;line-height:1.6">
+            <strong>Tarifs déjà négociés</strong><br>
+            ${current.map(p => `${esc(p.plan_code)} : <strong>${money(p.monthly_price)}/mois</strong>${
+              p.note ? ' — ' + esc(p.note) : ''}`).join('<br>')}
+          </div>` : ''}
+
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <button class="btn dark" id="pSave">Enregistrer</button>
+          <button class="btn" onclick="Console.closeSheet()">Annuler</button>
+        </div>`);
+
+      // Pré-remplit si un tarif existe déjà pour la formule choisie
+      const fill = () => {
+        const p = byPlan[$('pPlan').value];
+        $('pPrice').value = p ? p.monthly_price : '';
+        $('pNote').value  = p && p.note ? p.note : '';
+      };
+      $('pPlan').addEventListener('change', fill);
+      fill();
+
+      $('pSave').addEventListener('click', async () => {
+        const raw = $('pPrice').value.trim();
+        // Chaîne vide ⇒ null ⇒ suppression de la remise côté serveur.
+        const price = raw === '' ? null : Number(raw);
+
+        if (price !== null && (isNaN(price) || price < 0)) {
+          toast('Prix invalide', true);
+          return;
+        }
+
+        const btn = $('pSave');
+        btn.disabled = true; btn.textContent = 'Enregistrement…';
+
+        try {
+          await AfyaAPI.platform.setPrice(id, $('pPlan').value, price, $('pNote').value.trim());
+          toast(price === null ? 'Tarif public rétabli.' : 'Tarif négocié enregistré.');
+          closeSheet();
+          loadTenants();
+        } catch (e) {
+          toast(e.message, true);
+          btn.disabled = false; btn.textContent = 'Enregistrer';
+        }
+      });
     },
 
     async grant(id) {

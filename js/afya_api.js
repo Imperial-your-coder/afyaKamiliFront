@@ -602,6 +602,16 @@ const AfyaAPI = {
     },
     async tenant(id)          { return await request('GET', `/platform/tenants/${id}`); },
 
+    /* Tarif négocié pour un établissement.
+       price = null retire la remise et rétablit le tarif public. */
+    async setPrice(id, planCode, price, note) {
+      return await request('PUT', `/platform/tenants/${id}/price`, {
+        plan_code: planCode,
+        monthly_price: price,
+        note: note || null,
+      });
+    },
+
     /* ── Comptes utilisateurs (tous établissements confondus) ── */
     async users(params = {}) {
       const q = new URLSearchParams(
