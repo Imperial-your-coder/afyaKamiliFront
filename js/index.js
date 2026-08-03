@@ -223,6 +223,8 @@ function buildCard(m) {
   if (isUnlocked && m.link) el.href = m.link;
   el.className = `mcard ${isUnlocked ? 'avail' : 'locked'}`;
   el.style.textDecoration = 'none';
+  // Repère stable pour la visite guidée (onboarding.js)
+  el.dataset.module = m.id;
   el.style.color = 'inherit';
 
   // Badge bottom-left

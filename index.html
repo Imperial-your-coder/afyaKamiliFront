@@ -12,6 +12,30 @@
 <script src="./js/dashboard.js" defer></script>
 <!-- Modal de paiement Orange Money : expose window.AfyaBilling -->
 <script src="./js/billing.js" defer></script>
+<script src="./js/onboarding.js" defer></script>
+<script>
+/* ── Visite guidée du tableau de bord ── */
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.AfyaTour) return;
+
+  // Les tuiles sont construites après un appel réseau : on attend
+  // qu'elles existent plutôt que de deviner un délai.
+  var tries = 0;
+  var wait = setInterval(function () {
+    var tile = document.querySelector('.mcard.avail[data-module="pharmacy"]');
+    if (tile || ++tries > 24) {
+      clearInterval(wait);
+      if (!tile) return;
+      AfyaTour.run([{
+        id:  'dash.pharmacy',
+        sel: '.mcard.avail[data-module="pharmacy"]',
+        html: 'Cliquez ici pour ouvrir votre <strong>pharmacie</strong> : ' +
+              'catalogue, stock, ventes et caisse.'
+      }], { delay: 500 });
+    }
+  }, 250);
+});
+</script>
 <link rel="stylesheet" href="./css/index.css">
 </head>
 <body>

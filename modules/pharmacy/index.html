@@ -12,6 +12,7 @@
 <!-- Verrou d'abonnement : doit être présent sur TOUTE page utilisable,
      sinon un compte expiré entrerait par l'URL du module. -->
 <script src="../../js/billing.js" defer></script>
+<script src="../../js/onboarding.js" defer></script>
 <script src="./index.js" defer></script>
 <script src="pharmacy.js" defer></script>
 <script>
@@ -19,44 +20,6 @@
      On attend que billing.js ait publié window.AfyaBilling ; s'il n'a
      pas pu se charger, on retombe sur la page des formules plutôt que
      de laisser un bouton mort. */
-  /* ── Menu du compte : identité, abonnement, déconnexion ── */
-  document.addEventListener('DOMContentLoaded', function () {
-    var av = document.getElementById('phAvatar');
-    var mn = document.getElementById('phMenu');
-    if (av && mn) {
-      av.addEventListener('click', function (e) {
-        e.stopPropagation();
-        mn.classList.toggle('open');
-      });
-      document.addEventListener('click', function () { mn.classList.remove('open'); });
-      mn.addEventListener('click', function (e) { e.stopPropagation(); });
-    }
-
-    var bl = document.getElementById('phmBilling');
-    if (bl) bl.addEventListener('click', function () {
-      if (window.AfyaBilling) AfyaBilling.show(); else window.location.href = '/pricing';
-    });
-
-    var lo = document.getElementById('phmLogout');
-    if (lo) lo.addEventListener('click', async function () {
-      try { await AfyaAPI.auth.logout(); } catch (e) { AfyaAPI.Token.clear(); }
-      window.location.replace('/login');
-    });
-
-    (async function () {
-      try {
-        var u = await AfyaAPI.auth.me();
-        var ini = (u.name || '?').trim().split(/\s+/).slice(0, 2)
-                    .map(function (w) { return w[0]; }).join('').toUpperCase();
-        if (av) av.textContent = ini || 'PH';
-        var n = document.getElementById('phmName');
-        var sb = document.getElementById('phmSub');
-        if (n)  n.textContent  = u.name || '';
-        if (sb) sb.textContent = (u.tenant && u.tenant.establishment_name) || '';
-      } catch (e) { /* la barre reste utilisable sans identité */ }
-    })();
-  });
-
   document.addEventListener('DOMContentLoaded', function () {
     var b = document.getElementById('tbBilling');
     if (!b) return;
@@ -67,22 +30,9 @@
   });
 </script>
 <style>.acct-kpi-scroll::-webkit-scrollbar{display:none}
-/* ── Menu du compte (barre supérieure) ── */
+/* ── Barre supérieure ── */
 .tb-actions{position:relative}
 .tb-avatar{cursor:pointer}
-.ph-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:216px;background:#fff;
-  border:1px solid rgba(0,0,0,.09);border-radius:16px;box-shadow:0 20px 48px rgba(0,0,0,.16);
-  padding:7px;z-index:400;display:none}
-.ph-menu.open{display:block}
-.phm-head{padding:11px 13px 9px;border-bottom:1px solid rgba(0,0,0,.07);margin-bottom:5px}
-.phm-name{font-size:13.5px;font-weight:800;color:#12120f}
-.phm-sub{font-size:11.5px;color:#8B8D86;margin-top:2px}
-.phm-item{display:block;width:100%;text-align:left;padding:10px 13px;border:none;background:none;
-  border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#12120f;
-  cursor:pointer;text-decoration:none}
-.phm-item:hover{background:rgba(0,0,0,.05)}
-.phm-item.danger{color:#dc2626}
-.phm-sep{height:1px;background:rgba(0,0,0,.07);margin:5px 0}
 </style>
 </head>
 <body>
@@ -143,19 +93,10 @@
       </svg>
       <span class="hide-mobile">Abonnement</span>
     </button>
+    <!-- L'avatar et son menu sont construits par pharmacy.js
+         (fonction buildUserMenu). Ne PAS ajouter de menu statique
+         ici : il s'afficherait en double, comme cela s'est produit. -->
     <div class="tb-avatar" id="phAvatar" title="Mon compte">PH</div>
-
-    <!-- Menu du compte, ouvert au clic sur l'avatar -->
-    <div class="ph-menu" id="phMenu">
-      <div class="phm-head">
-        <div class="phm-name" id="phmName">—</div>
-        <div class="phm-sub"  id="phmSub">—</div>
-      </div>
-      <a class="phm-item" href="../admin/index">Mon compte</a>
-      <button class="phm-item" id="phmBilling" type="button">Mon abonnement</button>
-      <div class="phm-sep"></div>
-      <button class="phm-item danger" id="phmLogout" type="button">Se déconnecter</button>
-    </div>
   </div>
 </header>
 
@@ -275,7 +216,7 @@
       <div class="sec-hd-spacer"></div>
       <div class="sec-hd-actions">
         <span id="catCount" style="font-size:11.5px;font-weight:700;color:var(--mid)"></span>
-        <button class="tb-btn primary" onclick="openAddMed()">
+        <button class="tb-btn primary" id="catalogAddBtn" onclick="openAddMed()">
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
           Ajouter
         </button>
@@ -468,7 +409,7 @@
         </div>
         <div class="field"><label class="field-lbl">Pied de page facture</label><textarea class="ph-textarea" id="setFooter" placeholder="Merci de votre confiance."></textarea></div>
         <div class="field"><label class="field-lbl">Pied de page ordonnance</label><textarea class="ph-textarea" id="setRxFooter" placeholder="Ordonnance valable 3 mois…"></textarea></div>
-        <button class="tb-btn primary" style="width:100%;justify-content:center" onclick="saveSettingsForm()">Enregistrer les paramètres</button>
+        <button class="tb-btn primary" id="saveSettingsBtn" style="width:100%;justify-content:center" onclick="saveSettingsForm()">Enregistrer les paramètres</button>
       </div>
     </div>
   </section>
@@ -959,5 +900,73 @@ window.switchTab = function(name) {
   </div>
 </div>
 
+<script>
+/* ═══ Visite guidée de la pharmacie ═══
+
+   Trois moments distincts, pas une séquence forcée :
+
+   1. Le catalogue est vide  → montrer « Ajouter ».
+   2. La devise est en USD   → prévenir, et pointer les Réglages.
+      C'est le piège le plus coûteux : quelqu'un qui saisit tous ses
+      prix en francs alors que l'application est en dollars devra tout
+      ressaisir. Mieux vaut l'avertir avant la première fiche.
+   3. La devise vient d'être changée → rappeler d'enregistrer.
+      Un <select> modifié mais non enregistré donne l'illusion d'un
+      réglage pris en compte.
+*/
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.AfyaTour) return;
+
+  var tries = 0;
+  var wait = setInterval(function () {
+    var ready = document.getElementById('catalogAddBtn');
+    if (!ready && ++tries < 24) return;
+    clearInterval(wait);
+    if (!ready) return;
+
+    var steps = [];
+
+    // La devise par défaut est le dollar : à signaler en premier,
+    // avant que le pharmacien ne saisisse le moindre prix.
+    var cur = document.getElementById('setCurrency');
+    if (!cur || cur.value === 'USD' || cur.value === '') {
+      steps.push({
+        id: 'ph.currency',
+        sel: '.bottom-nav-item[data-tab="settings"], .sb-item[data-tab="settings"]',
+        html: 'Vos prix sont pour l\'instant en <strong>dollars</strong>. ' +
+              'Ouvrez les <strong>Réglages</strong> pour choisir votre devise ' +
+              'avant d\'ajouter vos médicaments.'
+      });
+    }
+
+    steps.push({
+      id: 'ph.add',
+      sel: '#catalogAddBtn',
+      html: 'Cliquez ici pour enregistrer votre <strong>premier médicament</strong> : ' +
+            'nom, conditionnement, prix et stock.'
+    });
+
+    AfyaTour.run(steps, { delay: 1200 });
+
+    /* ── Rappel d'enregistrement ──
+       Se déclenche à la modification de la devise, jamais au
+       chargement : c'est une réaction à un geste, pas un conseil
+       général. */
+    if (cur) {
+      cur.addEventListener('change', function () {
+        setTimeout(function () {
+          AfyaTour.show(
+            'ph.saveSettings',
+            '#saveSettingsBtn',
+            'N\'oubliez pas d\'<strong>enregistrer</strong> : sans cela, ' +
+            'votre devise ne sera pas conservée.',
+            { force: true, duration: 14000 }
+          );
+        }, 350);
+      });
+    }
+  }, 250);
+});
+</script>
 </body>
 </html>

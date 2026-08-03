@@ -714,7 +714,9 @@
       </div>
 
       <div class="field-row">
-        <div class="field">
+        <!-- Masqué quand la boîte ne contient qu'une seule unité :
+             le prix de la boîte EST alors le prix de l'unité. -->
+        <div class="field" id="unitPriceField">
           <label class="field-lbl">Prix d'${scheme.baseUnit === 'ampoule' ? 'une' : 'un'} ${scheme.baseUnit}
             <span class="opt-tag">Vous fixez</span>
           </label>
@@ -725,6 +727,10 @@
           <input class="ph-input" id="addPurchasePrice" type="number" step="0.01" min="0" placeholder="0.00">
         </div>
       </div>
+
+      <div id="singleUnitNote" style="display:none;padding:10px 12px;border-radius:12px;
+           background:rgba(0,0,0,.03);font-size:11.5px;color:#5a5a55;font-weight:600;
+           margin-bottom:12px;line-height:1.6"></div>
 
       <div id="priceHint" style="margin-top:2px;padding:10px 12px;border-radius:12px;
            background:rgba(0,0,0,.03);font-size:12px;font-weight:600;color:#5a5a55;
@@ -768,7 +774,8 @@
       <div class="field">
         <div id="saleUnitsWrap" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:2px">
           ${scheme.saleUnits.map((u, i) => `
-            <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;
+            <label data-unit="${u}"
+                   style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;
                           padding:6px 12px;border:1.5px solid var(--border);border-radius:999px;
                           background:var(--card)">
               <input type="checkbox" class="sale-unit-cb" value="${u}"
@@ -806,12 +813,69 @@
     return parseInt(document.getElementById('addUnitsPerBox')?.value) || 0;
   }
 
+  /**
+   * Un flacon dans une boîte : la boîte EST le flacon.
+   *
+   * Demander « prix de la boîte » PUIS « prix du flacon » pour un sirop
+   * conditionné à l'unité, c'est demander deux fois la même chose. Le
+   * pharmacien saisissait 8500 dans les deux champs, et le modal de
+   * vente proposait ensuite « Boîte 8500 » et « Flacon 8500 » —
+   * deux boutons pour un même acte.
+   *
+   * Quand pack_size vaut 1 et qu'il n'y a pas de plaquette, on masque
+   * donc le second prix et la seconde unité de vente. Le champ reste
+   * dans le DOM et reçoit la valeur de la boîte : les données envoyées
+   * à l'API ne changent pas, seule l'interface se simplifie.
+   */
+  function applySingleUnitCollapse(scheme, pack, box) {
+    const single = !scheme.hasStrip && pack === 1;
+
+    const field = document.getElementById('unitPriceField');
+    const note  = document.getElementById('singleUnitNote');
+    const input = document.getElementById('addPriceUnit');
+
+    if (field) field.style.display = single ? 'none' : '';
+
+    if (single) {
+      // Le prix unitaire suit celui de la boîte, sans intervention.
+      if (input) input.value = box > 0 ? box : '';
+
+      if (note) {
+        note.innerHTML =
+          `Une boîte = <strong>1 ${scheme.baseUnit}</strong>. ` +
+          `Le prix de la boîte est donc aussi celui ${
+            scheme.baseUnit === 'ampoule' ? "de l'ampoule" : 'du ' + scheme.baseUnit
+          } — inutile de le saisir deux fois.`;
+        note.style.display = 'block';
+      }
+    } else if (note) {
+      note.style.display = 'none';
+    }
+
+    // Unités de vente : masquer celle qui ferait doublon avec « Boîte ».
+    document.querySelectorAll('#saleUnitsWrap label[data-unit]').forEach(lb => {
+      const unit = lb.dataset.unit;
+      const dup  = single && unit !== 'boite';
+
+      lb.style.display = dup ? 'none' : '';
+
+      // Une case masquée ne doit pas rester cochée : elle produirait
+      // un bouton invisible mais actif dans le modal de vente.
+      if (dup) {
+        const cb = lb.querySelector('.sale-unit-cb');
+        if (cb) cb.checked = false;
+      }
+    });
+  }
+
   /** Suggestions de prix + aperçu du stock converti */
   window.onPackagingInput = function () {
     const scheme = schemeForForm(document.getElementById('addForm')?.value);
     const c    = sym();
     const box  = parseFloat(document.getElementById('addPrice')?.value) || 0;
     const pack = packSize();
+
+    applySingleUnitCollapse(scheme, pack, box);
 
     const strip    = parseInt(document.getElementById('addUnitsPerStrip')?.value) || 0;
     const elStrip  = document.getElementById('addPriceStrip');
@@ -846,13 +910,17 @@
           );
         }
 
-        const margeU = uPrice - perUnit;
-        rows.push(
-          `<strong>${scheme.baseLabel}</strong> : ${c}${uPrice.toFixed(2)}` +
-          (Math.abs(margeU) > 0.001
-            ? ` <span style="color:${margeU > 0 ? '#16a34a' : '#dc2626'}">
-                 (${margeU > 0 ? '+' : ''}${c}${margeU.toFixed(2)} vs prorata)</span>` : '')
-        );
+        // Avec une seule unité par boîte, la ligne « Flacon » répéterait
+        // mot pour mot la ligne « Boîte ». On l'omet.
+        if (scheme.hasStrip || pack > 1) {
+          const margeU = uPrice - perUnit;
+          rows.push(
+            `<strong>${scheme.baseLabel}</strong> : ${c}${uPrice.toFixed(2)}` +
+            (Math.abs(margeU) > 0.001
+              ? ` <span style="color:${margeU > 0 ? '#16a34a' : '#dc2626'}">
+                   (${margeU > 0 ? '+' : ''}${c}${margeU.toFixed(2)} vs prorata)</span>` : '')
+          );
+        }
 
         hint.innerHTML = rows.join('<br>');
         hint.style.display = 'block';
@@ -968,7 +1036,21 @@
     const stockUnit = document.getElementById('addStockUnit')?.value || 'boite';
     const stockBase = stockToBaseUnits(stockQty, stockUnit, pack, strip);
 
-    const saleUnits = [...document.querySelectorAll('.sale-unit-cb:checked')].map(cb => cb.value);
+    let saleUnits = [...document.querySelectorAll('.sale-unit-cb:checked')].map(cb => cb.value);
+
+    /*
+     * Filet de sécurité côté données.
+     *
+     * L'interface masque déjà les unités redondantes, mais un
+     * médicament enregistré AVANT ce correctif — ou modifié pendant
+     * que la forme galénique changeait — peut arriver ici avec
+     * ['boite','flacon'] alors que la boîte ne contient qu'un flacon.
+     * On dédoublonne avant d'envoyer, pour ne pas propager le problème
+     * dans la base.
+     */
+    if (!scheme.hasStrip && pack === 1 && saleUnits.length > 1) {
+      saleUnits = ['boite'];
+    }
 
     const payload = {
       name,
@@ -1694,6 +1776,10 @@
       <a href="../../index.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;
          border-radius:10px;font-size:13px;font-weight:600;color:#111;text-decoration:none">
         Tableau de bord</a>
+      <button type="button" id="phBilling" style="display:flex;align-items:center;gap:10px;
+              padding:10px 12px;border-radius:10px;font-size:13px;font-weight:600;color:#111;
+              background:none;border:none;cursor:pointer;width:100%;text-align:left;font-family:inherit">
+        Mon abonnement</button>
       <div style="height:1px;background:rgba(0,0,0,.07);margin:6px 4px"></div>
       <button type="button" id="phLogout" style="display:flex;align-items:center;gap:10px;
               padding:10px 12px;border-radius:10px;font-size:13px;font-weight:600;color:#dc2626;
@@ -1701,6 +1787,12 @@
         Se déconnecter</button>`;
 
     (actions || document.body).appendChild(menu);
+
+    const billingBtn = menu.querySelector('#phBilling');
+    if (billingBtn) billingBtn.addEventListener('click', () => {
+      if (window.AfyaBilling) AfyaBilling.show();
+      else window.location.href = '../../pricing.html';
+    });
 
     menu.querySelectorAll('a,button').forEach(el => {
       el.addEventListener('mouseenter', () => el.style.background = 'rgba(0,0,0,.05)');
@@ -1991,7 +2083,16 @@
 
   /** Unité de vente proposée par défaut pour ce médicament */
   function defaultUnit(m) {
-    const units = (m.sale_units && m.sale_units.length) ? m.sale_units : ['boite'];
+    let units = (m.sale_units && m.sale_units.length) ? m.sale_units : ['boite'];
+
+    /*
+     * Même règle à l'affichage, pour les médicaments déjà enregistrés :
+     * si une boîte ne contient qu'une unité, « Boîte » et « Flacon »
+     * désignent le même objet au même prix. On n'en garde qu'un.
+     */
+    if ((m.pack_size || 1) === 1 && !m.units_per_strip && units.length > 1) {
+      units = [units.includes('boite') ? 'boite' : units[0]];
+    }
     return units.includes('boite') ? 'boite' : units[0];
   }
 

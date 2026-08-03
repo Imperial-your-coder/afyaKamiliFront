@@ -10,6 +10,7 @@
 
 <!-- ══ COUCHE API — doit être chargée avant tout ══ -->
 <script src="./js/afya_api.js"></script>
+<script src="./js/onboarding.js" defer></script>
 
 <script>
 tailwind.config = {
@@ -359,7 +360,7 @@ html,body{height:100%;font-family:'Manrope',sans-serif;overflow:hidden;}
 
       <!-- Remplacement du bouton Google par "Créer mon compte" -->
       <div class="flex items-center gap-3 mb-3.5"><div class="flex-1 h-px bg-[rgba(0,0,0,0.1)]"></div><span class="text-[11.5px] text-[#BCBCB6] font-medium">Nouveau sur Afya Kamili ?</span><div class="flex-1 h-px bg-[rgba(0,0,0,0.1)]"></div></div>
-      <button type="button" onclick="switchMode('signup')" class="w-full py-3.5 px-5 rounded-full border-[1.5px] border-ink bg-transparent text-[14px] font-bold text-ink cursor-pointer flex items-center justify-center gap-2 hover:bg-ink hover:text-white transition-all">
+      <button type="button" id="signupBtn" onclick="switchMode('signup')" class="w-full py-3.5 px-5 rounded-full border-[1.5px] border-ink bg-transparent text-[14px] font-bold text-ink cursor-pointer flex items-center justify-center gap-2 hover:bg-ink hover:text-white transition-all">
         Créer mon compte
       </button>
       
@@ -1206,6 +1207,33 @@ async function submitSignup(){
 // ── INIT ──
 switchOrgan(0);
 updateProgress();
+</script>
+<script>
+/* ── Visite guidée de la page de connexion ──
+   Deux bulles seulement. La seconde n'apparaît qu'une fois le bouton
+   « Créer mon compte » atteint par défilement : la pointer avant
+   qu'il soit à l'écran n'aurait aucun sens. */
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.AfyaTour) return;
+
+  // Quelqu'un déjà connecté n'a pas besoin qu'on lui explique le login.
+  if (window.AfyaAPI && AfyaAPI.Token.exists()) return;
+
+  AfyaTour.run([
+    {
+      id:  'login.connect',
+      sel: '#loginBtn',
+      html: 'Vous avez déjà un compte ? Connectez-vous avec votre ' +
+            '<strong>numéro de téléphone</strong> et votre mot de passe.'
+    },
+    {
+      id:  'login.signup',
+      sel: '#signupBtn',
+      html: "C'est votre première visite ? Cliquez ici pour créer le compte " +
+            'de votre <strong>pharmacie, clinique ou hôpital</strong>.'
+    }
+  ], { delay: 1100 });
+});
 </script>
 </body>
 </html>
