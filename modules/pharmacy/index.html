@@ -926,18 +926,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var steps = [];
 
-    // La devise par défaut est le dollar : à signaler en premier,
-    // avant que le pharmacien ne saisisse le moindre prix.
+    /* Information, jamais constat.
+     *
+     * La version précédente affirmait « vos prix sont en dollars »
+     * après avoir testé le <select> des réglages. Mais ce select est
+     * rempli par un appel réseau qui n'est pas terminé à ce stade :
+     * le test passait donc TOUJOURS, y compris pour une pharmacie
+     * déjà passée en francs. Annoncer un fait faux détruit la
+     * confiance dans tous les autres messages de la visite.
+     *
+     * On se contente donc d'indiquer où se règle la devise — vrai
+     * dans tous les cas, utile dans tous les cas. */
+    steps.push({
+      id: 'ph.currency',
+      sel: '.bottom-nav-item[data-tab="settings"], .sb-item[data-tab="settings"]',
+      html: 'Besoin de changer votre <strong>devise</strong> ou vos informations ? ' +
+            'Tout se règle dans les <strong>Réglages</strong>.'
+    });
+
     var cur = document.getElementById('setCurrency');
-    if (!cur || cur.value === 'USD' || cur.value === '') {
-      steps.push({
-        id: 'ph.currency',
-        sel: '.bottom-nav-item[data-tab="settings"], .sb-item[data-tab="settings"]',
-        html: 'Vos prix sont pour l\'instant en <strong>dollars</strong>. ' +
-              'Ouvrez les <strong>Réglages</strong> pour choisir votre devise ' +
-              'avant d\'ajouter vos médicaments.'
-      });
-    }
 
     steps.push({
       id: 'ph.add',
