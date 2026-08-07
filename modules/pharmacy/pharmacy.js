@@ -989,6 +989,124 @@
     }
   };
 
+
+  /* ═══════════════════════════════════════════════════════════
+     VENTE RAPIDE — vendre sans avoir saisi sa fiche produit
+
+     Le pharmacien n'a que trois champs à remplir. Le serveur
+     retrouve le médicament par son nom, ou le crée, puis passe
+     la vente par le circuit normal : journal de caisse, facture,
+     numérotation. Le catalogue se construit donc tout seul, à
+     partir de ce qui se vend réellement.
+  ═══════════════════════════════════════════════════════════ */
+
+  window.openQuickSale = function () {
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    set('qsName', ''); set('qsPrice', ''); set('qsQty', 1); set('qsCustomer', '');
+
+    const tot = document.getElementById('qsTotal');
+    if (tot) tot.textContent = sym() + '0.00';
+
+    /* Suggestions depuis le catalogue déjà constitué. Au bout de
+       quelques jours, « Para… » suffit et le prix se remplit seul —
+       c'est ce qui rend la vente rapide plus rapide que la fiche. */
+    const dl = document.getElementById('qsNames');
+    if (dl) {
+      dl.innerHTML = MEDICATIONS
+        .map(m => `<option value="${String(m.name).replace(/"/g, '&quot;')}">`)
+        .join('');
+    }
+
+    const recalc = () => {
+      const p = parseFloat(document.getElementById('qsPrice')?.value) || 0;
+      const q = parseInt(document.getElementById('qsQty')?.value) || 0;
+      if (tot) tot.textContent = sym() + (p * q).toFixed(2);
+    };
+
+    ['qsPrice', 'qsQty'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.dataset.qsBound) {
+        el.dataset.qsBound = '1';
+        el.addEventListener('input', recalc);
+      }
+    });
+
+    // Nom connu → prix pré-rempli, sans jamais écraser une saisie.
+    const nameEl = document.getElementById('qsName');
+    if (nameEl && !nameEl.dataset.qsBound) {
+      nameEl.dataset.qsBound = '1';
+      nameEl.addEventListener('change', () => {
+        const found = MEDICATIONS.find(
+          m => String(m.name).toLowerCase() === nameEl.value.trim().toLowerCase()
+        );
+        const priceEl = document.getElementById('qsPrice');
+        if (found && priceEl && !priceEl.value) {
+          priceEl.value = found.unit_price ?? found.price ?? '';
+          recalc();
+        }
+      });
+    }
+
+    openModal('modalQuickSale');
+    setTimeout(() => nameEl?.focus(), 120);
+  };
+
+  window.submitQuickSale = async function () {
+    const name  = (document.getElementById('qsName')?.value || '').trim();
+    const price = parseFloat(document.getElementById('qsPrice')?.value);
+    const qty   = parseInt(document.getElementById('qsQty')?.value) || 1;
+
+    if (!name)                         { toast('Indiquez le nom du médicament', 'error'); return; }
+    if (!Number.isFinite(price) || price <= 0) { toast('Indiquez le prix', 'error'); return; }
+
+    const btn = document.getElementById('qsSubmit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+
+    try {
+      const method   = document.getElementById('qsPay')?.value || 'Espèces';
+      const customer = (document.getElementById('qsCustomer')?.value || '').trim();
+
+      const res = await AfyaAPI.sales.quick({
+        name, unit_price: price, quantity: qty,
+        payment_method: method, customer_name: customer || null,
+      });
+
+      const sale = res.sale;
+      closeModal('modalQuickSale');
+
+      // Montants validés par le serveur, jamais recalculés ici.
+      const sub   = parseFloat(sale.subtotal)     || price * qty;
+      const tva   = parseFloat(sale.tax_amount)   || 0;
+      const total = parseFloat(sale.total_amount) || sub + tva;
+      const now   = new Date();
+
+      setTimeout(() => showInvoice({
+        m: { name: res.medication.name },
+        qty,
+        ulabel:  'Unité',
+        up: price, sub, tva, total,
+        method, customer,
+        ref:     sale.sale_number,
+        dateStr: now.toLocaleDateString('fr-FR'),
+        timeStr: now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0'),
+      }), 200);
+
+      if (res.medication.is_new) {
+        toast(`Vente enregistrée — « ${res.medication.name} » ajouté au catalogue`);
+      } else {
+        toast('Vente enregistrée');
+      }
+
+      invalidate('meds', 'journal', 'alerts');
+      await loadMedications();
+      await loadJournal();
+    } catch (e) {
+      toast(errMsg(e), 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Valider la vente'; }
+    }
+  };
+
   /* ═══ 4. CATALOGUE ═══ */
   async function loadMedications() {
     setBusy(true);

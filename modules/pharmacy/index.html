@@ -220,6 +220,18 @@
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
           Ajouter
         </button>
+        <!-- Vente rapide : vendre sans avoir saisi sa fiche produit.
+             Volontairement à côté de « Ajouter » : c'est l'alternative
+             à la saisie, elle doit se présenter au même endroit. -->
+        <button class="tb-btn" id="quickSaleBtn" onclick="openQuickSale()"
+                style="border-color:rgba(22,163,74,.4);color:#16a34a">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1.5 1.5h1.8l1.5 8.2h7.4l1.3-6H4.2"/>
+            <circle cx="6" cy="13.2" r="1.1"/><circle cx="12" cy="13.2" r="1.1"/>
+          </svg>
+          Vendre maintenant
+        </button>
       </div>
     </div>
     <div class="search-row">
@@ -433,6 +445,71 @@
     <div class="modal-ft">
       <button class="tb-btn primary" id="medModalSellBtn" style="flex:1;font-size:13.5px" onclick="openSellModal()">💊 Vendre ce médicament</button>
       <button class="tb-btn" onclick="closeModal('modalMed')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Vente rapide (sans fiche produit) -->
+<div class="modal-overlay" id="modalQuickSale">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Vendre maintenant</div>
+      <button class="modal-close" onclick="closeModal('modalQuickSale')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+
+      <div style="padding:11px 13px;border-radius:12px;background:rgba(22,163,74,.09);
+                  font-size:12px;color:#15803d;font-weight:600;margin-bottom:14px;line-height:1.6">
+        Vendez sans avoir enregistré le médicament. Sa fiche sera créée
+        automatiquement — vous la compléterez plus tard si vous le souhaitez.
+      </div>
+
+      <div class="field" style="margin-bottom:12px">
+        <label class="field-lbl">Nom du médicament *</label>
+        <input class="ph-input" id="qsName" list="qsNames" autocomplete="off"
+               placeholder="Ex : Paracétamol 500mg">
+        <!-- Suggestions tirées du catalogue déjà constitué : au bout de
+             quelques jours, les produits courants se saisissent en deux
+             lettres et le prix se remplit tout seul. -->
+        <datalist id="qsNames"></datalist>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-lbl">Prix unitaire *</label>
+          <input class="ph-input" id="qsPrice" type="number" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label class="field-lbl">Quantité</label>
+          <input class="ph-input" id="qsQty" type="number" min="1" value="1">
+        </div>
+      </div>
+
+      <div class="total-box" style="margin-top:6px">
+        <div><div class="total-lbl">Total à encaisser</div></div>
+        <div class="total-val" id="qsTotal">0.00</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-lbl">Mode de paiement</label>
+          <select class="ph-select" id="qsPay">
+            <option value="Espèces">Espèces</option>
+            <option value="Mobile money">Mobile money</option>
+            <option value="Crédit">Crédit (différé)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-lbl">Client <span class="opt-tag">Optionnel</span></label>
+          <input class="ph-input" id="qsCustomer" placeholder="Nom du client">
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" id="qsSubmit" style="flex:1;justify-content:center"
+              onclick="submitQuickSale()">Valider la vente</button>
+      <button class="tb-btn" onclick="closeModal('modalQuickSale')">Annuler</button>
     </div>
   </div>
 </div>

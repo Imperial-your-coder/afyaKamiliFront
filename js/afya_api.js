@@ -392,6 +392,20 @@ const AfyaAPI = {
 
   /* ═══ PHARMACIE — VENTES ═══ */
   sales: {
+    /**
+     * Vente rapide : vendre sans fiche produit préalable.
+     * Le médicament est créé ou retrouvé côté serveur à partir du nom.
+     */
+    async quick({ name, unit_price, quantity, payment_method, customer_name, notes }) {
+      return await request('POST', '/pharmacy/sales/quick', {
+        name, unit_price,
+        quantity:       quantity || 1,
+        payment_method: payment_method || 'Espèces',
+        customer_name:  customer_name || null,
+        notes:          notes || null,
+      });
+    },
+
     async list(params = {}) {
       const qs = new URLSearchParams(params).toString();
       return await request('GET', `/pharmacy/sales${qs ? '?' + qs : ''}`);

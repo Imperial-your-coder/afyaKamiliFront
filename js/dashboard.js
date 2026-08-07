@@ -107,6 +107,27 @@
     });
   }
 
+  /**
+   * Prix réellement dû par CET établissement.
+   *
+   * Les montants codés en dur plus bas ne sont qu'un repli : dès que
+   * le ghost admin accorde un tarif négocié, /billing/info renvoie le
+   * prix remisé, et c'est celui-là qu'il faut afficher. Sans cette
+   * lecture, une pharmacie remisée à 5 $ voyait encore « 15 $/mois »
+   * sur son tableau de bord — de quoi lui faire croire que la remise
+   * n'a pas été appliquée.
+   */
+  async function realPrice(planCode) {
+    try {
+      const info  = await AfyaAPI.request('GET', '/billing/info');
+      const plan  = (info.plans || []).find(p => p.code === planCode);
+      if (plan && plan.monthly_price != null) {
+        return `${plan.monthly_price} $/mois`;
+      }
+    } catch (e) { /* on gardera le repli codé en dur */ }
+    return null;
+  }
+
   function fillPlanBanner(tenant) {
     const pill    = document.getElementById('planPill');
     const text    = document.getElementById('planText');
@@ -134,7 +155,7 @@
 
     let plan = 'none', price = '';
     if (paid.length === 0)                                { plan = 'none'; }
-    else if (paid.length === 1 && paid[0] === 'pharmacy') { plan = 'starter';    price = '15 $/mois'; }
+    else if (paid.length === 1 && paid[0] === 'pharmacy') { plan = 'starter';    price = '15 $/mois'; }   // repli
     else if (paid.includes('laboratory') && paid.includes('imaging')
              && !paid.includes('hospitalization'))        { plan = 'diagno';     price = '60 $/mois'; }
     else if (paid.length >= 8)                            { plan = 'enterprise'; price = '150 $/mois'; }
@@ -156,6 +177,15 @@
       upgrade.textContent = plan === 'none' ? "S'abonner →" : 'Changer de formule →';
       upgrade.classList.toggle('hide', plan === 'enterprise');
       openBillingOnClick(upgrade);
+    }
+
+    // Puis on corrige le prix si un tarif négocié existe. L'affichage
+    // se fait en deux temps volontairement : le bandeau apparaît tout
+    // de suite avec le tarif public, et se met à jour dès la réponse.
+    if (plan !== 'none') {
+      realPrice(plan).then(p => {
+        if (p && text) text.innerHTML = text.innerHTML.replace(price, p);
+      });
     }
   }
 
