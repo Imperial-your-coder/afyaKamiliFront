@@ -677,6 +677,18 @@
 
       open();
     } catch (e) {
+      /*
+       * En mode « expiré », un échec de chargement ne doit JAMAIS
+       * laisser l'écran vide : c'est précisément la situation où le
+       * client a le plus besoin de voir comment payer. On affiche
+       * alors le modal avec les seules informations dont on dispose.
+       */
+      if (opts.mode === 'expired') {
+        build();
+        viewExpired({ status: 'trial' });
+        open();
+        return;
+      }
       toast(errMsg(e), true);
     }
   }

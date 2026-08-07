@@ -291,6 +291,22 @@
       console.log('✅ Connecté :', user.name, '| Modules :', tenant.modules);
     } catch (e) {
       if (e.status === 401) return;
+
+      /*
+       * 402 = abonnement ou essai expiré.
+       *
+       * Ce n'est PAS une panne : c'est un état normal du produit, et
+       * il a sa propre interface. On ouvre le modal Orange Money
+       * verrouillé plutôt que d'afficher « impossible de joindre le
+       * serveur », qui laisserait le client croire à un bug alors
+       * qu'il lui suffit de payer.
+       */
+      if (e.status === 402) {
+        if (window.AfyaBilling) AfyaBilling.show({ mode: 'expired' });
+        else window.location.href = './pricing.html';
+        return;
+      }
+
       console.error('Dashboard :', e);
       const t = document.getElementById('planText');
       if (t) t.textContent = 'Impossible de joindre le serveur';
