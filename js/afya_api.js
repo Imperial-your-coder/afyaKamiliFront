@@ -400,7 +400,11 @@ const AfyaAPI = {
       return await request('POST', '/pharmacy/sales/quick', {
         name, unit_price,
         quantity:       quantity || 1,
-        payment_method: payment_method || 'Espèces',
+        // ⚠ La colonne est un enum de codes anglais
+        // ('cash', 'mobile_money'…). Le formulaire envoie des libellés
+        // français : sans cette conversion, MySQL refuse l'insertion
+        // avec « Data truncated for column 'payment_method' ».
+        payment_method: Adapt.payMethodCode(payment_method || 'Espèces'),
         customer_name:  customer_name || null,
         notes:          notes || null,
       });
