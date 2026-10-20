@@ -318,6 +318,10 @@
   window.openGestion = () => {
     const cur = document.querySelector('.tab.active')?.dataset.tab;
     document.querySelectorAll('.gs-tile[data-g]').forEach(t => t.classList.toggle('cur', t.dataset.g === cur));
+    // Point de départ de l'animation : le centre du bouton Gestion
+    const sh = document.getElementById('gestionSheet'), b = document.getElementById('bnGestion').getBoundingClientRect();
+    sh.style.setProperty('--gx', `${b.left + b.width / 2 - sh.offsetLeft}px`);
+    sh.querySelectorAll('.gs-title, .gs-tile').forEach((t, i) => t.style.setProperty('--i', i));
     ['gestionSheet', 'gestionOv'].forEach(i => document.getElementById(i).classList.add('on'));
     document.getElementById('bnGestion').classList.add('open');
   };
