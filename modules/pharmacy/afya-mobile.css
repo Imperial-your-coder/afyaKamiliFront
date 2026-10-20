@@ -405,3 +405,7 @@ body:has(.modal-overlay.open) .afya-help,body:has(#scanSheet.on) .afya-help{disp
 .bn-plus.open svg{transform:rotate(45deg)}
 @media(min-width:761px){.plus-pad{display:none}}
 body:has(.plus-pad.on) .afya-help{display:none!important}
+.plus-pad{padding:6px 8px;border-radius:30px}
+.plus-pad button{width:58px;height:54px;border-radius:24px;flex-direction:column;gap:3px;background:transparent}
+.plus-pad button:hover,.plus-pad button:active{background:#2a2c25}
+.plus-pad button span{font:700 9.5px Manrope,sans-serif;color:#c9cbc3;letter-spacing:.2px}
