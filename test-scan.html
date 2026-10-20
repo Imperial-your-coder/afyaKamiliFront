@@ -63,6 +63,14 @@ fieldset{border:0;padding:0;margin:0}legend{font-family:var(--mono);font-size:.7
 .sh-foot{padding:12px max(18px,env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));border-top:1px solid var(--line)}
 [hidden]{display:none!important}.sh-body{flex:1 1 auto;min-height:0}
 .stk{font:700 1rem var(--mono);color:var(--acc)}
+.grid>label{grid-column:auto}
+@media (max-width:520px){.grid{grid-template-columns:1fr}}
+.grid input,.grid select,.grid textarea{display:block;max-width:100%;min-height:44px;line-height:1.3;-webkit-appearance:none;appearance:none}
+.grid select{background-image:linear-gradient(45deg,transparent 50%,var(--mute) 50%),linear-gradient(135deg,var(--mute) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px;text-overflow:ellipsis}
+.grid input[type=date]{text-align:left}.grid input::-webkit-date-and-time-value{text-align:left}
+.grid textarea{resize:vertical}
+.prod>div,.meta dd{min-width:0;overflow-wrap:anywhere}
+.code{overflow-wrap:anywhere}
 </style></head><body>
 <div class="app" id="app">
   <header><div class="brand">Afiya <b>Scan</b></div><div class="status" id="st"><span class="dot"></span><span id="stt">prêt</span></div></header>
