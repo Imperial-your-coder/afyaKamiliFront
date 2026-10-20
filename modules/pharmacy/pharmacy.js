@@ -612,11 +612,12 @@
     consommable: {
       forms: ['DISP', 'CONS', 'PARA', 'MAT'],
       baseUnit: 'unite',
-      baseLabel: 'Pièce',
+      baseLabel: 'Article',
       basePlural: 'pièces',
       hasStrip: false,
+      simple: true,
       saleUnits: ['boite', 'unite'],
-      example: 'Pansement, seringue, cathéter, gants, parapharmacie…',
+      example: 'Lingettes, pansements, seringues, gants… Laissez 1 si l\'article se vend tel quel.',
     },
     perfusion: {
       forms: ['PERF'],
@@ -644,15 +645,28 @@
         if (SCHEMES[key].forms.includes(code)) return SCHEMES[key];
       }
     }
-    return SCHEMES.blister;   // défaut : le cas le plus courant
+    // Code inconnu : on devine d'après le nom du type, sinon article simple
+    const sel = document.getElementById('addForm');
+    const n = (form?.name || [...(sel?.options || [])].find(o => o.value === String(formId))?.text || '').toLowerCase();
+    if (/compri|gélule|gelule|suppo|ovule/.test(n)) return SCHEMES.blister;
+    if (/sirop|suspension|solution|goutte|collyre|spray|aérosol/.test(n)) return SCHEMES.flacon;
+    if (/ampoule|inject/.test(n)) return SCHEMES.ampoule;
+    if (/crème|creme|pommade|gel|baume/.test(n)) return SCHEMES.tube;
+    if (/perf/.test(n)) return SCHEMES.perfusion;
+    if (/sachet|poudre|patch/.test(n) && !/lingette/.test(n)) return SCHEMES.sachet;
+    return SCHEMES.consommable;
   }
+  window.schemeForForm = schemeForForm;
+  window.__renderPack = () => { renderPackagingBlock(); try { onPackagingInput(); } catch (e) {} };
 
   /** Génère le bloc « Conditionnement & Prix » selon la forme */
   function renderPackagingBlock() {
     const host = document.getElementById('packagingBlock');
     if (!host) return;
 
-    const scheme = schemeForForm(document.getElementById('addForm')?.value);
+    const formVal = document.getElementById('addForm')?.value;
+    if (!formVal) { host.innerHTML = ''; return; }
+    const scheme = schemeForForm(formVal);
     const c = sym();
 
     // ── Conditionnement : les champs dépendent du schéma ──
@@ -671,7 +685,7 @@
       : `
       <div class="field-row">
         <div class="field">
-          <label class="field-lbl">Nombre de ${scheme.basePlural} dans une boîte</label>
+          <label class="field-lbl">${scheme.simple ? 'Pièces par paquet' : `Nombre de ${scheme.basePlural} dans une boîte`}</label>
           <input class="ph-input" id="addUnitsPerBox" type="number" min="1" value="1" placeholder="Ex : 1">
         </div>
         <div class="field"></div>
@@ -698,7 +712,7 @@
 
       <div class="sec-divider">Prix de vente</div>
 
-      <div style="padding:10px 12px;border-radius:12px;background:rgba(239,255,58,.12);
+      <div class="ff-medonly" style="padding:10px 12px;border-radius:12px;background:rgba(239,255,58,.12);
                   border:1px solid rgba(239,255,58,.45);font-size:11.5px;color:#5a5a55;
                   font-weight:600;margin-bottom:12px;line-height:1.6">
         Vous fixez <strong>chaque prix librement</strong>. Une suggestion au prorata
@@ -707,7 +721,7 @@
 
       <div class="field-row">
         <div class="field">
-          <label class="field-lbl">Prix d'une boîte *</label>
+          <label class="field-lbl">${scheme.simple ? 'Prix de vente *' : "Prix d'une boîte *"}</label>
           <input class="ph-input" id="addPrice" type="number" step="0.01" min="0" placeholder="0.00">
         </div>
         ${stripPriceField}
@@ -769,7 +783,7 @@
         <div class="field"></div>
       </div>
 
-      <div class="sec-divider">Ventes autorisées</div>
+      <div class="sec-divider ff-medonly">Ventes autorisées</div>
 
       <div class="field">
         <div id="saleUnitsWrap" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:2px">

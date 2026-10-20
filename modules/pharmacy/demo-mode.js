@@ -2,8 +2,12 @@
 (function () {
   if (window.AfyaAPI?.auth) window.AfyaAPI.auth.isLoggedIn = () => true;
   const of = window.fetch;
+  const REFS = { categories: [{id:1,name:'Analgésiques'},{id:2,name:'Antibiotiques'},{id:3,name:'Hygiène'}],
+    forms: [{id:1,code:'CP',name:'Comprimé'},{id:2,code:'GEL',name:'Gélule'},{id:3,code:'SIR',name:'Sirop'},
+      {id:4,code:'INJ',name:'Ampoule injectable'},{id:5,code:'CRE',name:'Crème / Pommade'},{id:6,code:'POU',name:'Sachet poudre'},
+      {id:7,code:'CONS',name:'Consommable / Hygiène'}], sale_units: [] };
   window.fetch = (u, o) => /fonts|unpkg|openfoodfacts/.test(String(u)) ? of(u, o)
-    : Promise.resolve(new Response('{"success":true,"data":[]}', { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    : Promise.resolve(new Response(/refs/.test(String(u)) ? JSON.stringify(REFS) : '{"success":true,"data":[]}', { status: 200, headers: { 'Content-Type': 'application/json' } }));
   window.addEventListener('load', () => setTimeout(() => {
     const D = [
       ['Paracétamol 500mg','Comprimé',2.5,120],['Amoxicilline 500mg','Gélule',6,8],
