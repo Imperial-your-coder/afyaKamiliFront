@@ -391,3 +391,17 @@ body:has(.modal-overlay.open) .afya-help,body:has(#scanSheet.on) .afya-help{disp
 #qsSubmit{height:44px;font-size:14px;border-radius:12px}
 #modalQuickSale .modal-hd{padding:14px 18px}#modalQuickSale .modal-title{font-size:15px}
 .gestion-sheet{bottom:calc(74px + env(safe-area-inset-bottom,0))}
+/* ── Pad du + : pilule à 2 icônes ── */
+.plus-pad{position:fixed;left:50%;bottom:calc(72px + env(safe-area-inset-bottom,0));z-index:199;
+  display:flex;gap:6px;padding:5px;border-radius:999px;background:linear-gradient(180deg,#232420,#0f100d);
+  box-shadow:0 8px 24px rgba(0,0,0,.3);transform:translate(-50%,10px) scale(.9);opacity:0;pointer-events:none;
+  transition:.22s cubic-bezier(.2,.9,.3,1.2)}
+.plus-pad.on{transform:translate(-50%,0) scale(1);opacity:1;pointer-events:auto}
+.plus-pad button{width:44px;height:44px;border-radius:50%;border:0;background:#2a2c25;color:var(--accent);
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.plus-pad button:active{transform:scale(.92)}
+.plus-pad button svg{width:20px;height:20px}
+.bn-plus svg{transition:transform .22s}
+.bn-plus.open svg{transform:rotate(45deg)}
+@media(min-width:761px){.plus-pad{display:none}}
+body:has(.plus-pad.on) .afya-help{display:none!important}

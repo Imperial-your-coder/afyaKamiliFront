@@ -314,3 +314,24 @@
     document.getElementById('bnGestion').classList.toggle('active', t.dataset.g !== 'catalog');
   });
 })();
+
+/* ── Pad du gros + ── */
+(function () {
+  window.togglePlusPad = () => (document.getElementById('plusPad').classList.contains('on') ? closePlusPad() : openPlusPad());
+  window.openPlusPad = () => {
+    closeGestion();
+    document.getElementById('plusPad').classList.add('on');
+    document.getElementById('bnPlus').classList.add('open');
+    document.getElementById('gestionOv').classList.add('on');
+  };
+  window.closePlusPad = () => {
+    document.getElementById('plusPad')?.classList.remove('on');
+    document.getElementById('bnPlus')?.classList.remove('open');
+    if (!document.getElementById('gestionSheet')?.classList.contains('on'))
+      document.getElementById('gestionOv')?.classList.remove('on');
+  };
+  const og = window.openGestion;
+  window.openGestion = function () { closePlusPad(); return og.apply(this, arguments); };
+  const cg = window.closeGestion;
+  window.closeGestion = function () { document.getElementById('plusPad')?.classList.remove('on'); document.getElementById('bnPlus')?.classList.remove('open'); return cg.apply(this, arguments); };
+})();
