@@ -668,3 +668,22 @@ body{
   .journal-hd .period-tabs{order:2;width:100%;}
   .journal-hd .tb-btn{margin-left:auto!important;}
 }
+/* ══ Vente manuelle — design revu ══ */
+#modalQuickSale .modal{border-radius:22px;overflow:hidden}
+#modalQuickSale .modal-hd{background:var(--ink);color:#fff;padding:18px 20px}
+#modalQuickSale .modal-title{color:#fff;font-size:17px}
+#modalQuickSale .modal-close{background:rgba(255,255,255,.12);color:#fff}
+#modalQuickSale .modal-body{padding:18px 20px}
+#modalQuickSale .modal-body>div:first-child{background:var(--card)!important;color:var(--dark)!important;border:1.5px dashed var(--light);font-weight:600!important}
+#modalQuickSale .ph-input,#modalQuickSale .ph-select{height:48px;font-size:15px;border-radius:14px}
+#qsName{font-weight:700}
+.qs-step{display:flex;align-items:center;border:1.5px solid var(--border,var(--light));border-radius:14px;overflow:hidden;height:48px;background:var(--white)}
+.qs-step button{width:46px;height:100%;border:0;background:var(--card);font-size:20px;font-weight:800;color:var(--ink);cursor:pointer}
+.qs-step input{flex:1;min-width:0;border:0!important;text-align:center;font-weight:800;height:100%!important;border-radius:0!important;background:transparent}
+#modalQuickSale .total-box{background:var(--ink);border-radius:18px;padding:16px 18px;margin:14px 0}
+#modalQuickSale .total-lbl{color:#a3a59e}
+#qsTotal{color:var(--accent);font-size:28px;font-weight:800}
+.qs-pay{display:flex;gap:6px;flex-wrap:wrap}
+.qs-pay button{flex:1;min-width:90px;height:44px;border-radius:12px;border:1.5px solid var(--light);background:var(--white);font:700 12.5px Manrope,sans-serif;cursor:pointer}
+.qs-pay button.on{background:var(--accent);border-color:var(--ink);color:var(--ink)}
+#qsSubmit{height:52px;font-size:15px;border-radius:14px}
