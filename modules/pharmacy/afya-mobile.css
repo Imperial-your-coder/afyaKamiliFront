@@ -366,3 +366,28 @@ body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
   body:has(.gestion-sheet.on) .afya-help{display:none!important}
 }
 body:has(.modal-overlay.open) .afya-help,body:has(#scanSheet.on) .afya-help{display:none!important}
+/* ── v2.1 : proportions resserrées ── */
+.bottom-nav{gap:2px;padding:5px!important;bottom:calc(12px + env(safe-area-inset-bottom,0))!important;box-shadow:0 8px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.07)}
+.bottom-nav-item{width:40px;height:40px}
+.bottom-nav-item svg{width:19px;height:19px;stroke-width:1.9}
+.bottom-nav-item .bn-badge{top:3px;right:3px;min-width:13px;height:13px;font-size:8px}
+.bn-plus{width:44px;height:44px;margin:0 6px;box-shadow:0 4px 12px rgba(239,255,58,.3)}
+.bn-plus svg{width:20px;height:20px}
+@media(max-width:760px){.ph-main{padding-bottom:84px!important}
+  .afya-help{bottom:calc(72px + env(safe-area-inset-bottom,0))!important;width:38px!important;height:38px!important;font-size:15px!important}}
+.gestion-sheet{left:50%;right:auto;width:min(340px,calc(100% - 24px));transform:translate(-50%,16px);bottom:calc(66px + env(safe-area-inset-bottom,0));border-radius:22px;padding:8px 10px 10px}
+.gestion-sheet.on{transform:translate(-50%,0)}
+.gs-grip{width:30px;height:3px;margin-bottom:8px}
+.gs-title{font-size:13px;margin:0 6px 8px;color:#a3a59e;font-weight:700}
+.gs-grid{gap:6px}
+.gs-tile{border-radius:14px;padding:10px 8px;align-items:center;text-align:center;gap:2px}
+.gs-tile svg{width:18px;height:18px;margin-bottom:4px}
+.gs-tile b{font-size:11.5px}.gs-tile small{display:none}
+#modalQuickSale .ph-input,#modalQuickSale .ph-select,.qs-step{height:42px;font-size:14px;border-radius:12px}
+.qs-step button{width:40px;font-size:17px}
+.qs-pay button{height:38px;font-size:12px;border-radius:10px}
+#modalQuickSale .total-box{padding:12px 14px;border-radius:14px}
+#qsTotal{font-size:22px}
+#qsSubmit{height:44px;font-size:14px;border-radius:12px}
+#modalQuickSale .modal-hd{padding:14px 18px}#modalQuickSale .modal-title{font-size:15px}
+.gestion-sheet{bottom:calc(74px + env(safe-area-inset-bottom,0))}
