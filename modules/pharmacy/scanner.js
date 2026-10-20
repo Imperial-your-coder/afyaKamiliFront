@@ -8,9 +8,9 @@
    localement en secours.
 ═══════════════════════════════════════════════════════════════ */
 (function () {
-  const LIB = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+  const LIB = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
   const MAP_KEY = 'afya_barcodes';
-  let scanner = null, mode = null, busy = false, pendingCode = null, libP = null;
+  let mode = null, busy = false, pendingCode = null, libP = null;
 
   /* ── mémoire code → id ── */
   const loadMap = () => { try { return JSON.parse(localStorage.getItem(MAP_KEY)) || {}; } catch { return {}; } };
@@ -26,7 +26,7 @@
 
   /* ── chargement paresseux de la librairie ── */
   function loadLib() {
-    if (window.Html5Qrcode) return Promise.resolve();
+    if (window.ZXing) return Promise.resolve();
     return libP ||= new Promise((ok, ko) => {
       const s = document.createElement('script');
       s.src = LIB; s.onload = ok; s.onerror = () => { libP = null; ko(); };
@@ -43,10 +43,10 @@
   .sc-sub{font-size:12px;color:#a3a59e;font-weight:600;margin-top:2px}
   .sc-x{width:40px;height:40px;border-radius:50%;border:0;background:#24261f;color:#fff;font-size:20px}
   .sc-cam{position:relative;flex:1;margin:0 16px;border-radius:22px;overflow:hidden;background:#000;min-height:260px}
-  #scanReader{position:absolute;inset:0}
+  #scanReader{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   #scanReader video{width:100%!important;height:100%!important;object-fit:cover}
   #scanReader img,#scanReader__dashboard,#scanReader__header_message{display:none!important}
-  .sc-frame{position:absolute;left:8%;right:8%;top:32%;height:30%;border-radius:16px;pointer-events:none;
+  .sc-frame{position:absolute;left:5%;right:5%;top:24%;height:46%;border-radius:16px;pointer-events:none;
     box-shadow:0 0 0 2000px rgba(0,0,0,.45);border:2px solid #EFFF3A}
   .sc-frame::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:#EFFF3A;
     box-shadow:0 0 12px #EFFF3A;animation:scl 1.8s ease-in-out infinite}
@@ -75,7 +75,7 @@
     d.innerHTML = `
       <div class="sc-top"><div style="flex:1"><div class="sc-title" id="scTitle"></div><div class="sc-sub" id="scSub"></div></div>
         <button class="sc-x" onclick="closeScanner()" aria-label="Fermer">×</button></div>
-      <div class="sc-cam"><div id="scanReader"></div><div class="sc-frame"></div>
+      <div class="sc-cam"><video id="scanReader" playsinline muted></video><div class="sc-frame"></div>
         <div class="sc-flash" id="scFlash"></div><div class="sc-hint" id="scHint">Placez le code-barres dans le cadre</div></div>
       <div class="sc-res" id="scRes"><div class="ic">▦</div><div><div class="t">En attente…</div><div class="s">Le scan est automatique</div></div></div>
       <div class="sc-foot"><button class="sc-btn" id="scManual"></button><button class="sc-btn y" id="scMain"></button></div>`;
@@ -116,19 +116,38 @@
   }
 
   /* ── ouverture / fermeture ── */
+  let stream = null, loop = null, reader = null, flip = 0;
+  const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+
+  function makeReader() {
+    const Z = ZXing, h = new Map(), B = Z.BarcodeFormat;
+    h.set(Z.DecodeHintType.TRY_HARDER, true);
+    h.set(Z.DecodeHintType.POSSIBLE_FORMATS, [B.EAN_13, B.EAN_8, B.UPC_A, B.UPC_E, B.CODE_128, B.CODE_39, B.ITF, B.QR_CODE, B.DATA_MATRIX]);
+    const r = new Z.MultiFormatReader(); r.setHints(h); return r;
+  }
+  // Image entière (comme le prototype), une fois sur deux tournée de 90° pour les codes verticaux
+  function tick() {
+    const v = document.getElementById('scanReader');
+    if (busy || !v.videoWidth) return;
+    const sc = v.videoWidth > 1280 ? .6 : 1, W = Math.round(v.videoWidth * sc), H = Math.round(v.videoHeight * sc);
+    if (++flip % 2) { cv.width = H; cv.height = W; cx.save(); cx.translate(H, 0); cx.rotate(Math.PI / 2); cx.drawImage(v, 0, 0, W, H); cx.restore(); }
+    else { cv.width = W; cv.height = H; cx.drawImage(v, 0, 0, W, H); }
+    try {
+      const src = new ZXing.HTMLCanvasElementLuminanceSource(cv);
+      onCode(reader.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(src))).getText());
+    } catch {}
+  }
+
   window.openScanner = async function (m) {
     buildUI(); mode = m; busy = false; setFoot();
     result('▦', 'En attente…', 'Le scan est automatique');
     document.getElementById('scanSheet').classList.add('on');
     try {
-      await loadLib();
-      const F = Html5QrcodeSupportedFormats;
-      scanner = new Html5Qrcode('scanReader', {
-        formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39, F.ITF, F.DATA_MATRIX, F.QR_CODE],
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true }, verbose: false });
-      await scanner.start({ facingMode: 'environment' },
-        { fps: 15, qrbox: (w, h) => ({ width: Math.floor(w * .84), height: Math.floor(h * .3) }) },
-        onCode, () => {});
+      await loadLib(); reader ||= makeReader();
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      const v = document.getElementById('scanReader'); v.srcObject = stream; await v.play();
+      try { await stream.getVideoTracks()[0].applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch {}
+      clearInterval(loop); loop = setInterval(tick, 180);
     } catch (e) {
       result('⚠', 'Caméra indisponible', 'Autorisez la caméra, ou saisissez à la main.');
     }
@@ -136,8 +155,8 @@
 
   window.closeScanner = async function () {
     document.getElementById('scanSheet')?.classList.remove('on');
-    try { if (scanner?.isScanning) await scanner.stop(); scanner?.clear(); } catch {}
-    scanner = null;
+    clearInterval(loop); loop = null;
+    stream?.getTracks().forEach(t => t.stop()); stream = null;
   };
 
   function feedback() {
