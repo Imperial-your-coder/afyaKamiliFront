@@ -52,9 +52,7 @@
 
     // Type : boutons-pastilles qui pilotent le select existant (gardé caché)
     form.querySelector('.field-lbl').textContent = 'Type d\'article *';
-    $('addForm').style.display = 'none';
     const chips = document.createElement('div'); chips.className = 'ff-types'; chips.id = 'ffTypes';
-    form.appendChild(chips);
 
     const wait = document.createElement('div'); wait.className = 'ff-wait'; wait.id = 'ffWait';
     wait.textContent = 'Choisissez le type : seuls les champs utiles s\'afficheront.';
@@ -80,8 +78,12 @@
 
   /* ── Type ── */
   function renderChips() {
-    const sel = $('addForm'), box = $('ffTypes');
-    if (!sel || !box) return;
+    const sel = $('addForm'); if (!sel) return;
+    [...sel.options].forEach(o => {
+      if (!o.value) o.text = '— Choisir le type —';
+      else if (/^autre$/i.test(o.text.trim())) o.text = 'Autre (hygiène, matériel…)';
+    });
+    const box = $('ffTypes'); if (!box) return;
     box.innerHTML = [...sel.options].filter(o => o.value).map(o =>
       `<button type="button" data-v="${esc(o.value)}" class="${o.value === sel.value ? 'on' : ''}">${/^autre$/i.test(o.text.trim()) ? 'Autre · hygiène, matériel…' : esc(o.text)}</button>`).join('')
       || '<span style="font-size:12px;color:var(--mid)">Aucun type disponible</span>';
