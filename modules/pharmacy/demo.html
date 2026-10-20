@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Afya Kamili — Pharmacie</title>
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./index.css">
+<link rel="stylesheet" href="./afya-mobile.css">
+<script src="../../js/afya_api.js" defer></script>
+<!-- Verrou d'abonnement : doit être présent sur TOUTE page utilisable,
+     sinon un compte expiré entrerait par l'URL du module. -->
+<script src="./demo-mode.js" defer></script>
+<script src="../../js/onboarding.js" defer></script>
+<script src="./index.js" defer></script>
+<script src="pharmacy.js" defer></script>
+<script src="scanner.js" defer></script>
+<script>
+  /* Le bouton « Abonnement » de la barre supérieure.
+     On attend que billing.js ait publié window.AfyaBilling ; s'il n'a
+     pas pu se charger, on retombe sur la page des formules plutôt que
+     de laisser un bouton mort. */
+  document.addEventListener('DOMContentLoaded', function () {
+    var b = document.getElementById('tbBilling');
+    if (!b) return;
+    b.addEventListener('click', function () {
+      if (window.AfyaBilling) AfyaBilling.show();
+      else window.location.href = '/pricing';
+    });
+  });
+</script>
+<style>.acct-kpi-scroll::-webkit-scrollbar{display:none}
+/* ── Barre supérieure ── */
+.tb-actions{position:relative}
+.tb-avatar{cursor:pointer}
+</style>
+<link rel="stylesheet" href="../../css/afya-golden.css">
+</head>
+<body>
+
+<!-- ═══════ TOPBAR ═══════ -->
+<header class="topbar">
+  <!-- Hamburger (mobile only) -->
+  <button class="ham-btn" id="hamBtn" onclick="toggleSidebar()" aria-label="Menu">
+    <svg viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M1 2h16M1 7h16M1 12h16"/>
+    </svg>
+  </button>
+
+  <a class="tb-brand" href="../../index.html">
+    <div class="tb-dot">
+      <svg viewBox="0 0 14 14" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+    </div>
+    <div class="tb-name-anim">
+      <div class="tb-name-slot afya" id="brandAfya">Afya <span>Kamili</span></div>
+      <div class="tb-name-slot pharma slide-down" id="brandPharma">Ma Pharmacie</div>
+    </div>
+  </a>
+  <span class="tb-sep hide-mobile">›</span>
+  <div class="tb-module hide-mobile">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="8" height="12" rx="2"/><path d="M6.5 7h3M8 5.5v3"/></svg>
+    Pharmacie
+  </div>
+  <div class="tb-spacer"></div>
+  <div class="tb-actions">
+    <button class="tb-btn" onclick="openFreePrescription()">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2H5a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V5L9 2zm0 0v3h3"/></svg>
+      <span class="hide-mobile">Ordonnance</span>
+    </button>
+    <button class="tb-btn" id="cartBtn" onclick="openCart()" style="position:relative">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1.5 1.5h1.8l1.5 8.2h7.4l1.3-6H4.2"/>
+        <circle cx="6" cy="13.2" r="1.1"/><circle cx="11.5" cy="13.2" r="1.1"/>
+      </svg>
+      <span class="hide-mobile">Panier</span>
+      <span id="cartBadge" style="display:none;position:absolute;top:-5px;right:-5px;
+            min-width:18px;height:18px;padding:0 5px;border-radius:999px;
+            background:var(--red,#e53e3e);color:#fff;font-size:10px;font-weight:800;
+            align-items:center;justify-content:center;line-height:1">0</span>
+    </button>
+    <!-- Le bouton « Ajouter » a été retiré d'ici : il existe déjà dans
+         l'en-tête du catalogue, juste en dessous. Sur mobile il poussait
+         l'avatar hors de l'écran, rendant la déconnexion inaccessible. -->
+    <!-- Abonnement : ouvre le modal Orange Money. Aux couleurs de
+         l'opérateur pour être reconnaissable d'un coup d'œil, et
+         volontairement discret — un pharmacien passe sa journée sur
+         cette barre, ce bouton ne doit pas lui crier dessus. -->
+    <button class="tb-btn" id="tbBilling" title="Mon abonnement"
+            style="border-color:rgba(255,121,0,.35);color:#FF7900">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1.5" y="3.5" width="13" height="9" rx="2"/>
+        <path d="M1.5 6.8h13"/><path d="M4 10h2.5"/>
+      </svg>
+      <span class="hide-mobile">Abonnement</span>
+    </button>
+    <!-- L'avatar et son menu sont construits par pharmacy.js
+         (fonction buildUserMenu). Ne PAS ajouter de menu statique
+         ici : il s'afficherait en double, comme cela s'est produit. -->
+    <div class="tb-avatar" id="phAvatar" title="Mon compte">PH</div>
+  </div>
+</header>
+
+<!-- ═══════ SIDEBAR (mobile) ═══════ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="tb-dot" style="width:24px;height:24px;flex-shrink:0"><svg viewBox="0 0 14 14" fill="none" stroke="#111" stroke-width="2.3" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg></div>
+      <span style="font-size:14px;font-weight:800;color:var(--ink)">Pharmacie</span>
+    </div>
+    <button class="sidebar-close" onclick="closeSidebar()">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg>
+    </button>
+  </div>
+  <div class="sidebar-body">
+    <div class="sb-item active" data-tab="catalog" onclick="switchTab('catalog');closeSidebar()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="1.5" width="13" height="13" rx="2"/><path d="M5 5.5h6M5 8h6M5 10.5h4"/></svg>
+      Catalogue
+    </div>
+    <div class="sb-item" data-tab="stock" onclick="switchTab('stock');closeSidebar()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1l7 3.5v7L8 15l-7-3.5v-7L8 1z"/><path d="M8 8.5l7-3.5M8 8.5V15M8 8.5L1 5"/></svg>
+      Stock
+    </div>
+    <div class="sb-item" data-tab="accounting" onclick="switchTab('accounting');closeSidebar()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="1.5" width="13" height="13" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/></svg>
+      Comptabilité
+    </div>
+    <div class="sb-item" data-tab="orders" onclick="switchTab('orders');closeSidebar()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h10l-1.5 9H4.5L3 3z"/><circle cx="6.5" cy="14" r="1.3"/><circle cx="11" cy="14" r="1.3"/></svg>
+      Commandes
+    </div>
+    <div class="sb-item" data-tab="alerts" onclick="switchTab('alerts');closeSidebar()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 1.5l6.5 12H1.5L8 1.5z"/><path d="M8 6v4M8 11.5h.01"/></svg>
+      Alertes
+      <span class="tab-badge" id="alertBadgeSb" style="margin-left:auto">0</span>
+    </div>
+    <div class="sb-item" data-tab="prescriptions" onclick="switchTab('prescriptions');closeSidebar()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2H6a2 2 0 00-2 2v9a2 2 0 002 2h7a2 2 0 002-2V6L10 2zm0 0v4h5M6 8h5M6 10.5h5M6 13h3"/></svg>
+      Ordonnances
+    </div>
+    <div class="sb-item" data-tab="settings" onclick="switchTab('settings');closeSidebar()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.8 3.8l1.4 1.4M10.8 10.8l1.4 1.4M3.8 12.2l1.4-1.4M10.8 5.2l1.4-1.4"/></svg>
+      Paramètres
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════ TAB BAR (desktop) ═══════ -->
+<nav class="tab-bar" id="tabBar">
+  <div class="tab active" data-tab="catalog" onclick="switchTab('catalog')">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="1.5" width="11" height="11" rx="2"/><path d="M4.5 5h5M4.5 7.5h5M4.5 10h3"/></svg>
+    Catalogue
+  </div>
+  <div class="tab" data-tab="stock" onclick="switchTab('stock')">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 1l6 3v6L7 13 1 10V4L7 1z"/></svg>
+    Stock
+  </div>
+  <div class="tab" data-tab="accounting" onclick="switchTab('accounting')">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="1.5" width="11" height="11" rx="1.5"/><path d="M5 5h4M5 7.5h4M5 10h2"/></svg>
+    Comptabilité
+  </div>
+  <div class="tab" data-tab="orders" onclick="switchTab('orders')">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h8l-1.2 7.5H4.2L3 3z"/><circle cx="5.5" cy="12" r="1"/><circle cx="9.5" cy="12" r="1"/></svg>
+    Commandes
+  </div>
+  <div class="tab" data-tab="alerts" onclick="switchTab('alerts')">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 1.5l5.5 10H1.5L7 1.5z"/><path d="M7 5.5v3M7 10h.01"/></svg>
+    Alertes
+    <span class="tab-badge" id="alertBadge">0</span>
+  </div>
+  <div class="tab" data-tab="prescriptions" onclick="switchTab('prescriptions')">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2H5a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V5L9 2zm0 0v3h3"/></svg>
+    Ordonnances
+  </div>
+  <div class="tab" data-tab="settings" onclick="switchTab('settings')">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/></svg>
+    Paramètres
+  </div>
+  <div class="tab-kpi">
+    <div style="display:flex;align-items:center;gap:4px"><div class="kpi-dot" style="background:var(--green)"></div><span id="kpiOk">—</span></div>
+    <div style="display:flex;align-items:center;gap:4px"><div class="kpi-dot" style="background:var(--orange)"></div><span id="kpiWarn">—</span></div>
+    <div style="display:flex;align-items:center;gap:4px"><div class="kpi-dot" style="background:var(--red)"></div><span id="kpiCrit">—</span></div>
+  </div>
+</nav>
+
+<!-- ═══════ MAIN ═══════ -->
+<main class="ph-main">
+
+  <!-- ─── CATALOGUE ─── -->
+  <section class="tab-section active ph-content" data-section="catalog">
+    <!-- Profil mobile façon Medimax -->
+    <div class="afya-profile">
+      <div>
+        <div class="afya-profile-greet">Bonjour 👋</div>
+        <div class="afya-profile-name" id="afyaProfileName">Pharmacien</div>
+        <div class="afya-profile-role" id="afyaProfileRole">Pharmacie</div>
+      </div>
+      <div class="afya-profile-av" id="afyaProfileAv">PH</div>
+    </div>
+    <!-- Hero fond bleu + organe (mobile) -->
+    <div class="afya-hero" id="afyaHero">
+      <div class="afya-hero-scan"></div>
+      <div class="afya-hero-txt">
+        <div class="afya-hero-tag">Afya Kamili</div>
+        <div class="afya-hero-title">Votre pharmacie, intelligente</div>
+        <div class="afya-hero-sub" id="afyaHeroSub">Catalogue en stock</div>
+      </div>
+      <div class="afya-hero-organ"><img id="afyaHeroOrgan" src="" alt=""></div>
+      <div class="afya-hero-dots" id="afyaHeroDots"><span class="on"></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="sec-hd">
+      <div>
+        <div class="sec-hd-title">Catalogue médicaments</div>
+        <div class="sec-hd-sub">Cliquez sur un article pour voir la fiche et effectuer une vente</div>
+      </div>
+      <div class="sec-hd-spacer"></div>
+      <div class="sec-hd-actions">
+        <span id="catCount" style="font-size:11.5px;font-weight:700;color:var(--mid)"></span>
+        <button class="tb-btn primary" id="catalogAddBtn" onclick="openAddMed()">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+          Ajouter
+        </button>
+        <!-- Vente rapide : vendre sans avoir saisi sa fiche produit.
+             Volontairement à côté de « Ajouter » : c'est l'alternative
+             à la saisie, elle doit se présenter au même endroit. -->
+        <button class="tb-btn" id="quickSaleBtn" onclick="openQuickSale()"
+                style="border-color:rgba(22,163,74,.4);color:#16a34a">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1.5 1.5h1.8l1.5 8.2h7.4l1.3-6H4.2"/>
+            <circle cx="6" cy="13.2" r="1.1"/><circle cx="12" cy="13.2" r="1.1"/>
+          </svg>
+          Vendre maintenant
+        </button>
+      </div>
+    </div>
+    <div class="search-row">
+      <div class="search-wrap">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="4.5"/><path d="M12.5 12.5l-2.5-2.5" stroke-linecap="round"/></svg>
+        <input class="search-input" id="searchInput" type="search" placeholder="Nom, DCI, catégorie…" oninput="searchQ=this.value;renderCatalog()" autocomplete="off">
+      </div>
+      <div class="filter-chip" onclick="toggleCat(this,'Antibiotiques')">Antibiotiques</div>
+      <div class="filter-chip" onclick="toggleCat(this,'Analgésiques')">Analgésiques</div>
+      <div class="filter-chip" onclick="toggleCat(this,'Antipaludéens')">Antipaludéens</div>
+    </div>
+    <div class="med-grid" id="medGrid"></div>
+  </section>
+
+  <!-- ─── STOCK ─── -->
+  <section class="tab-section ph-content" data-section="stock">
+    <div class="sec-hd">
+      <div><div class="sec-hd-title">Gestion du stock</div><div class="sec-hd-sub">Niveaux, péremptions, ajustements d'inventaire</div></div>
+      <div class="sec-hd-spacer"></div>
+      <button class="tb-btn" onclick="openAjust()">Ajustement inventaire</button>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card accent"><div class="kpi-lbl">Articles</div><div class="kpi-val" id="kpiTotal">—</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Stock OK</div><div class="kpi-val" id="kpiOkC">—</div><div class="kpi-delta">Au-dessus seuil</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Stock bas</div><div class="kpi-val" id="kpiWarnC">—</div><div class="kpi-delta neg">Sous le seuil</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Rupture</div><div class="kpi-val" id="kpiCritC">—</div><div class="kpi-delta neg">Épuisé</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Péremption &lt;60j</div><div class="kpi-val" id="kpiExpC">—</div><div class="kpi-delta neg">À surveiller</div></div>
+    </div>
+    <div class="med-grid" id="stockGrid"></div>
+  </section>
+
+  <!-- ─── COMPTABILITÉ ─── -->
+  <section class="tab-section ph-content" data-section="accounting">
+    <div class="sec-hd">
+      <div><div class="sec-hd-title">Comptabilité & Caisse</div><div class="sec-hd-sub">Journal OHADA — recettes et dépenses</div></div>
+      <div class="sec-hd-spacer"></div>
+      <div class="sec-hd-actions">
+        <div class="period-tabs">
+          <button class="period-tab active" data-period="day" onclick="setPeriod('day')">Jour</button>
+          <button class="period-tab" data-period="week" onclick="setPeriod('week')">Sem.</button>
+          <button class="period-tab" data-period="month" onclick="setPeriod('month')">Mois</button>
+          <button class="period-tab" data-period="year" onclick="setPeriod('year')">Année</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bouton Dépenser + KPI cards -->
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;">
+      <button class="tb-btn" style="background:var(--red-bg);color:var(--red);border-color:rgba(229,62,62,0.2);font-weight:700" onclick="openExpenseModal()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 10V3M4 7.5L7 10l3-2.5"/></svg>
+        Enregistrer une dépense
+      </button>
+    </div>
+
+    <div class="acct-kpi-scroll" style="display:flex;gap:12px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:2px">
+      <div class="kpi-card" style="flex:1 0 130px;min-width:130px">
+        <div class="kpi-lbl">Entrées</div>
+        <div class="kpi-val" id="acctIn">—</div>
+        <div class="kpi-delta">Recettes totales</div>
+      </div>
+      <div class="kpi-card" style="flex:1 0 130px;min-width:130px">
+        <div class="kpi-lbl">Sorties</div>
+        <div class="kpi-val" id="acctOut">—</div>
+        <div class="kpi-delta neg">Dépenses totales</div>
+      </div>
+      <div class="kpi-card accent" style="flex:1 0 130px;min-width:130px">
+        <div class="kpi-lbl">Solde net</div>
+        <div class="kpi-val" id="acctNet">—</div>
+      </div>
+    </div>
+
+    <!-- Journal avec filtres — EN PREMIER -->
+    <div class="journal-wrap">
+      <div class="journal-hd">
+        <span class="journal-hd-title">Journal de caisse</span>
+        <!-- Filtres Tout / Entrées / Dépenses -->
+        <div class="period-tabs" style="margin-left:auto">
+          <button class="period-tab active jf-btn" data-filter="all" onclick="setJournalFilter('all')">Tout</button>
+          <button class="period-tab jf-btn" data-filter="in" onclick="setJournalFilter('in')">Entrées</button>
+          <button class="period-tab jf-btn" data-filter="out" onclick="setJournalFilter('out')">Dépenses</button>
+        </div>
+        <button class="tb-btn" style="margin-left:10px" onclick="showToast('Rapport OHADA généré','success')">Exporter</button>
+      </div>
+      <div id="journalRows"></div>
+    </div>
+
+    <!-- Graphiques EN BAS -->
+    <div class="acct-layout" style="margin-top:16px">
+      <div class="acct-panel">
+        <div class="acct-panel-title">Évolution Recettes / Dépenses</div>
+        <div class="bar-chart-wrap" id="acctChart"></div>
+        <div class="acct-legend">
+          <div class="acct-legend-item"><div class="legend-dot" style="background:var(--green)"></div>Recettes</div>
+          <div class="acct-legend-item"><div class="legend-dot" style="background:rgba(229,62,62,0.6)"></div>Dépenses</div>
+        </div>
+      </div>
+      <div class="acct-panel">
+        <div class="acct-panel-title">Modes de paiement</div>
+        <div style="display:flex;flex-direction:column;gap:9px" id="payMethodBars">
+          <div style="text-align:center;color:var(--mid);font-size:12px;padding:10px">—</div>
+        </div>
+        <div style="height:1px;background:var(--border);margin:14px 0"></div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Dernière clôture</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><div style="font-size:9px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:0.4px">Date</div><div style="font-size:13.5px;font-weight:800;margin-top:2px" id="lastClosureDate">—</div></div>
+          <div><div style="font-size:9px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:0.4px">Solde</div><div style="font-size:13.5px;font-weight:800;color:var(--green);margin-top:2px" id="lastClosureBalance">—</div></div>
+        </div>
+        <button class="tb-btn primary" style="width:100%;justify-content:center;margin-top:12px" onclick="openClosureModal()">Clôturer la caisse</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── COMMANDES ─── -->
+  <section class="tab-section ph-content" data-section="orders">
+    <div class="sec-hd">
+      <div><div class="sec-hd-title">Commandes fournisseurs</div><div class="sec-hd-sub">Bons de commande, réceptions</div></div>
+      <div class="sec-hd-spacer"></div>
+      <button class="tb-btn primary" onclick="openModal('modalNewOrder')">Nouvelle commande</button>
+    </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi-card"><div class="kpi-lbl">En attente</div><div class="kpi-val"></div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Ce mois</div><div class="kpi-val"></div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Fournisseurs</div><div class="kpi-val"></div></div>
+      <div class="kpi-card accent"><div class="kpi-lbl">Délai moyen</div><div class="kpi-val"></div></div>
+    </div>
+    <div id="ordersList"></div>
+  </section>
+
+  <!-- ─── ALERTES ─── -->
+  <section class="tab-section ph-content" data-section="alerts">
+    <div class="sec-hd">
+      <div><div class="sec-hd-title">Alertes</div><div class="sec-hd-sub">Ruptures, stock bas, péremptions</div></div>
+      <div class="sec-hd-spacer"></div>
+      <button class="tb-btn" onclick="switchTab('orders')">Commander les ruptures</button>
+    </div>
+    <div class="alert-list" id="alertList"></div>
+  </section>
+
+  <!-- ─── ORDONNANCES ─── -->
+  <section class="tab-section ph-content" data-section="prescriptions">
+    <div class="sec-hd">
+      <div><div class="sec-hd-title">Ordonnances libres</div><div class="sec-hd-sub">Composez et imprimez une ordonnance pour tout médicament</div></div>
+      <div class="sec-hd-spacer"></div>
+      <button class="tb-btn primary" onclick="openFreePrescription()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+        Nouvelle ordonnance
+      </button>
+    </div>
+    <div id="rxList"></div>
+  </section>
+
+  <!-- ─── PARAMÈTRES ─── -->
+  <section class="tab-section ph-content" data-section="settings">
+    <div class="sec-hd"><div><div class="sec-hd-title">Paramètres</div><div class="sec-hd-sub">Identité, devise, TVA, format d'impression</div></div></div>
+    <div class="settings-grid">
+      <div class="settings-panel">
+        <div class="settings-panel-title">Identité de la pharmacie</div>
+        <div class="settings-panel-sub">Apparaît sur les factures et reçus</div>
+        <div class="field"><label class="field-lbl">Nom de la pharmacie</label><input class="ph-input" id="setPharmacyName" placeholder="Ex : Pharmacie Centrale"></div>
+        <div class="field-row">
+          <div class="field"><label class="field-lbl">Devise</label>
+            <select class="ph-select" id="setCurrency">
+              <option value="USD">Dollar US (USD)</option>
+              <option value="CDF">Franc Congolais (CDF)</option>
+              <option value="EUR">Euro (EUR)</option>
+              <option value="XOF">Franc CFA (XOF)</option>
+              <option value="NGN">Naira (NGN)</option>
+              <option value="KES">Shilling Kényan (KES)</option>
+              <option value="ZAR">Rand (ZAR)</option>
+            </select>
+          </div>
+          <div class="field"><label class="field-lbl">Symbole</label><input class="ph-input" id="setCurrencySymbol" placeholder="$" maxlength="5"></div>
+        </div>
+      </div>
+      <div class="settings-panel">
+        <div class="settings-panel-title">Facturation & Impression</div>
+        <div class="settings-panel-sub">Paramètres des reçus et ordonnances</div>
+        <div class="toggle-row"><div class="toggle-info"><div class="tl">Activer la TVA</div><div class="ts">Ajouter la TVA sur chaque vente</div></div><button class="toggle on" id="setTvaEnabled" onclick="tglBtn(this)"></button></div>
+        <div class="field"><label class="field-lbl">Taux de TVA (%)</label><input class="ph-input" id="setTvaRate" type="number" step="0.1" placeholder="16"></div>
+        <div class="field"><label class="field-lbl">Format de facture</label>
+          <select class="ph-select" id="setInvoiceFormat">
+            <option value="A4">A4 — imprimante standard</option>
+            <option value="A5">A5 — format réduit</option>
+            <option value="58mm">58mm — caisse thermique petite</option>
+            <option value="80mm">80mm — caisse thermique standard</option>
+          </select>
+        </div>
+        <div class="field"><label class="field-lbl">Pied de page facture</label><textarea class="ph-textarea" id="setFooter" placeholder="Merci de votre confiance."></textarea></div>
+        <div class="field"><label class="field-lbl">Pied de page ordonnance</label><textarea class="ph-textarea" id="setRxFooter" placeholder="Ordonnance valable 3 mois…"></textarea></div>
+        <button class="tb-btn primary" id="saveSettingsBtn" style="width:100%;justify-content:center" onclick="saveSettingsForm()">Enregistrer les paramètres</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════ MODALS ═══════ -->
+
+<!-- Modal : Fiche médicament -->
+<div class="modal-overlay" id="modalMed">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Fiche médicament</div>
+      <div style="display:flex;gap:7px;margin-left:auto;align-items:center">
+        <button class="tb-btn" onclick="openAddMed(currentMedId);closeModal('modalMed')">Modifier</button>
+        <button class="tb-btn" style="color:var(--red)" onclick="deleteMed(currentMedId)">Suppr.</button>
+        <button class="modal-close" onclick="closeModal('modalMed')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button>
+      </div>
+    </div>
+    <div class="modal-body" id="medModalBody"></div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" id="medModalSellBtn" style="flex:1;font-size:13.5px" onclick="openSellModal()">💊 Vendre ce médicament</button>
+      <button class="tb-btn" onclick="closeModal('modalMed')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Vente rapide (sans fiche produit) -->
+<div class="modal-overlay" id="modalQuickSale">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Vendre maintenant</div>
+      <button class="modal-close" onclick="closeModal('modalQuickSale')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+
+      <div style="padding:11px 13px;border-radius:12px;background:rgba(22,163,74,.09);
+                  font-size:12px;color:#15803d;font-weight:600;margin-bottom:14px;line-height:1.6">
+        Vendez sans avoir enregistré le médicament. Sa fiche sera créée
+        automatiquement — vous la compléterez plus tard si vous le souhaitez.
+      </div>
+
+      <div class="field" style="margin-bottom:12px">
+        <label class="field-lbl">Nom du médicament *</label>
+        <input class="ph-input" id="qsName" list="qsNames" autocomplete="off"
+               placeholder="Ex : Paracétamol 500mg">
+        <!-- Suggestions tirées du catalogue déjà constitué : au bout de
+             quelques jours, les produits courants se saisissent en deux
+             lettres et le prix se remplit tout seul. -->
+        <datalist id="qsNames"></datalist>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-lbl">Prix unitaire *</label>
+          <input class="ph-input" id="qsPrice" type="number" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label class="field-lbl">Quantité</label>
+          <input class="ph-input" id="qsQty" type="number" min="1" value="1">
+        </div>
+      </div>
+
+      <div class="total-box" style="margin-top:6px">
+        <div><div class="total-lbl">Total à encaisser</div></div>
+        <div class="total-val" id="qsTotal">0.00</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-lbl">Mode de paiement</label>
+          <select class="ph-select" id="qsPay">
+            <option value="Espèces">Espèces</option>
+            <option value="Mobile money">Mobile money</option>
+            <option value="Crédit">Crédit (différé)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-lbl">Client <span class="opt-tag">Optionnel</span></label>
+          <input class="ph-input" id="qsCustomer" placeholder="Nom du client">
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" id="qsSubmit" style="flex:1;justify-content:center"
+              onclick="submitQuickSale()">Valider la vente</button>
+      <button class="tb-btn" onclick="closeModal('modalQuickSale')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Vente -->
+<div class="modal-overlay" id="modalSell">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Nouvelle vente</div>
+      <button class="modal-close" onclick="closeModal('modalSell')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="sell-med-info" id="sellMedInfo"></div>
+      <label class="field-lbl" style="display:block;margin-bottom:7px">Unité de vente</label>
+      <div class="unit-selector" id="unitSelector"></div>
+      <label class="field-lbl" style="display:block;margin-bottom:7px">Quantité</label>
+      <div class="qty-row">
+        <button class="qty-btn" onclick="updateQty(-1)">−</button>
+        <input class="qty-input" id="sellQtyInput" type="number" min="1" value="1" oninput="onQtyInput()" onchange="onQtyInput()">
+        <button class="qty-btn" onclick="updateQty(1)">+</button>
+      </div>
+      <div class="total-box">
+        <div>
+          <div class="total-lbl">Total à encaisser</div>
+          <div class="total-breakdown" id="sellBreakdown"></div>
+        </div>
+        <div class="total-val" id="sellTotal">$0.00</div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-lbl">Mode de paiement</label>
+          <select class="ph-select" id="sellPayMethod">
+            <option value="Espèces">Espèces</option>
+            <option value="Mobile money">Mobile money</option>
+            <option value="Carte">Carte bancaire</option>
+            <option value="Virement">Virement bancaire</option>
+            <option value="Crédit">Crédit (différé)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-lbl">Client <span class="opt-tag">Optionnel</span></label>
+          <input class="ph-input" id="sellCustomer" placeholder="Nom du client">
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" style="flex:1" onclick="confirmSale()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7.5l3.5 3.5 6-6"/></svg>
+        Valider la vente
+      </button>
+      <button class="tb-btn" onclick="closeModal('modalSell')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Facture -->
+<div class="modal-overlay" id="modalInvoice">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Reçu de vente</div>
+      <button class="modal-close" onclick="closeModal('modalInvoice')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button>
+    </div>
+    <div class="modal-body" id="invoiceBody"></div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" style="flex:1" onclick="printInvoice()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 4V2h7v2M2 4h10a1 1 0 011 1v5H1V5a1 1 0 011-1zM3.5 10v2h7v-2"/></svg>
+        Imprimer le reçu
+      </button>
+      <button class="tb-btn" onclick="closeModal('modalInvoice')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Dépense -->
+<div class="modal-overlay" id="modalExpense">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Enregistrer une dépense</div>
+      <button class="modal-close" onclick="closeModal('modalExpense')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-lbl">Montant *</label>
+        <input class="ph-input" id="expenseAmount" type="number" step="0.01" min="0.01" placeholder="0.00" style="font-size:22px;font-weight:800;text-align:center;padding:14px">
+      </div>
+      <div class="field">
+        <label class="field-lbl">Motif / Description *</label>
+        <input class="ph-input" id="expenseMotif" placeholder="Ex : Achat fournitures, frais livraison, loyer…">
+      </div>
+      <div class="field">
+        <label class="field-lbl">Mode de paiement</label>
+        <select class="ph-select" id="expenseMethod">
+          <option value="Espèces">Espèces</option>
+          <option value="Mobile money">Mobile money</option>
+          <option value="Virement">Virement bancaire</option>
+          <option value="Carte">Carte bancaire</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn" style="flex:1;background:var(--red-bg);color:var(--red);border-color:rgba(229,62,62,0.2);font-weight:800" onclick="confirmExpense()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 10V3M4 7.5L7 10l3-2.5"/></svg>
+        Confirmer la dépense
+      </button>
+      <button class="tb-btn" onclick="closeModal('modalExpense')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Ajout/Modification médicament -->
+<div class="modal-overlay" id="modalAddMed">
+  <div class="modal wide">
+    <div class="modal-hd">
+      <div class="modal-title" id="addMedTitle">Nouveau médicament</div>
+      <button class="modal-close" onclick="closeModal('modalAddMed')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="sec-divider">Photo <span class="opt-tag">Optionnel — sans photo, l'image générique sera utilisée</span></div>
+      <div class="photo-upload" id="photoWrap" onclick="document.getElementById('photoInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15V19a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        <span>Cliquez pour ajouter une photo (JPG/PNG · 3 Mo max)</span>
+        <img class="photo-preview" id="photoPreviewImg" alt="">
+        <div class="photo-rm" onclick="event.stopPropagation();removePhoto()"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></div>
+      </div>
+      <input type="file" id="photoInput" accept="image/jpeg,image/png" style="display:none" onchange="handlePhoto(this)">
+      <div class="sec-divider" style="margin-top:14px">Identification</div>
+      <div class="field-row">
+        <div class="field"><label class="field-lbl">Nom commercial *</label><input class="ph-input" id="addName" placeholder="Ex : Amoxicilline 500mg"></div>
+        <div class="field"><label class="field-lbl">DCI / Générique <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addGeneric" placeholder="Dénomination commune"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="field-lbl">Forme galénique</label>
+          <select class="ph-select" id="addForm">
+            <option value="">—</option>
+            <option>Comprimé</option><option>Comprimé effervescent</option><option>Gélule</option>
+            <option>Sirop</option><option>Solution buvable</option><option>Sachet</option>
+            <option>Ampoule injectable IV</option><option>Ampoule injectable IM</option>
+            <option>Flacon perfusion</option><option>Crème / Pommade</option>
+            <option>Gouttes oculaires</option><option>Spray nasal</option>
+            <option>Aérosol / Nébulisation</option><option>Suppositoire</option>
+            <option>Patch transdermique</option><option>Autre</option>
+          </select>
+        </div>
+        <div class="field"><label class="field-lbl">Dosage <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addStrength" placeholder="Ex : 500mg, 250mg/5ml"></div>
+      </div>
+      <div class="field"><label class="field-lbl">Catégorie thérapeutique</label>
+        <select class="ph-select" id="addCategory">
+          <option value="">—</option>
+          <option>Antibiotiques</option><option>Analgésiques</option><option>Anti-inflammatoires</option>
+          <option>Antipaludéens</option><option>Antihypertenseurs</option><option>Antidiabétiques</option>
+          <option>Bronchodilatateurs</option><option>Antihistaminiques</option><option>Vitamines</option>
+          <option>Antiviraux</option><option>Antifongiques</option><option>Solutés</option>
+          <option>Psychotropes</option><option>Antiacides</option><option>Contraceptifs</option><option>Autres</option>
+        </select>
+      </div>
+      <!-- Conditionnement, prix, stock et ventes autorisées :
+           généré par pharmacy.js selon la forme galénique choisie -->
+      <div id="packagingBlock"></div>
+
+      <div class="sec-divider">Emplacement & Fabricant</div>
+      <div class="field"><label class="field-lbl">Emplacement <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addLocation" placeholder="Ex : Rayonnage A – Étagère 2, Réfrigérateur, Armoire sécurisée…"></div>
+      <div class="field"><label class="field-lbl">Fabricant <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="addManufacturer" placeholder="Ex : Pfizer, Sanofi, Pharmafrique…"></div>
+      <div class="sec-divider">Réglementation</div>
+      <div class="toggle-row"><div class="toggle-info"><div class="tl">Ordonnance obligatoire</div><div class="ts">Le patient doit présenter une prescription</div></div><button class="toggle on" id="tglPrescription" onclick="tglBtn(this)"></button></div>
+      <div class="toggle-row"><div class="toggle-info"><div class="tl">Médicament stupéfiant / psychotrope</div><div class="ts">Stockage sécurisé, traçabilité renforcée</div></div><button class="toggle" id="tglControlled" onclick="tglBtn(this)"></button></div>
+      <div class="field" style="margin-top:12px"><label class="field-lbl">Notes <span class="opt-tag">Optionnel</span></label><textarea class="ph-textarea" id="addNotes" placeholder="Contre-indications, effets secondaires, remarques…"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" style="flex:1" onclick="saveMed()">Enregistrer</button>
+      <button class="tb-btn" onclick="closeModal('modalAddMed')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Ajustement inventaire -->
+<div class="modal-overlay" id="modalAjust">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">Ajustement d'inventaire</div><button class="modal-close" onclick="closeModal('modalAjust')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button></div>
+    <div class="modal-body">
+      <div class="field"><label class="field-lbl">Médicament *</label><select class="ph-select" id="ajustMedSel"></select></div>
+      <div class="field-row">
+        <div class="field"><label class="field-lbl">Type</label>
+          <select class="ph-select" id="ajustType">
+            <option value="up">Ajout (+)</option>
+            <option value="down">Retrait (−)</option>
+            <option value="set">Définir quantité exacte</option>
+          </select>
+        </div>
+        <div class="field"><label class="field-lbl">Quantité</label><input class="ph-input" id="ajustQty" type="number" min="1" placeholder="0"></div>
+      </div>
+      <div class="field"><label class="field-lbl">Motif</label>
+        <select class="ph-select" id="ajustReason">
+          <option>Inventaire physique</option><option>Perte / Casse</option>
+          <option>Vol</option><option>Retrait péremption</option>
+          <option>Don reçu</option><option>Erreur de saisie</option><option>Autre</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" style="flex:1" onclick="saveAjust()">Valider</button>
+      <button class="tb-btn" onclick="closeModal('modalAjust')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Nouvelle commande -->
+<div class="modal-overlay" id="modalNewOrder">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-title">Nouvelle commande</div><button class="modal-close" onclick="closeModal('modalNewOrder')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button></div>
+    <div class="modal-body">
+      <div class="field"><label class="field-lbl">Fournisseur *</label><input class="ph-input" id="newOrderSupplier" placeholder="Nom du fournisseur"></div>
+      <div class="field-row">
+        <div class="field"><label class="field-lbl">Date commande</label><input class="ph-input" id="newOrderDate" type="date"></div>
+        <div class="field"><label class="field-lbl">Livraison prévue</label><input class="ph-input" id="newOrderDelivery" type="date"></div>
+      </div>
+      <div class="field"><label class="field-lbl">Notes</label><textarea class="ph-textarea" id="newOrderNotes" style="min-height:54px" placeholder="Instructions de livraison…"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" style="flex:1" onclick="showToast('Commande créée','success');closeModal('modalNewOrder');renderOrders()">Créer la commande</button>
+      <button class="tb-btn" onclick="closeModal('modalNewOrder')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Composer ordonnance -->
+<div class="modal-overlay" id="modalRx">
+  <div class="modal wide">
+    <div class="modal-hd"><div class="modal-title">Composer une ordonnance</div><button class="modal-close" onclick="closeModal('modalRx')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label class="field-lbl">Patient <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="rxPatient" placeholder="Nom du patient"></div>
+        <div class="field"><label class="field-lbl">Prescripteur <span class="opt-tag">Optionnel</span></label><input class="ph-input" id="rxPrescriber" placeholder="Dr. Nom"></div>
+      </div>
+      <div class="sec-divider">Médicaments prescrits</div>
+      <div id="rxItemsContainer"></div>
+      <button class="tb-btn" style="width:100%;justify-content:center" onclick="addRxItem()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+        Ajouter un médicament
+      </button>
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" style="flex:1" onclick="previewRx()">Prévisualiser & Imprimer</button>
+      <button class="tb-btn" onclick="closeModal('modalRx')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Aperçu ordonnance -->
+<div class="modal-overlay" id="modalRxPreview">
+  <div class="modal wide">
+    <div class="modal-hd"><div class="modal-title">Aperçu de l'ordonnance</div><button class="modal-close" onclick="closeModal('modalRxPreview')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg></button></div>
+    <div class="modal-body" id="rxPreviewBody"></div>
+    <div class="modal-ft">
+      <button class="tb-btn primary" style="flex:1" onclick="printRx()">Imprimer l'ordonnance</button>
+      <button class="tb-btn" onclick="closeModal('modalRxPreview');openModal('modalRx')">Modifier</button>
+      <button class="tb-btn" onclick="closeModal('modalRxPreview')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="globalToast"></div>
+
+
+<script>
+/* ─── Sidebar mobile ─── */
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  const open = sb.classList.toggle('open');
+  ov.classList.toggle('open', open);
+  document.body.style.overflow = open ? 'hidden' : '';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ─── Sync sidebar active state with tabs ─── */
+const _origSwitch = window.switchTab;
+window.switchTab = function(name) {
+  _origSwitch(name);
+  // sync sidebar items
+  document.querySelectorAll('.sb-item[data-tab]').forEach(i =>
+    i.classList.toggle('active', i.dataset.tab === name));
+  // sync alert badge in sidebar
+  const badgeSb = document.getElementById('alertBadgeSb');
+  const badge   = document.getElementById('alertBadge');
+  if (badgeSb && badge) badgeSb.textContent = badge.textContent;
+};
+
+/* ─── Lazy render on tab switch ─── */
+const _switchWithRender = window.switchTab;
+window.switchTab = function(name) {
+  _switchWithRender(name);
+  if (name === 'stock')        { renderStock(); updateKpis(); }
+  if (name === 'accounting')   { renderJournal(); renderChart(); }
+  if (name === 'orders')       renderOrders();
+  if (name === 'alerts')       renderAlerts();
+  if (name === 'prescriptions')renderPrescriptions();
+  if (name === 'settings')     loadSettingsForm();
+};
+</script>
+<!-- ══ MODALE CLÔTURE DE CAISSE ══ -->
+<div class="modal-overlay" id="modalClosure">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-hd">
+      <div class="modal-title">Clôture de caisse</div>
+      <button class="modal-x" onclick="closeModal('modalClosure')">&times;</button>
+    </div>
+    <div class="modal-bd">
+      <div id="closureLoading" style="text-align:center;padding:20px;color:var(--mid);font-size:13px">Chargement…</div>
+      <div id="closureContent" style="display:none">
+        <div style="background:var(--light);border-radius:14px;padding:14px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px"><span style="color:var(--mid)">Solde d'ouverture</span><strong id="clOpening">—</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px"><span style="color:var(--mid)">Recettes du jour</span><strong id="clIncome" style="color:var(--green)">—</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px"><span style="color:var(--mid)">Dépenses du jour</span><strong id="clExpense" style="color:var(--red)">—</strong></div>
+          <div style="height:1px;background:var(--border);margin:8px 0"></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px"><span style="font-weight:700">Solde théorique</span><strong id="clExpected" style="font-size:16px">—</strong></div>
+          <div style="font-size:11px;color:var(--mid);margin-top:4px"><span id="clSalesCount">0</span> vente(s) · <span id="clCash">—</span> en espèces</div>
+        </div>
+        <div class="field">
+          <label class="field-lbl">Montant réel compté en caisse *</label>
+          <input class="ph-input" id="clActual" type="number" step="0.01" min="0" placeholder="0.00" oninput="updateClosureDiff()">
+        </div>
+        <div id="clDiffBox" style="display:none;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:700;margin-top:4px;text-align:center"></div>
+        <div class="field" style="margin-top:10px">
+          <label class="field-lbl">Note <span class="opt-tag">Optionnel</span></label>
+          <textarea class="ph-input" id="clNotes" rows="2" placeholder="Observation sur la journée…"></textarea>
+        </div>
+      </div>
+      <div id="closureAlready" style="display:none;text-align:center;padding:24px">
+        <div style="font-size:15px;font-weight:800;color:var(--green);margin-bottom:6px">Caisse déjà clôturée</div>
+        <div style="font-size:13px;color:var(--mid)">La caisse de ce jour a été clôturée.</div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn" onclick="closeModal('modalClosure')" style="flex:1">Annuler</button>
+      <button class="tb-btn primary" id="clConfirmBtn" onclick="confirmClosure()" style="flex:1">Clôturer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALE ANNULATION (vente OU dépense) ══ -->
+<div class="modal-overlay" id="modalJournalCancel">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hd">
+      <div class="modal-title" id="jcTitle">Annuler</div>
+      <button class="modal-x" onclick="closeModal('modalJournalCancel')">&times;</button>
+    </div>
+    <div class="modal-bd">
+      <div id="jcInfo" style="background:var(--light);border-radius:12px;padding:12px;font-size:13px;margin-bottom:14px"></div>
+      <div style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:12px;padding:10px 12px;font-size:12px;color:#b91c1c;font-weight:600;margin-bottom:14px" id="jcWarn"></div>
+      <div class="field">
+        <label class="field-lbl">Motif *</label>
+        <textarea class="ph-input" id="jcReason" rows="3" placeholder="Ex : erreur de saisie, produit rendu…"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="tb-btn" onclick="closeModal('modalJournalCancel')" style="flex:1">Retour</button>
+      <button class="tb-btn" onclick="confirmJournalCancel()" style="flex:1;background:var(--red-bg);color:var(--red);border-color:rgba(229,62,62,.2);font-weight:800">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- ══ BARRE DE NAVIGATION BASSE (mobile) ══ -->
+<nav class="bottom-nav" id="bottomNav">
+  <div class="bottom-nav-item active" data-tab="catalog" onclick="switchTab('catalog');closeGestion()" aria-label="Catalogue">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4.5v-5h-5v5H5a1 1 0 01-1-1z"/></svg>
+  </div>
+  <button class="bn-plus" id="bnPlus" onclick="togglePlusPad()" aria-label="Ajouter un produit">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <div class="bottom-nav-item" id="bnGestion" onclick="toggleGestion()" aria-label="Gestion" style="position:relative">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.25"/></svg>
+    <span class="bn-badge" id="bnAlertBadge" style="display:none">0</span>
+  </div>
+</nav>
+
+<div class="plus-pad" id="plusPad">
+  <button onclick="closePlusPad();openScanner('add')" aria-label="Ajouter un article" title="Ajouter un article">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l8.5 4.7v9.6L12 21.5l-8.5-4.7V7.2z"/><path d="M12 9v6M9 12h6"/></svg><span>Ajouter</span>
+  </button>
+  <button onclick="closePlusPad();openScanner('sell')" aria-label="Vendre un article" title="Vendre un article">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3h2.6l2.2 11.2h10.4l2-8.2H6"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg><span>Vendre</span>
+  </button>
+</div>
+<div class="gestion-ov" id="gestionOv" onclick="closeGestion()"></div>
+<div class="gestion-sheet" id="gestionSheet">
+  <div class="gs-grip"></div>
+  <div class="gs-title">Gestion</div>
+  <div class="gs-grid">
+    <div class="gs-tile" data-g="catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><b>Catalogue</b><small>Tous les produits</small></div>
+    <div class="gs-tile" data-g="stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/><path d="M12 12l9-5M12 12v10M12 12L3 7"/></svg><b>Stock</b><small>Niveaux & inventaire</small></div>
+    <div class="gs-tile" data-g="accounting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg><b>Caisse</b><small>Ventes & clôture</small></div>
+    <div class="gs-tile" data-g="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l9 17H3L12 3z"/><path d="M12 9v5M12 17h.01"/></svg><b>Alertes</b><small>Ruptures & péremptions</small></div>
+    <div class="gs-tile" data-g="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg><b>Réglages</b><small>Pharmacie & TVA</small></div>
+    <div class="gs-tile" onclick="closeGestion();openCart()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2.5 3h2.6l2.2 11.2h10.4l2-8.2H6"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg><b>Panier</b><small>Vente en cours</small></div>
+  </div>
+</div>
+
+
+<!-- ══ PANIER — vente groupée, une seule facture ══ -->
+<div class="modal-overlay" id="modalCart">
+  <div class="modal wide">
+    <div class="modal-hd">
+      <div class="modal-title">Panier de vente</div>
+      <button class="modal-close" onclick="closeModal('modalCart')">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12L12 2M2 2l10 10"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div id="cartLines"></div>
+
+      <div id="cartEmpty" style="text-align:center;padding:44px 20px;color:var(--mid);font-size:13.5px;display:none">
+        Le panier est vide.<br>
+        <span style="font-size:12.5px">Cliquez le + sur un médicament du catalogue pour l'ajouter.</span>
+      </div>
+
+      <div id="cartForm" style="display:none">
+        <div class="sec-divider" style="margin-top:18px">Encaissement</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-lbl">Mode de paiement</label>
+            <select class="ph-select" id="cartPayMethod">
+              <option value="Espèces">Espèces</option>
+              <option value="Mobile money">Mobile money</option>
+              <option value="Carte">Carte bancaire</option>
+              <option value="Virement">Virement bancaire</option>
+              <option value="Crédit">Crédit (différé)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-lbl">Client <span class="opt-tag">Optionnel</span></label>
+            <input class="ph-input" id="cartCustomer" placeholder="Nom du client">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-lbl">Remise globale <span class="opt-tag">Optionnel</span></label>
+            <input class="ph-input" id="cartDiscount" type="number" step="0.01" min="0"
+                   placeholder="0.00" oninput="renderCart()">
+          </div>
+          <div class="field">
+            <label class="field-lbl">Ordonnance <span class="opt-tag">Optionnel</span></label>
+            <input class="ph-input" id="cartRxRef" placeholder="N° ou prescripteur">
+          </div>
+        </div>
+
+        <div class="total-box" style="margin-top:6px">
+          <div>
+            <div class="total-lbl">Total à encaisser</div>
+            <div class="total-breakdown" id="cartBreakdown"></div>
+          </div>
+          <div class="total-val" id="cartTotal">0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-ft">
+      <button class="tb-btn" id="cartClearBtn" onclick="clearCart()"
+              style="color:var(--red,#e53e3e)">Vider</button>
+      <button class="tb-btn primary" id="cartConfirmBtn" style="flex:1" onclick="confirmCartSale()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7.5l3.5 3.5 6-6"/></svg>
+        Valider la vente
+      </button>
+      <button class="tb-btn" onclick="closeModal('modalCart')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══ Visite guidée de la pharmacie ═══
+
+   Trois moments distincts, pas une séquence forcée :
+
+   1. Le catalogue est vide  → montrer « Ajouter ».
+   2. La devise est en USD   → prévenir, et pointer les Réglages.
+      C'est le piège le plus coûteux : quelqu'un qui saisit tous ses
+      prix en francs alors que l'application est en dollars devra tout
+      ressaisir. Mieux vaut l'avertir avant la première fiche.
+   3. La devise vient d'être changée → rappeler d'enregistrer.
+      Un <select> modifié mais non enregistré donne l'illusion d'un
+      réglage pris en compte.
+*/
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.AfyaTour) return;
+
+  var tries = 0;
+  var wait = setInterval(function () {
+    var ready = document.getElementById('catalogAddBtn');
+    if (!ready && ++tries < 24) return;
+    clearInterval(wait);
+    if (!ready) return;
+
+    var steps = [];
+
+    /* Information, jamais constat.
+     *
+     * La version précédente affirmait « vos prix sont en dollars »
+     * après avoir testé le <select> des réglages. Mais ce select est
+     * rempli par un appel réseau qui n'est pas terminé à ce stade :
+     * le test passait donc TOUJOURS, y compris pour une pharmacie
+     * déjà passée en francs. Annoncer un fait faux détruit la
+     * confiance dans tous les autres messages de la visite.
+     *
+     * On se contente donc d'indiquer où se règle la devise — vrai
+     * dans tous les cas, utile dans tous les cas. */
+    steps.push({
+      id: 'ph.currency',
+      sel: '.bottom-nav-item[data-tab="settings"], .sb-item[data-tab="settings"]',
+      html: 'Besoin de changer votre <strong>devise</strong> ou vos informations ? ' +
+            'Tout se règle dans les <strong>Réglages</strong>.'
+    });
+
+    var cur = document.getElementById('setCurrency');
+
+    steps.push({
+      id: 'ph.add',
+      sel: '#catalogAddBtn',
+      html: 'Cliquez ici pour enregistrer votre <strong>premier médicament</strong> : ' +
+            'nom, conditionnement, prix et stock.'
+    });
+
+    AfyaTour.run(steps, { delay: 1200 });
+
+    /* ── Rappel d'enregistrement ──
+       Se déclenche à la modification de la devise, jamais au
+       chargement : c'est une réaction à un geste, pas un conseil
+       général. */
+    if (cur) {
+      cur.addEventListener('change', function () {
+        setTimeout(function () {
+          AfyaTour.show(
+            'ph.saveSettings',
+            '#saveSettingsBtn',
+            'N\'oubliez pas d\'<strong>enregistrer</strong> : sans cela, ' +
+            'votre devise ne sera pas conservée.',
+            { force: true, duration: 14000 }
+          );
+        }, 350);
+      });
+    }
+  }, 250);
+});
+</script>
+</body>
+</html>
