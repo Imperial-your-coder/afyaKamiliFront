@@ -205,7 +205,8 @@ async function found(code,src){
   let p=null;try{p=await lookupDrug(gtin)}catch(e){}
   if(p){cur={gtin,_src:'Source : '+p.src,name:p.name,lab:p.lab,img:p.img,...scan};
     if(p.src==='openFDA'){cur.dci=p.active;cur.cat='Médicament';cur.notes=[p.form,p.route].filter(Boolean).join(' · ')}else cur.pack=p.form;
-    render();release()}
+    if(REQ.every(k=>cur[k])){const {_src,_local,...d}=cur;store.set(gtin,d);cur._local=true;cur._src+=' · enregistré';render();release()}
+    else{render();openForm()}}
   else{cur={gtin,_src:src+' · absent des bases publiques',...scan};render();openForm()}
 }
 function release(){setTimeout(()=>{if($('sheet').hidden){busy=false;tStart=Date.now();if(mode==='bar')status('scan en cours',true)}},2500)}
