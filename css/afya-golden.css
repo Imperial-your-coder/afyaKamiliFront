@@ -1,0 +1,103 @@
+/* ═══════════════════════════════════════════════════════════
+   AFYA KAMILI — COUCHE DE PROPORTIONS (nombre d'or / Fibonacci)
+   Chargée EN DERNIER sur chaque page : elle harmonise sans
+   réécrire les styles des modules.
+
+   φ = 1,618  ·  suite de Fibonacci : 5 8 13 21 34 55 89
+   - Espacements   : 5 / 8 / 13 / 21 / 34 px
+   - Typo (×√φ≈1,272) : 13 → 16,5 → 21 → 26,7 px
+   - Rayon d'un bouton = hauteur / 2 (pilule) ou 13 px (champ)
+   - Hauteur tactile mobile : 44 px (≈ 27 × φ), jamais < 40
+   - Padding horizontal d'un bouton = hauteur / φ² (44/2,618 ≈ 17)
+═══════════════════════════════════════════════════════════ */
+:root{
+  --phi:1.618;
+  --f1:5px;--f2:8px;--f3:13px;--f4:21px;--f5:34px;--f6:55px;
+  --t-sm:13px;--t-md:16.5px;--t-lg:21px;--t-xl:26.7px;
+  --touch:44px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+img,svg,video,canvas{max-width:100%}
+img{height:auto}
+input,select,textarea,button{max-width:100%;font-family:inherit}
+
+/* Textes longs : jamais de débordement */
+h1,h2,h3,h4,p,li,td,th,label,.modal-title{overflow-wrap:anywhere;word-break:normal}
+
+/* Tableaux : défilement interne plutôt que débordement de page */
+table{max-width:100%}
+.table-wrap,.tbl-wrap,.table-container{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* Toasts : retour à la ligne au lieu de sortir de l'écran */
+.toast{white-space:normal!important;text-align:center;line-height:1.4;
+  max-width:calc(100vw - 2*var(--f4))!important;border-radius:var(--f4)!important;
+  padding:var(--f3) var(--f4)!important;width:max-content}
+/* Image vide : pas de cadre cassé */
+img[src=""],img:not([src]){visibility:hidden}
+
+/* Modales : jamais plus hautes que l'écran */
+.modal,.drawer,[role=dialog]{max-height:calc(100dvh - var(--f5));overflow-y:auto}
+.modal{overflow-y:hidden}
+.modal-body{overflow-y:auto;min-height:0}
+
+/* Enfants flex/grid : autoriser le rétrécissement */
+.modal-hd>*,.modal-ft>*,.row>*,.grid>*{min-width:0}
+.modal-ft{flex-wrap:wrap;gap:var(--f2)}
+
+/* ── Boutons : de vrais boutons ───────────────────────── */
+button,.btn,.tb-btn,a.btn{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn,.tb-btn{line-height:1.2;font-weight:700}
+.btn:active,.tb-btn:active,.qty-btn:active{transform:scale(.97)}
+.btn:focus-visible,.tb-btn:focus-visible,button:focus-visible{outline:2px solid #111;outline-offset:2px}
+
+@media (max-width:767px){
+  /* Boutons texte : 44 px, padding = 44/φ² */
+  .tb-btn,.btn,button.tab,.tab{min-height:var(--touch);padding-left:17px;padding-right:17px;font-size:var(--t-sm)}
+  .tb-btn svg,.btn svg{width:16px;height:16px}
+  /* Boutons icône : cercle de 44 px */
+  .tb-icon-btn,.icon-btn,.modal-close,.close,.modal-x,#closeDrawer,#pwToggle{
+    min-width:var(--touch);min-height:var(--touch);width:var(--touch)!important;height:var(--touch)!important}
+  #pwToggle{display:flex;align-items:center;justify-content:center}
+  .modal-close svg,.close svg{width:16px;height:16px}
+  /* Champs : 44 px et 16 px de police (évite le zoom iOS) */
+  .ph-input,.ph-select,.search-input,.input,input.input,select.input,
+  input[type=text],input[type=tel],input[type=email],input[type=password],input[type=number],input[type=search],select{
+    min-height:var(--touch);font-size:16px}
+  .ph-textarea,textarea{font-size:16px}
+  .qty-btn{width:var(--touch)!important;height:var(--touch)!important}
+  /* Barre du haut : boutons icône ronds de 44 px, rien ne sort de l'écran */
+  .tb-actions{gap:var(--f2);flex-wrap:nowrap;min-width:0}
+  .tb-actions .tb-btn{width:var(--touch);padding:0;flex-shrink:0}
+  .tb-actions .tb-btn .hide-mobile{display:none}
+  /* Barres d'actions : passage à la ligne propre */
+  .catalog-actions,.toolbar,.actions{flex-wrap:wrap;gap:var(--f2)}
+}
+
+/* Marque : « Afya Kamili » sur une seule ligne */
+.brand,.brand>span,.tb-brand-name{white-space:nowrap}
+
+@media (max-width:767px){
+  /* Bandeau d'offre : texte au-dessus, bouton en dessous (ratio φ) */
+  .locked-bar{flex-wrap:wrap;padding:var(--f4);gap:var(--f3)}
+  .locked-bar .lb-text{flex:1 1 calc(100% - 55px);min-width:0}
+  .locked-bar .lb-cta{flex:1 1 100%;justify-content:center;min-height:var(--touch)}
+}
+/* Très petits écrans (< 360 px) : cibles ramenées à 40 px pour tout faire tenir */
+@media (max-width:359px){
+  .tb-actions .tb-btn,.tb-icon-btn{width:40px!important;height:40px!important;min-width:40px;min-height:40px}
+  .tb-actions{gap:var(--f1)}
+}
+
+/* Barres du haut (accueil, admin) : la marque et le compte restent visibles,
+   la navigation défile horizontalement au lieu de pousser le reste hors écran */
+@media (max-width:767px){
+  .topbar{padding-left:var(--f3)!important;padding-right:var(--f3)!important;gap:var(--f2)!important}
+  .topbar>.tb-brand,.topbar>.brand,.tb-avatar,.acct-wrap,.acct-avatar{flex-shrink:0}
+  .topbar .tb-nav,.topbar .nav{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+  .topbar .tb-nav::-webkit-scrollbar,.topbar .nav::-webkit-scrollbar{display:none}
+  .topbar .tb-nav>*,.topbar .nav>*{flex-shrink:0}
+  .topbar .tb-spacer{display:none}
+}
+@media (max-width:420px){ .tb-brand-name,.brand>span{font-size:15px} }
+@media (max-width:420px){ .topbar .tb-nav{display:none} .topbar .tb-actions{margin-left:auto} }
