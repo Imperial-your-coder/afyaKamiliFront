@@ -58,7 +58,7 @@ video{width:100%;height:100%;object-fit:cover;display:block}
   <div class="nudge" id="nudge">Le code-barres n'est pas reconnu ? <button data-m="ocr">Lire les chiffres</button> ou <button data-m="manual">saisir à la main</button>.</div>
   <div class="manual">
     <label for="code">Numéro sous le code-barres</label>
-    <input id="code" inputmode="numeric" autocomplete="off" placeholder="6009710390290" maxlength="14">
+    <input id="code" inputmode="numeric" autocomplete="off" placeholder="3400930000000" maxlength="14">
     <button class="btn" id="ok">Rechercher</button>
   </div>
   <section class="result" id="res"><div class="empty">Aucun produit scanné pour l'instant.</div></section>
@@ -81,7 +81,7 @@ async function openCam(){
 /* ---- code-barres (ZXing, avec essais en rotation) ---- */
 const Z=ZXing,hints=new Map();
 hints.set(Z.DecodeHintType.TRY_HARDER,true);
-hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.UPC_E,Z.BarcodeFormat.CODE_128,Z.BarcodeFormat.CODE_39,Z.BarcodeFormat.QR_CODE]);
+hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.UPC_E,Z.BarcodeFormat.CODE_128,Z.BarcodeFormat.CODE_39,Z.BarcodeFormat.QR_CODE,Z.BarcodeFormat.DATA_MATRIX]);
 const zr=new Z.MultiFormatReader();zr.setHints(hints);
 const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
 function grab(rot,scale=1){
@@ -154,20 +154,41 @@ async function found(code,src){
   if(busy)return;busy=true;lastCode=code;
   if(navigator.vibrate)navigator.vibrate(80);
   status('trouvé',false);
-  const res=$('res');
-  res.innerHTML=`<div class="src">${src}</div><div class="code">${code}</div><div class="empty">Recherche du produit…</div>`;
-  try{
-    const d=await(await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json')).json();
-    if(d.status===1){const p=d.product;
-      res.innerHTML=`<div class="src">${src}</div><div class="code">${code}</div>
-      <div class="prod">${p.image_front_small_url?`<img src="${p.image_front_small_url}" alt="">`:''}
-      <div><h3>${p.product_name||'Produit sans nom'}</h3>
-      <dl class="meta"><dt>Marque</dt><dd>${p.brands||'–'}</dd><dt>Quantité</dt><dd>${p.quantity||'–'}</dd>
-      <dt>Nutri-Score</dt><dd>${(p.nutriscore_grade||'–').toUpperCase()}</dd><dt>Origine</dt><dd>${p.countries||'–'}</dd></dl></div></div>`}
-    else res.innerHTML=`<div class="src">${src}</div><div class="code">${code}</div><div class="empty">Code lu, mais ce produit n'est pas dans la base Open Food Facts.</div>`;
-  }catch(e){res.lastElementChild.textContent='Code lu. Recherche impossible : vérifiez la connexion.'}
+  const res=$('res'),g=parseGS1(code),gtin=g.gtin||code.replace(/\D/g,'');
+  const head=`<div class="src">${src}</div><div class="code">${gtin}</div>`;
+  const rows=[['Pays (GS1)',gs1Country(gtin)]];
+  if(g.exp)rows.push(['Péremption',g.exp]);if(g.lot)rows.push(['Lot',g.lot]);if(g.sn)rows.push(['N° série',g.sn]);
+  const dl=r=>`<dl class="meta">${r.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
+  res.innerHTML=head+dl(rows)+`<div class="empty">Recherche du médicament…</div>`;
+  let p=null;
+  try{p=await lookupDrug(gtin)}catch(e){}
+  if(p){const r=[['Laboratoire',p.lab],['Forme',p.form],['Voie',p.route],['Principe actif',p.active],...rows].filter(x=>x[1]);
+    res.innerHTML=head+`<div><h3 style="margin:0 0 8px">${p.name}</h3>${dl(r)}</div><div class="src">Source : ${p.src}</div>`}
+  else res.innerHTML=head+dl(rows)+`<div class="empty">Médicament absent des bases publiques. Il faudra l'ajouter dans la base Afiya Kamili.</div>`;
   setTimeout(()=>{busy=false;tStart=Date.now();if(mode==='bar')status('scan en cours',true)},2500);
 }
+/* GS1 DataMatrix pharma : (01) GTIN, (17) péremption AAMMJJ, (10) lot, (21) série */
+function parseGS1(s){
+  s=s.replace(/^\]d2/,'').replace(/\(([0-9]{2})\)/g,'\x1d$1').replace(/^\x1d/,'');
+  if(!/^01\d{14}/.test(s))return {};
+  const o={};let i=0;const GS='\x1d';
+  while(i<s.length){if(s[i]===GS){i++;continue}
+    const ai=s.substr(i,2);i+=2;
+    if(ai==='01'){o.gtin=s.substr(i,14).replace(/^0/,'');i+=14}
+    else if(ai==='17'){const d=s.substr(i,6);o.exp=(d.slice(4)==='00'?'':d.slice(4)+'/')+d.slice(2,4)+'/20'+d.slice(0,2);i+=6}
+    else{let j=s.indexOf(GS,i);if(j<0)j=s.length;const val=s.slice(i,j);if(ai==='10')o.lot=val;if(ai==='21')o.sn=val;i=j}}
+  return o}
+function gs1Country(g){
+  const p=+g.padStart(13,'0').slice(0,3),T=[[0,139,'États-Unis / Canada'],[300,379,'France'],[400,440,'Allemagne'],[500,509,'Royaume-Uni'],[540,549,'Belgique / Luxembourg'],[600,601,'Afrique du Sud'],[611,611,'Maroc'],[616,616,'Kenya'],[618,618,"Côte d'Ivoire"],[619,619,'Tunisie'],[620,620,'Tanzanie'],[622,622,'Égypte'],[690,699,'Chine'],[760,769,'Suisse'],[800,839,'Italie'],[840,849,'Espagne'],[870,879,'Pays-Bas'],[890,890,'Inde']];
+  const f=T.find(([a,b])=>p>=a&&p<=b);return f?f[2]:'Préfixe '+String(p).padStart(3,'0')}
+/* openFDA : médicaments enregistrés aux États-Unis (recherche par code UPC) */
+async function lookupDrug(g){
+  const q=[g,g.padStart(12,'0').slice(-12)];
+  for(const c of [...new Set(q)]){
+    const r=await fetch('https://api.fda.gov/drug/label.json?search=openfda.upc:%22'+c+'%22&limit=1');
+    if(!r.ok)continue;const d=await r.json(),f=(d.results&&d.results[0]||{}).openfda;
+    if(f)return {name:(f.brand_name||f.generic_name||['Médicament'])[0],lab:(f.manufacturer_name||[])[0],form:(f.dosage_form||[])[0],route:(f.route||[])[0],active:(f.substance_name||f.generic_name||[]).join(', '),src:'openFDA'}}
+  return null}
 
 /* ---- modes ---- */
 async function setMode(m){
