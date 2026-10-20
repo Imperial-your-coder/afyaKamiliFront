@@ -339,6 +339,11 @@ const AfyaAPI = {
       return await request('GET', '/pharmacy/medications/refs');
     },
 
+    /** Identifie un produit à partir de photos (data URL) — recherche web côté serveur */
+    async identify(images, barcode = null) {
+      return await request('POST', '/pharmacy/medications/identify', { images, barcode });
+    },
+
     async get(id) {
       const data = await request('GET', `/pharmacy/medications/${id}`);
       return Adapt.medicationFromApi(data.medication);
