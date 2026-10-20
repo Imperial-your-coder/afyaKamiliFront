@@ -45,6 +45,22 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 .prod h3{margin:0 0 4px;font-size:1.05rem}
 .meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.85rem}.meta dt{color:var(--mute)}.meta dd{margin:0}
 .empty{color:var(--mute);font-size:.9rem}
+.result .btn{margin-top:4px}.result .nudge{margin:0}
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(3,10,8,.7);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:24px 24px 0 0;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.sh-head{display:flex;justify-content:space-between;align-items:center;padding:18px max(18px,env(safe-area-inset-right)) 8px max(18px,env(safe-area-inset-left))}
+.sh-head h2{margin:0;font-size:1.15rem}.x{background:var(--bg);border:1px solid var(--line);color:var(--fg);width:36px;height:36px;border-radius:50%;font-size:1.3rem;cursor:pointer}
+.sh-body{overflow-y:auto;padding:0 max(18px,env(safe-area-inset-right)) 8px max(18px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
+.sub{margin:0;color:var(--mute);font-size:.82rem;font-family:var(--mono)}
+fieldset{border:0;padding:0;margin:0}legend{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid label{display:flex;flex-direction:column;gap:4px;font-size:.75rem;color:var(--mute);min-width:0}
+.grid label.wide,.grid label:first-child{grid-column:1/-1}.grid b{color:var(--warn)}
+.grid input,.grid select,.grid textarea{font:500 .95rem var(--ui);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%;min-width:0;font-size:16px}
+.grid input:focus,.grid select:focus,.grid textarea:focus{outline:2px solid var(--acc);border-color:transparent}
+.grid .missing input,.grid .missing select{border-color:rgba(255,181,71,.6)}
+.sh-foot{padding:12px max(18px,env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));border-top:1px solid var(--line)}
 </style></head><body>
 <div class="app" id="app">
   <header><div class="brand">Afiya <b>Scan</b></div><div class="status" id="st"><span class="dot"></span><span id="stt">prêt</span></div></header>
@@ -62,6 +78,13 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     <button class="btn" id="ok">Rechercher</button>
   </div>
   <section class="result" id="res"><div class="empty">Aucun produit scanné pour l'instant.</div></section>
+</div>
+<div class="sheet" id="sheet" hidden>
+  <form class="panel" id="sheetForm" novalidate>
+    <div class="sh-head"><h2 id="sheetTitle">Nouveau produit</h2><button type="button" class="x" id="sheetClose" aria-label="Fermer">×</button></div>
+    <div class="sh-body" id="sheetBody"></div>
+    <div class="sh-foot"><button type="submit" class="btn">Enregistrer la fiche</button></div>
+  </form>
 </div>
 <script>
 const $=id=>document.getElementById(id),app=$('app'),cam=$('cam'),v=$('v');
@@ -150,23 +173,60 @@ async function readDigits(){
 }
 
 /* ---- résultat ---- */
+const FIELDS=[
+ ['Identification',[['name','Nom commercial*','text'],['dci','DCI / principe(s) actif(s)','text'],['dosage','Dosage','text','500 mg'],['form','Forme galénique','list','Comprimé|Comprimé effervescent|Gélule|Sirop|Suspension buvable|Solution injectable|Pommade|Crème|Gel|Collyre|Suppositoire|Ovule|Sachet|Spray|Patch|Lingettes|Autre'],['pack','Conditionnement / contenance','text','Boîte de 20 / 100 ml'],['route','Voie d\'administration','list','Orale|Injectable|Cutanée|Ophtalmique|Nasale|Rectale|Vaginale|Inhalée|Sublinguale|Non applicable'],['lab','Laboratoire / marque','text']]],
+ ['Classement',[['cat','Catégorie*','list','Médicament|Parapharmacie|Hygiène|Cosmétique|Nutrition / lait infantile|Complément alimentaire|Dispositif médical|Matériel / consommable'],['thera','Classe thérapeutique','text','Antalgique, antibiotique…'],['rx','Délivrance','list','Libre (sans ordonnance)|Sur ordonnance|Ordonnance spéciale (stupéfiant / psychotrope)'],['amm','N° AMM / enregistrement','text']]],
+ ['Lot et stock',[['lot','N° de lot','text'],['exp','Date de péremption*','date'],['stock','Quantité en stock','number'],['min','Seuil d\'alerte stock','number'],['buy','Prix d\'achat (FC)','number'],['sell','Prix de vente (FC)*','number']]],
+ ['Usage et sécurité',[['store','Conservation','list','Température ambiante (< 25 °C)|Au frais (2–8 °C)|À l\'abri de la lumière|Congelé'],['posology','Posologie usuelle','area'],['ci','Contre-indications / précautions','area'],['preg','Grossesse / allaitement','list','Autorisé|Avec précaution|Déconseillé|Contre-indiqué'],['notes','Notes','area']]]];
+const REQ=['name','cat','exp','sell'];
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store={get(k){try{return JSON.parse(localStorage.getItem('afiya:'+k))}catch(e){return null}},set(k,v){try{localStorage.setItem('afiya:'+k,JSON.stringify(v))}catch(e){}}};
+let cur=null;
+function render(){
+  const p=cur,res=$('res'),miss=REQ.filter(k=>!p[k]);
+  const lab=Object.fromEntries(FIELDS.flatMap(g=>g[1]).map(f=>[f[0],f[1].replace('*','')]));
+  const rows=['dci','dosage','form','pack','lab','cat','rx','lot','exp','stock','sell'].filter(k=>p[k]).map(k=>`<dt>${lab[k]}</dt><dd>${esc(k==='sell'?p[k]+' FC':k==='exp'?p[k].split('-').reverse().join('/'):p[k])}</dd>`).join('');
+  res.innerHTML=`<div class="src">${esc(p._src)}</div><div class="code">${p.gtin}</div>
+  <div class="prod">${p.img?`<img src="${esc(p.img)}" alt="">`:''}<div><h3>${esc(p.name||'Produit sans nom')}</h3><dl class="meta"><dt>Pays (GS1)</dt><dd>${gs1Country(p.gtin)}</dd>${rows}</dl></div></div>
+  ${miss.length?`<div class="nudge" style="display:block">Informations manquantes : ${miss.map(k=>lab[k]).join(', ')}.</div>`:''}
+  <button class="btn ${miss.length?'':'ghost'}" id="edit">${p._local?'Modifier la fiche':miss.length?'Compléter les informations':'Ajouter / modifier des informations'}</button>`;
+  $('edit').onclick=openForm;
+}
 async function found(code,src){
   if(busy)return;busy=true;lastCode=code;
   if(navigator.vibrate)navigator.vibrate(80);
   status('trouvé',false);
-  const res=$('res'),g=parseGS1(code),gtin=g.gtin||code.replace(/\D/g,'');
-  const head=`<div class="src">${src}</div><div class="code">${gtin}</div>`;
-  const rows=[['Pays (GS1)',gs1Country(gtin)]];
-  if(g.exp)rows.push(['Péremption',g.exp]);if(g.lot)rows.push(['Lot',g.lot]);if(g.sn)rows.push(['N° série',g.sn]);
-  const dl=r=>`<dl class="meta">${r.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
-  res.innerHTML=head+dl(rows)+`<div class="empty">Recherche du produit…</div>`;
-  let p=null;
-  try{p=await lookupDrug(gtin)}catch(e){}
-  if(p){const r=[['Laboratoire / marque',p.lab],[p.src==='openFDA'?'Forme':'Contenance',p.form],['Voie',p.route],[p.src==='openFDA'?'Principe actif':'Catégorie',p.active],...rows].filter(x=>x[1]);
-    res.innerHTML=head+`<div class="prod">${p.img?`<img src="${p.img}" alt="">`:''}<div><h3>${p.name}</h3>${dl(r)}</div></div><div class="src">Source : ${p.src}</div>`}
-  else res.innerHTML=head+dl(rows)+`<div class="empty">Produit absent des bases publiques. Il faudra l'ajouter dans la base Afiya Kamili.</div>`;
-  setTimeout(()=>{busy=false;tStart=Date.now();if(mode==='bar')status('scan en cours',true)},2500);
+  const g=parseGS1(code),gtin=g.gtin||code.replace(/\D/g,'');
+  const scan={};if(g.lot)scan.lot=g.lot;if(g.exp)scan.exp=g.exp.split('/').reverse().join('-').replace(/^(\d{4}-\d{2})$/,'$1-01');
+  $('res').innerHTML=`<div class="src">${src}</div><div class="code">${gtin}</div><div class="empty">Recherche du produit…</div>`;
+  const loc=store.get(gtin);
+  if(loc){cur={...loc,...scan,gtin,_src:'Base Afiya (cet appareil)',_local:true};render();return release()}
+  let p=null;try{p=await lookupDrug(gtin)}catch(e){}
+  if(p){cur={gtin,_src:'Source : '+p.src,name:p.name,lab:p.lab,img:p.img,...scan};
+    if(p.src==='openFDA'){cur.dci=p.active;cur.cat='Médicament';cur.notes=[p.form,p.route].filter(Boolean).join(' · ')}else cur.pack=p.form;
+    render();release()}
+  else{cur={gtin,_src:src+' · absent des bases publiques',...scan};render();openForm()}
 }
+function release(){setTimeout(()=>{if($('sheet').hidden){busy=false;tStart=Date.now();if(mode==='bar')status('scan en cours',true)}},2500)}
+function field([k,l,t,o]){
+  const v=esc(cur[k]),id='f_'+k,req=l.endsWith('*')?' required':'';
+  let inp;
+  if(t==='list')inp=`<select id="${id}"${req}><option value="">—</option>${o.split('|').map(x=>`<option${cur[k]===x?' selected':''}>${esc(x)}</option>`).join('')}</select>`;
+  else if(t==='area')inp=`<textarea id="${id}" rows="2">${v}</textarea>`;
+  else inp=`<input id="${id}" type="${t}" value="${v}"${t==='number'?' inputmode="decimal" min="0"':''}${o?` placeholder="${esc(o)}"`:''}${req}>`;
+  return `<label class="${t==='area'?'wide':''}${!cur[k]&&req?' missing':''}"><span>${l.replace('*','<b>*</b>')}</span>${inp}</label>`}
+function openForm(){
+  busy=true;clearInterval(loop);
+  $('sheetBody').innerHTML=`<p class="sub">Code <b>${cur.gtin}</b> · ${gs1Country(cur.gtin)}</p>`+FIELDS.map(([t,fs])=>`<fieldset><legend>${t}</legend><div class="grid">${fs.map(field).join('')}</div></fieldset>`).join('');
+  $('sheetTitle').textContent=cur.name?'Compléter la fiche':'Nouveau produit';
+  $('sheet').hidden=false;document.body.style.overflow='hidden';
+  setTimeout(()=>{const m=$('sheetBody').querySelector('.missing input,.missing select');if(m)m.focus()},250)}
+function closeForm(){$('sheet').hidden=true;document.body.style.overflow='';busy=false;if(mode!=='manual')setMode(mode)}
+$('sheetForm').onsubmit=e=>{e.preventDefault();
+  FIELDS.forEach(g=>g[1].forEach(([k])=>{cur[k]=$('f_'+k).value.trim()}));
+  const {_src,_local,_fda,...data}=cur;store.set(cur.gtin,data);
+  cur._src='Base Afiya (cet appareil)';cur._local=true;closeForm();render();status('fiche enregistrée')};
+$('sheetClose').onclick=closeForm;
 /* GS1 DataMatrix pharma : (01) GTIN, (17) péremption AAMMJJ, (10) lot, (21) série */
 function parseGS1(s){
   s=s.replace(/^\]d2/,'').replace(/\(([0-9]{2})\)/g,'\x1d$1').replace(/^\x1d/,'');
@@ -179,7 +239,7 @@ function parseGS1(s){
     else{let j=s.indexOf(GS,i);if(j<0)j=s.length;const val=s.slice(i,j);if(ai==='10')o.lot=val;if(ai==='21')o.sn=val;i=j}}
   return o}
 function gs1Country(g){
-  const p=+g.padStart(13,'0').slice(0,3),T=[[0,139,'États-Unis / Canada'],[300,379,'France'],[400,440,'Allemagne'],[500,509,'Royaume-Uni'],[540,549,'Belgique / Luxembourg'],[600,601,'Afrique du Sud'],[611,611,'Maroc'],[616,616,'Kenya'],[618,618,"Côte d'Ivoire"],[619,619,'Tunisie'],[620,620,'Tanzanie'],[622,622,'Égypte'],[690,699,'Chine'],[760,769,'Suisse'],[800,839,'Italie'],[840,849,'Espagne'],[870,879,'Pays-Bas'],[890,890,'Inde']];
+  const p=+g.padStart(13,'0').slice(0,3),T=[[0,139,'États-Unis / Canada'],[300,379,'France'],[400,440,'Allemagne'],[500,509,'Royaume-Uni'],[540,549,'Belgique / Luxembourg'],[600,601,'Afrique du Sud'],[611,611,'Maroc'],[616,616,'Kenya'],[618,618,"Côte d'Ivoire"],[619,619,'Tunisie'],[620,620,'Tanzanie'],[622,622,'Égypte'],[624,624,'Libye'],[625,625,'Jordanie'],[626,626,'Iran'],[628,628,'Arabie saoudite'],[629,629,'Émirats arabes unis'],[640,649,'Finlande'],[729,729,'Israël'],[730,739,'Suède'],[750,750,'Mexique'],[770,771,'Colombie'],[789,790,'Brésil'],[850,850,'Cuba'],[858,858,'Slovaquie'],[859,859,'Tchéquie'],[869,869,'Turquie'],[880,880,'Corée du Sud'],[885,885,'Thaïlande'],[888,888,'Singapour'],[893,893,'Vietnam'],[896,896,'Pakistan'],[899,899,'Indonésie'],[900,919,'Autriche'],[930,939,'Australie'],[940,949,'Nouvelle-Zélande'],[955,955,'Malaisie'],[450,459,'Japon'],[490,499,'Japon'],[460,469,'Russie'],[470,470,'Kirghizistan'],[480,480,'Philippines'],[489,489,'Hong Kong'],[520,521,'Grèce'],[560,560,'Portugal'],[570,579,'Danemark'],[590,590,'Pologne'],[594,594,'Roumanie'],[599,599,'Hongrie'],[603,603,'Ghana'],[604,604,'Sénégal'],[608,608,'Bahreïn'],[609,609,'Maurice'],[613,613,'Algérie'],[615,615,'Nigeria'],[617,617,'Cameroun'],[621,621,'Syrie'],[627,627,'Koweït'],[690,699,'Chine'],[760,769,'Suisse'],[800,839,'Italie'],[840,849,'Espagne'],[870,879,'Pays-Bas'],[890,890,'Inde']];
   const f=T.find(([a,b])=>p>=a&&p<=b);return f?f[2]:'Préfixe '+String(p).padStart(3,'0')}
 /* openFDA : médicaments enregistrés aux États-Unis (recherche par code UPC) */
 async function lookupDrug(g){
