@@ -24,7 +24,7 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 .frame::before{content:"";position:absolute;inset:0;border:2px solid var(--acc);border-radius:14px}
 .laser{position:absolute;left:4%;right:4%;top:50%;height:2px;background:var(--acc);box-shadow:0 0 12px var(--acc);animation:s 2s ease-in-out infinite}
 @keyframes s{0%,100%{top:15%}50%{top:85%}}
-.ocr .frame{inset:40% 6%}.ocr .laser{display:none}
+.ocr .frame{inset:42% 5%}.ocr .laser{display:none}
 .hint{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:.8rem;color:#fff;text-shadow:0 1px 4px #000}
 .cap{position:absolute;right:14px;bottom:44px;left:14px;display:none}
 .ocr .cap{display:block}
@@ -107,31 +107,45 @@ let worker=null;
 async function getWorker(){
   if(worker)return worker;
   status('chargement OCR…',true);
-  worker=await Tesseract.createWorker('eng');
-  await worker.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'7'});
+  worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status&&m.progress<1)status(m.status.includes('load')?'chargement OCR…':'lecture…',true)}});
+  await worker.setParameters({tessedit_char_whitelist:'0123456789',preserve_interword_spaces:'0'});
   return worker}
 function eanOk(s){if(!/^\d{8}$|^\d{12,13}$/.test(s))return false;
   const d=s.split('').map(Number),ck=d.pop();let sum=0;
   d.reverse().forEach((n,i)=>sum+=n*(i%2===0?3:1));return (10-sum%10)%10===ck}
 function pickCode(txt){
-  const digits=txt.replace(/[^0-9\n ]/g,'').replace(/ +/g,'');
-  const runs=(digits.match(/\d{8,14}/g)||[]).sort((a,b)=>b.length-a.length);
-  return runs.find(eanOk)||runs[0]||null}
+  const runs=txt.split('\n').map(l=>l.replace(/\D/g,'')).filter(r=>r.length>=8);
+  for(const r of runs)for(const n of [13,12,8])for(let i=0;i+n<=r.length;i++){const s=r.substr(i,n);if(eanOk(s))return {code:s,sure:true}}
+  const best=runs.sort((a,b)=>b.length-a.length)[0];
+  return best?{code:best.slice(0,14),sure:false}:null}
+/* découpe exactement la zone du cadre affiché, l'agrandit et la passe en noir et blanc */
+function cropFrame(thr){
+  const W=v.videoWidth,H=v.videoHeight,cr=cam.getBoundingClientRect(),fr=cam.querySelector('.frame').getBoundingClientRect();
+  const s=Math.max(cr.width/W,cr.height/H),ox=(W*s-cr.width)/2,oy=(H*s-cr.height)/2;
+  let sx=(fr.left-cr.left+ox)/s,sy=(fr.top-cr.top+oy)/s,sw=fr.width/s,sh=fr.height/s;
+  const pad=sh*.25;sy=Math.max(0,sy-pad);sh=Math.min(H-sy,sh+2*pad);
+  const k=Math.min(3,1600/sw),c=document.createElement('canvas');
+  c.width=Math.round(sw*k);c.height=Math.round(sh*k);
+  const x=c.getContext('2d',{willReadFrequently:true});x.imageSmoothingQuality='high';
+  x.drawImage(v,sx,sy,sw,sh,0,0,c.width,c.height);
+  const im=x.getImageData(0,0,c.width,c.height),d=im.data;let sum=0;
+  for(let i=0;i<d.length;i+=4){const g=.299*d[i]+.587*d[i+1]+.114*d[i+2];d[i]=g;sum+=g}
+  const t=sum/(d.length/4)*thr;
+  for(let i=0;i<d.length;i+=4){const g=d[i]<t?0:255;d[i]=d[i+1]=d[i+2]=g;d[i+3]=255}
+  x.putImageData(im,0,0);return c}
 async function readDigits(){
-  const b=$('snap');b.disabled=true;b.textContent='Lecture…';
+  const b=$('snap');b.disabled=true;b.textContent='Lecture…';let raw='';
   try{
     const w=await getWorker();status('lecture des chiffres…',true);
-    const W=v.videoWidth,H=v.videoHeight;let code=null;
-    for(const rot of [0,1]){
-      const c=document.createElement('canvas'),x=c.getContext('2d');
-      const sw=rot?W*.5:W*.88,sh=rot?H*.88:H*.2,sx=(W-sw)/2,sy=(H-sh)/2;
-      if(rot){c.width=sh*1.5;c.height=sw*1.5;x.translate(c.width,0);x.rotate(Math.PI/2);x.filter='grayscale(1) contrast(1.6)';x.drawImage(v,sx,sy,sw,sh,0,0,c.height,c.width)}
-      else{c.width=sw*1.5;c.height=sh*1.5;x.filter='grayscale(1) contrast(1.6)';x.drawImage(v,sx,sy,sw,sh,0,0,c.width,c.height)}
-      const {data}=await w.recognize(c);code=pickCode(data.text);if(code)break;
+    let hit=null;
+    for(const [thr,psm] of [[.8,'6'],[.8,'11'],[.65,'6'],[.95,'11']]){
+      await w.setParameters({tessedit_pageseg_mode:psm});
+      const {data}=await w.recognize(cropFrame(thr));raw=data.text.trim();
+      const r=pickCode(data.text);if(r&&(r.sure||!hit))hit=r;if(hit&&hit.sure)break;
     }
-    if(code)found(code,'Chiffres lus');
-    else{status('chiffres illisibles');$('hint').textContent='Rapprochez les chiffres et réessayez'}
-  }catch(e){status('OCR indisponible')}
+    if(hit){if(hit.sure)found(hit.code,'Chiffres lus');else{setMode('manual');$('code').value=hit.code;status('vérifiez le code');$('hint').textContent=''}}
+    else{status('chiffres illisibles');$('hint').textContent='Rapprochez-vous : les chiffres doivent remplir le cadre'}
+  }catch(e){status('OCR indisponible');$('hint').textContent='Erreur OCR : '+(e.message||e)}
   b.disabled=false;b.textContent='Lire les chiffres';
 }
 
