@@ -1,41 +1,46 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Scanner Code-barres</title>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <style>
 body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#f3f6f4;color:#1b2b24}
-#reader{width:100%;max-width:480px;margin:auto;border-radius:10px;overflow:hidden;background:#000}
+.wrap{position:relative;max-width:480px;margin:auto;border-radius:10px;overflow:hidden;background:#000}
+video{width:100%;display:block}
+.line{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#ff3b3b;box-shadow:0 0 8px #ff3b3b}
 button{display:block;margin:12px auto;font-size:1.1rem;padding:12px 24px;border:0;border-radius:8px;background:#1b7a5a;color:#fff}
 .card{background:#fff;border-radius:10px;padding:14px;margin:14px auto;max-width:480px}
 img{max-width:110px;float:right;margin-left:10px}
 </style></head><body>
-<div id="reader"></div>
-<button id="go">Démarrer le scan</button>
-<div id="out" class="card">Visez un code-barres.</div>
+<div class="wrap"><video id="v" playsinline muted></video><div class="line"></div></div>
+<button id="go" hidden>Démarrer le scan</button>
+<div id="out" class="card">Tenez le code-barres horizontal, à 15–20 cm.</div>
 <script>
 const out=document.getElementById('out'),go=document.getElementById('go');
-const F=Html5QrcodeSupportedFormats;
-const scanner=new Html5Qrcode('reader',{formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.QR_CODE],
-  experimentalFeatures:{useBarCodeDetectorIfSupported:true},verbose:false});
-let busy=false;
+const Z=ZXing,hints=new Map();
+hints.set(Z.DecodeHintType.TRY_HARDER,true);
+hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.UPC_E,Z.BarcodeFormat.CODE_128,Z.BarcodeFormat.CODE_39,Z.BarcodeFormat.QR_CODE]);
+const reader=new Z.BrowserMultiFormatReader(hints,200);
+let busy=false,running=false;
 async function onScan(code){
   if(busy)return;busy=true;
   if(navigator.vibrate)navigator.vibrate(100);
   out.innerHTML='<b>'+code+'</b><br>Recherche…';
   try{
     const d=await (await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json')).json();
-    if(d.status!==1)out.innerHTML='<b>'+code+'</b><br>Produit inconnu.';
+    if(d.status!==1)out.innerHTML='<b>Code : '+code+'</b><br>Produit inconnu dans la base.';
     else{const p=d.product;
       out.innerHTML=(p.image_front_small_url?'<img src="'+p.image_front_small_url+'">':'')+
       '<h3>'+(p.product_name||'Sans nom')+'</h3>Code : '+code+'<br>Marque : '+(p.brands||'-')+
       '<br>Quantité : '+(p.quantity||'-')+'<br>Nutri-Score : '+(p.nutriscore_grade||'-').toUpperCase();}
-  }catch(e){out.innerHTML='<b>'+code+'</b><br>Erreur réseau.'}
+  }catch(e){out.innerHTML='<b>Code : '+code+'</b><br>Erreur réseau.'}
   setTimeout(()=>busy=false,2500);
 }
 async function start(){
-  go.hidden=true;
-  try{await scanner.start({facingMode:'environment'},{fps:15,qrbox:(w,h)=>({width:Math.floor(w*.85),height:Math.floor(h*.45)})},onScan,()=>{});}
-  catch(e){go.hidden=false;out.textContent='Caméra refusée ou indisponible : '+e;}
+  if(running)return;running=true;go.hidden=true;
+  try{
+    await reader.decodeFromConstraints({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080},focusMode:'continuous'}},'v',
+      (r)=>{if(r)onScan(r.getText())});
+  }catch(e){running=false;go.hidden=false;out.textContent='Caméra indisponible : '+e;}
 }
 go.onclick=start;start();
 </script></body></html>
