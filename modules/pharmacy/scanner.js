@@ -292,3 +292,25 @@
     };
   });
 })();
+
+/* ── Feuille « Gestion » de la nav basse ── */
+(function () {
+  window.toggleGestion = () => (document.getElementById('gestionSheet').classList.contains('on') ? closeGestion() : openGestion());
+  window.openGestion = () => {
+    const cur = document.querySelector('.tab.active')?.dataset.tab;
+    document.querySelectorAll('.gs-tile[data-g]').forEach(t => t.classList.toggle('cur', t.dataset.g === cur));
+    ['gestionSheet', 'gestionOv'].forEach(i => document.getElementById(i).classList.add('on'));
+    document.getElementById('bnGestion').classList.add('open');
+  };
+  window.closeGestion = () => {
+    ['gestionSheet', 'gestionOv'].forEach(i => document.getElementById(i)?.classList.remove('on'));
+    document.getElementById('bnGestion')?.classList.remove('open');
+  };
+  document.addEventListener('click', e => {
+    const t = e.target.closest('.gs-tile[data-g]');
+    if (!t) return;
+    closeGestion(); switchTab(t.dataset.g);
+    // les onglets autres que Catalogue n'ont pas d'icône dédiée : on allume « Gestion »
+    document.getElementById('bnGestion').classList.toggle('active', t.dataset.g !== 'catalog');
+  });
+})();
