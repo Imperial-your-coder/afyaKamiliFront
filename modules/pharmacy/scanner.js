@@ -8,7 +8,7 @@
    localement en secours.
 ═══════════════════════════════════════════════════════════════ */
 (function () {
-  const LIB = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
+  const LIB = '../../js/zxing.min.js';
   const MAP_KEY = 'afya_barcodes';
   let mode = null, busy = false, pendingCode = null, libP = null;
 
@@ -145,11 +145,11 @@
     try {
       await loadLib(); reader ||= makeReader();
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
-      const v = document.getElementById('scanReader'); v.srcObject = stream; await v.play();
+      const v = document.getElementById('scanReader'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('autoplay', ''); v.srcObject = stream; await v.play();
       try { await stream.getVideoTracks()[0].applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch {}
       clearInterval(loop); loop = setInterval(tick, 180);
     } catch (e) {
-      result('⚠', 'Caméra indisponible', 'Autorisez la caméra, ou saisissez à la main.');
+      result('⚠', 'Caméra indisponible', 'Autorisez la caméra, ou saisissez à la main. (' + esc(e?.name || e) + ')');
     }
   };
 
