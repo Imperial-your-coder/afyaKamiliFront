@@ -62,6 +62,7 @@ fieldset{border:0;padding:0;margin:0}legend{font-family:var(--mono);font-size:.7
 .grid .missing input,.grid .missing select{border-color:rgba(255,181,71,.6)}
 .sh-foot{padding:12px max(18px,env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));border-top:1px solid var(--line)}
 [hidden]{display:none!important}.sh-body{flex:1 1 auto;min-height:0}
+.stk{font:700 1rem var(--mono);color:var(--acc)}
 </style></head><body>
 <div class="app" id="app">
   <header><div class="brand">Afiya <b>Scan</b></div><div class="status" id="st"><span class="dot"></span><span id="stt">prêt</span></div></header>
@@ -177,7 +178,7 @@ async function readDigits(){
 const FIELDS=[
  ['Identification',[['name','Nom commercial*','text'],['dci','DCI / principe(s) actif(s)','text'],['dosage','Dosage','text','500 mg'],['form','Forme galénique','list','Comprimé|Comprimé effervescent|Gélule|Sirop|Suspension buvable|Solution injectable|Pommade|Crème|Gel|Collyre|Suppositoire|Ovule|Sachet|Spray|Patch|Lingettes|Autre'],['pack','Conditionnement / contenance','text','Boîte de 20 / 100 ml'],['route','Voie d\'administration','list','Orale|Injectable|Cutanée|Ophtalmique|Nasale|Rectale|Vaginale|Inhalée|Sublinguale|Non applicable'],['lab','Laboratoire / marque','text']]],
  ['Classement',[['cat','Catégorie*','list','Médicament|Parapharmacie|Hygiène|Cosmétique|Nutrition / lait infantile|Complément alimentaire|Dispositif médical|Matériel / consommable'],['thera','Classe thérapeutique','text','Antalgique, antibiotique…'],['rx','Délivrance','list','Libre (sans ordonnance)|Sur ordonnance|Ordonnance spéciale (stupéfiant / psychotrope)'],['amm','N° AMM / enregistrement','text']]],
- ['Lot et stock',[['lot','N° de lot','text'],['exp','Date de péremption*','date'],['stock','Quantité en stock','number'],['min','Seuil d\'alerte stock','number'],['buy','Prix d\'achat (FC)','number'],['sell','Prix de vente (FC)*','number']]],
+ ['Lot et stock',[['lot','N° de lot','text'],['exp','Date de péremption*','date'],['min','Seuil d\'alerte stock','number'],['buy','Prix d\'achat (FC)','number'],['sell','Prix de vente (FC)*','number']]],
  ['Usage et sécurité',[['store','Conservation','list','Température ambiante (< 25 °C)|Au frais (2–8 °C)|À l\'abri de la lumière|Congelé'],['posology','Posologie usuelle','area'],['ci','Contre-indications / précautions','area'],['preg','Grossesse / allaitement','list','Autorisé|Avec précaution|Déconseillé|Contre-indiqué'],['notes','Notes','area']]]];
 const REQ=['name','cat','exp','sell'];
 const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -185,8 +186,8 @@ const store={get(k){try{return JSON.parse(localStorage.getItem('afiya:'+k))}catc
 let cur=null;
 function render(){
   const p=cur,res=$('res'),miss=REQ.filter(k=>!p[k]);
-  const lab=Object.fromEntries(FIELDS.flatMap(g=>g[1]).map(f=>[f[0],f[1].replace('*','')]));
-  const rows=['dci','dosage','form','pack','lab','cat','rx','lot','exp','stock','sell'].filter(k=>p[k]).map(k=>`<dt>${lab[k]}</dt><dd>${esc(k==='sell'?p[k]+' FC':k==='exp'?p[k].split('-').reverse().join('/'):p[k])}</dd>`).join('');
+  const lab=Object.fromEntries(FIELDS.flatMap(g=>g[1]).map(f=>[f[0],f[1].replace('*','')]));lab.stock='Stock';
+  const rows=['dci','dosage','form','pack','lab','cat','rx','lot','exp','stock','sell'].filter(k=>p[k]).map(k=>`<dt>${lab[k]}</dt><dd${k==='stock'?' class="stk"':''}>${esc(k==='sell'?p[k]+' FC':k==='exp'?p[k].split('-').reverse().join('/'):p[k])}</dd>`).join('');
   res.innerHTML=`<div class="src">${esc(p._src)}</div><div class="code">${p.gtin}</div>
   <div class="prod">${p.img?`<img src="${esc(p.img)}" alt="">`:''}<div><h3>${esc(p.name||'Produit sans nom')}</h3><dl class="meta"><dt>Pays (GS1)</dt><dd>${gs1Country(p.gtin)}</dd>${rows}</dl></div></div>
   ${miss.length?`<div class="nudge" style="display:block">Informations manquantes : ${miss.map(k=>lab[k]).join(', ')}.</div>`:''}
@@ -201,11 +202,11 @@ async function found(code,src){
   const scan={};if(g.lot)scan.lot=g.lot;if(g.exp)scan.exp=g.exp.split('/').reverse().join('-').replace(/^(\d{4}-\d{2})$/,'$1-01');
   $('res').innerHTML=`<div class="src">${src}</div><div class="code">${gtin}</div><div class="empty">Recherche du produit…</div>`;
   const loc=store.get(gtin);
-  if(loc){cur={...loc,...scan,gtin,_src:'Base Afiya (cet appareil)',_local:true};render();return release()}
+  if(loc){cur={...loc,...scan,gtin,stock:(+loc.stock||0)+1,_src:'Base Afiya · +1 en stock',_local:true};const {_src,_local,...d}=cur;store.set(gtin,d);render();return release()}
   let p=null;try{p=await lookupDrug(gtin)}catch(e){}
   if(p){cur={gtin,_src:'Source : '+p.src,name:p.name,lab:p.lab,img:p.img,...scan};
     if(p.src==='openFDA'){cur.dci=p.active;cur.cat='Médicament';cur.notes=[p.form,p.route].filter(Boolean).join(' · ')}else cur.pack=p.form;
-    if(REQ.every(k=>cur[k])){const {_src,_local,...d}=cur;store.set(gtin,d);cur._local=true;cur._src+=' · enregistré';render();release()}
+    if(REQ.every(k=>cur[k])){cur.stock=1;const {_src,_local,...d}=cur;store.set(gtin,d);cur._local=true;cur._src+=' · enregistré';render();release()}
     else{render();openForm()}}
   else{cur={gtin,_src:src+' · absent des bases publiques',...scan};render();openForm()}
 }
@@ -225,7 +226,7 @@ function openForm(){
   setTimeout(()=>{const m=$('sheetBody').querySelector('.missing input,.missing select');if(m)m.focus()},250)}
 function closeForm(){$('sheet').hidden=true;document.body.style.overflow='';busy=false;if(mode!=='manual')setMode(mode)}
 $('sheetForm').onsubmit=e=>{e.preventDefault();
-  FIELDS.forEach(g=>g[1].forEach(([k])=>{cur[k]=$('f_'+k).value.trim()}));
+  FIELDS.forEach(g=>g[1].forEach(([k])=>{cur[k]=$('f_'+k).value.trim()}));if(!cur._local)cur.stock=1;
   const {_src,_local,_fda,...data}=cur;store.set(cur.gtin,data);
   cur._src='Base Afiya (cet appareil)';cur._local=true;closeForm();render();status('fiche enregistrée')};
 $('sheetClose').onclick=closeForm;
