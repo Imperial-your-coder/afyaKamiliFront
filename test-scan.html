@@ -4,33 +4,38 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#f3f6f4;color:#1b2b24}
-h1{font-size:1.3rem}#reader{max-width:420px;margin:auto}
-.card{background:#fff;border-radius:10px;padding:14px;margin:14px auto;max-width:420px;box-shadow:0 1px 4px #0002}
-img{max-width:120px;float:right;margin-left:10px}input,button{font-size:1rem;padding:8px}
-dt{font-weight:600;margin-top:6px}
+#reader{width:100%;max-width:480px;margin:auto;border-radius:10px;overflow:hidden;background:#000}
+button{display:block;margin:12px auto;font-size:1.1rem;padding:12px 24px;border:0;border-radius:8px;background:#1b7a5a;color:#fff}
+.card{background:#fff;border-radius:10px;padding:14px;margin:14px auto;max-width:480px}
+img{max-width:110px;float:right;margin-left:10px}
 </style></head><body>
-<h1>Scanner code-barres</h1>
 <div id="reader"></div>
-<div class="card"><input id="code" placeholder="Ou tapez le code" inputmode="numeric"> <button onclick="lookup(code.value)">Chercher</button></div>
-<div id="out" class="card">Scannez un produit…</div>
+<button id="go">Démarrer le scan</button>
+<div id="out" class="card">Visez un code-barres.</div>
 <script>
-const out=document.getElementById('out');let last='';
-async function lookup(c){
-  c=(c||'').trim();if(!c)return;out.textContent='Recherche de '+c+'…';
+const out=document.getElementById('out'),go=document.getElementById('go');
+const F=Html5QrcodeSupportedFormats;
+const scanner=new Html5Qrcode('reader',{formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.QR_CODE],
+  experimentalFeatures:{useBarCodeDetectorIfSupported:true},verbose:false});
+let busy=false;
+async function onScan(code){
+  if(busy)return;busy=true;
+  if(navigator.vibrate)navigator.vibrate(100);
+  out.innerHTML='<b>'+code+'</b><br>Recherche…';
   try{
-    const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+c+'.json');
-    const d=await r.json();
-    if(d.status!==1){out.innerHTML='<b>'+c+'</b><br>Produit introuvable dans Open Food Facts.';return}
-    const p=d.product,n=p.nutriments||{};
-    out.innerHTML=(p.image_front_small_url?'<img src="'+p.image_front_small_url+'">':'')+
-    '<h2>'+(p.product_name||'Sans nom')+'</h2><dl>'+
-    '<dt>Code</dt><dd>'+c+'</dd><dt>Marque</dt><dd>'+(p.brands||'-')+'</dd>'+
-    '<dt>Quantité</dt><dd>'+(p.quantity||'-')+'</dd>'+
-    '<dt>Nutri-Score</dt><dd>'+((p.nutriscore_grade||'-').toUpperCase())+'</dd>'+
-    '<dt>Énergie /100g</dt><dd>'+(n['energy-kcal_100g']??'-')+' kcal</dd>'+
-    '<dt>Ingrédients</dt><dd>'+(p.ingredients_text_fr||p.ingredients_text||'-')+'</dd></dl>';
-  }catch(e){out.textContent='Erreur réseau : '+e.message}
+    const d=await (await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json')).json();
+    if(d.status!==1)out.innerHTML='<b>'+code+'</b><br>Produit inconnu.';
+    else{const p=d.product;
+      out.innerHTML=(p.image_front_small_url?'<img src="'+p.image_front_small_url+'">':'')+
+      '<h3>'+(p.product_name||'Sans nom')+'</h3>Code : '+code+'<br>Marque : '+(p.brands||'-')+
+      '<br>Quantité : '+(p.quantity||'-')+'<br>Nutri-Score : '+(p.nutriscore_grade||'-').toUpperCase();}
+  }catch(e){out.innerHTML='<b>'+code+'</b><br>Erreur réseau.'}
+  setTimeout(()=>busy=false,2500);
 }
-new Html5QrcodeScanner('reader',{fps:10,qrbox:{width:260,height:140}},false)
- .render(t=>{if(t!==last){last=t;document.getElementById('code').value=t;lookup(t)}});
+async function start(){
+  go.hidden=true;
+  try{await scanner.start({facingMode:'environment'},{fps:15,qrbox:(w,h)=>({width:Math.floor(w*.85),height:Math.floor(h*.45)})},onScan,()=>{});}
+  catch(e){go.hidden=false;out.textContent='Caméra refusée ou indisponible : '+e;}
+}
+go.onclick=start;start();
 </script></body></html>
