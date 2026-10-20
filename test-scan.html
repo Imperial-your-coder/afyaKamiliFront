@@ -159,12 +159,12 @@ async function found(code,src){
   const rows=[['Pays (GS1)',gs1Country(gtin)]];
   if(g.exp)rows.push(['Péremption',g.exp]);if(g.lot)rows.push(['Lot',g.lot]);if(g.sn)rows.push(['N° série',g.sn]);
   const dl=r=>`<dl class="meta">${r.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
-  res.innerHTML=head+dl(rows)+`<div class="empty">Recherche du médicament…</div>`;
+  res.innerHTML=head+dl(rows)+`<div class="empty">Recherche du produit…</div>`;
   let p=null;
   try{p=await lookupDrug(gtin)}catch(e){}
-  if(p){const r=[['Laboratoire',p.lab],['Forme',p.form],['Voie',p.route],['Principe actif',p.active],...rows].filter(x=>x[1]);
-    res.innerHTML=head+`<div><h3 style="margin:0 0 8px">${p.name}</h3>${dl(r)}</div><div class="src">Source : ${p.src}</div>`}
-  else res.innerHTML=head+dl(rows)+`<div class="empty">Médicament absent des bases publiques. Il faudra l'ajouter dans la base Afiya Kamili.</div>`;
+  if(p){const r=[['Laboratoire / marque',p.lab],[p.src==='openFDA'?'Forme':'Contenance',p.form],['Voie',p.route],[p.src==='openFDA'?'Principe actif':'Catégorie',p.active],...rows].filter(x=>x[1]);
+    res.innerHTML=head+`<div class="prod">${p.img?`<img src="${p.img}" alt="">`:''}<div><h3>${p.name}</h3>${dl(r)}</div></div><div class="src">Source : ${p.src}</div>`}
+  else res.innerHTML=head+dl(rows)+`<div class="empty">Produit absent des bases publiques. Il faudra l'ajouter dans la base Afiya Kamili.</div>`;
   setTimeout(()=>{busy=false;tStart=Date.now();if(mode==='bar')status('scan en cours',true)},2500);
 }
 /* GS1 DataMatrix pharma : (01) GTIN, (17) péremption AAMMJJ, (10) lot, (21) série */
@@ -188,6 +188,10 @@ async function lookupDrug(g){
     const r=await fetch('https://api.fda.gov/drug/label.json?search=openfda.upc:%22'+c+'%22&limit=1');
     if(!r.ok)continue;const d=await r.json(),f=(d.results&&d.results[0]||{}).openfda;
     if(f)return {name:(f.brand_name||f.generic_name||['Médicament'])[0],lab:(f.manufacturer_name||[])[0],form:(f.dosage_form||[])[0],route:(f.route||[])[0],active:(f.substance_name||f.generic_name||[]).join(', '),src:'openFDA'}}
+  /* parapharmacie, hygiène, cosmétique, nutrition : bases Open*Facts */
+  for(const [host,src] of [['world.openbeautyfacts.org','Open Beauty Facts'],['world.openfoodfacts.org','Open Food Facts'],['world.openproductsfacts.org','Open Products Facts']]){
+    try{const d=await(await fetch('https://'+host+'/api/v2/product/'+g+'.json')).json();
+      if(d.status===1){const p=d.product;return {name:p.product_name_fr||p.product_name||'Produit sans nom',lab:p.brands,form:p.quantity,active:(p.categories||'').split(',').slice(-1)[0].trim(),img:p.image_front_small_url,src}}}catch(e){}}
   return null}
 
 /* ---- modes ---- */
